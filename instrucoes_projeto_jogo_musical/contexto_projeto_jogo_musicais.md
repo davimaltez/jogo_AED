@@ -8,7 +8,7 @@
 
 ## 1. Visão geral
 
-O projeto é um jogo de ritmo inspirado na jogabilidade de **Guitar
+O projeto é um jogo chamado "FINAL ACT", de ritmo inspirado na jogabilidade de **Guitar
 Hero**, mas com temática centrada em **filmes musicais**. O jogador
 escolhe músicas de diferentes filmes e precisa pressionar as teclas
 correspondentes no momento correto, acompanhando notas que aparecem e se
