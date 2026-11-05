@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#define TOTAL_PISTAS 5
+
 /*
  * Situacao de cada nota no ciclo de jogo.
  */
@@ -17,7 +19,7 @@ typedef enum {
  */
 typedef struct Nota {
     float tempo_alvo;       /* Instante em que a nota deve ser tocada (em segundos) */
-    int pista;              /* Pista correspondente: 0 = D, 1 = F, 2 = J, 3 = K */
+    int pista;              /* Pista correspondente: 0 = D, 1 = F, 2 = G, 3 = J, 4 = K */
     EstadoNota estado;      /* Pendente, acertada ou perdida */
     struct Nota *proximo;   /* Ponteiro para o proximo no da lista */
 } Nota;

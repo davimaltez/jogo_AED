@@ -95,7 +95,7 @@ bool desenhar_botao(Rectangle retangulo, const char *texto, Vector2 mouse, int t
 /*
  * Renderiza o menu inicial com titulo em destaque e botoes de navegacao.
  */
-void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela *estado, bool *deve_sair) {
+void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela *estado, bool *confirmar_saida) {
     desenhar_fundo_teatro(largura, altura);
 
     /* Titulo principal: FINAL ACT cinematografico */
@@ -142,7 +142,7 @@ void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela 
     /* Botao SAIR */
     Rectangle ret_sair = { posicao_x_botao, inicio_y_botoes + 2 * (altura_botao + espaco_entre_botoes), largura_botao, altura_botao };
     if (desenhar_botao(ret_sair, "SAIR", mouse, 26)) {
-        *deve_sair = true;
+        *confirmar_saida = true;
     }
 }
 
@@ -409,7 +409,7 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
  * Renderiza e gerencia a partida do jogo.
  * Utiliza a lista simplesmente encadeada de notas e sincroniza a queda pelo tempo.
  */
-void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
+void desenhar_tela_partida(int largura, int altura, bool pausada,
                            Musica musica_atual, Nota **cabeca_notas,
                            float *tempo_partida, int *pontuacao, int *combo,
                            int *maior_combo, int *notas_acertadas, int *notas_perdidas,
@@ -417,7 +417,7 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
     desenhar_fundo_teatro(largura, altura);
 
     /* Atualiza o tempo decorrido da partida em segundos */
-    float delta = GetFrameTime();
+    float delta = pausada ? 0.0f : GetFrameTime();
     *tempo_partida += delta;
 
     /* Atualiza feedback de acerto */
@@ -425,11 +425,11 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
         *tempo_feedback -= delta;
     }
 
-    /* Leitura das teclas de acerto D, F, J, K */
-    int teclas[] = { KEY_D, KEY_F, KEY_J, KEY_K };
+    /* Leitura das teclas de acerto D, F, G, J, K */
+    int teclas[] = { KEY_D, KEY_F, KEY_G, KEY_J, KEY_K };
 
-    for (int p = 0; p < 4; p++) {
-        if (IsKeyPressed(teclas[p])) {
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        if (!pausada && IsKeyPressed(teclas[p])) {
             /* Verifica se ha acerto na lista encadeada */
             if (verificar_acerto(*cabeca_notas, p, *tempo_partida, 0.20f)) {
                 *pontuacao += 100 + (*combo * 10);
@@ -447,14 +447,17 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
     }
 
     /* Atualiza notas que ultrapassaram a linha sem acerto */
-    atualizar_notas(*cabeca_notas, *tempo_partida, 0.22f, combo, notas_perdidas);
+    if (!pausada) {
+        atualizar_notas(*cabeca_notas, *tempo_partida, 0.22f, combo, notas_perdidas);
+    }
 
-    /* Cores das 4 pistas (Guitar Hero) */
+    /* Cores das 5 pistas (Guitar Hero) */
     Color cores_pistas[] = {
         (Color){ 225, 50, 110, 255 },  /* Pista 0: D (Rosa / Vinho) */
         (Color){ 50, 140, 245, 255 },  /* Pista 1: F (Azul Vibrante) */
-        (Color){ 245, 195, 65, 255 },  /* Pista 2: J (Dourado Ouro) */
-        (Color){ 45, 210, 125, 255 }   /* Pista 3: K (Verde Esmeralda) */
+        (Color){ 245, 195, 65, 255 },  /* Pista 2: G (Dourado Ouro) */
+        (Color){ 45, 210, 125, 255 },  /* Pista 3: J (Verde Esmeralda) */
+        (Color){ 180, 90, 245, 255 }   /* Pista 4: K (Roxo) */
     };
 
     /* 
@@ -484,12 +487,12 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
     DrawCircleGradient(centro_horizonte, largura_topo * 0.6f, (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
 
     /* Linhas divisórias das pistas convergindo para a perspectiva */
-    for (int p = 0; p <= 4; p++) {
-        float fracao = p / 4.0f;
+    for (int p = 0; p <= TOTAL_PISTAS; p++) {
+        float fracao = p / (float)TOTAL_PISTAS;
         Vector2 inicio_div = { (centro_x - largura_topo / 2.0f) + (fracao * largura_topo), y_topo };
         Vector2 fim_div    = { (centro_x - largura_base / 2.0f) + (fracao * largura_base), y_base };
 
-        if (p == 0 || p == 4) {
+        if (p == 0 || p == TOTAL_PISTAS) {
             /* Bordas externas da pista em dourado iluminado */
             DrawLineEx(inicio_div, fim_div, 3.0f, COR_DOURADO);
         } else {
@@ -511,10 +514,10 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
     DrawLineEx(linha_alvo_inicio, linha_alvo_fim, 2.0f, WHITE);
 
     /* Teclas receptoras na base da linha de acerto */
-    const char *nomes_teclas[] = { "D", "F", "J", "K" };
-    float largura_coluna_alvo = largura_alvo / 4.0f;
+    const char *nomes_teclas[] = { "D", "F", "G", "J", "K" };
+    float largura_coluna_alvo = largura_alvo / (float)TOTAL_PISTAS;
 
-    for (int p = 0; p < 4; p++) {
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
         float cx_rec = x_alvo_esq + (p + 0.5f) * largura_coluna_alvo;
         float larg_rec = largura_coluna_alvo * 0.85f;
         float alt_rec = 34.0f;
@@ -530,8 +533,8 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
 
         /* Se ativa, desenha feixe de luz ascendente na pista */
         if (ativa) {
-            float fracao_esq = (float)p / 4.0f;
-            float fracao_dir = (float)(p + 1) / 4.0f;
+            float fracao_esq = (float)p / (float)TOTAL_PISTAS;
+            float fracao_dir = (float)(p + 1) / (float)TOTAL_PISTAS;
             Vector2 t_esq = { (centro_x - largura_topo / 2.0f) + (fracao_esq * largura_topo), y_topo };
             Vector2 t_dir = { (centro_x - largura_topo / 2.0f) + (fracao_dir * largura_topo), y_topo };
             Vector2 b_esq = { (centro_x - largura_base / 2.0f) + (fracao_esq * largura_base), y_alvo };
@@ -573,7 +576,7 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
 
                 float largura_pista_y = largura_topo + (largura_base - largura_topo) * fator_largura;
                 float x_esq_y = centro_x - (largura_pista_y / 2.0f);
-                float largura_coluna_y = largura_pista_y / 4.0f;
+                float largura_coluna_y = largura_pista_y / (float)TOTAL_PISTAS;
 
                 float cx_nota = x_esq_y + (atual->pista + 0.5f) * largura_coluna_y;
                 float larg_nota = largura_coluna_y * 0.85f;
@@ -619,15 +622,10 @@ void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
         DrawText(txt_feedback, (largura - larg_fb) / 2, y_alvo - 75, 30, COR_DOURADO_BRILHO);
     }
 
-    /* Instrucao para sair com ESC */
-    const char *aviso_esc = "Pressione [ESC] para retornar a selecao";
+    const char *aviso_esc = "Pressione [ESC] para pausar";
     int larg_esc = MeasureText(aviso_esc, 18);
     DrawText(aviso_esc, (largura - larg_esc) / 2, altura - 28, 18, (Color){ 190, 180, 200, 220 });
 
-    if (IsKeyPressed(KEY_ESCAPE)) {
-        liberar_lista_notas(cabeca_notas);
-        *estado = TELA_SELECAO_MUSICAS;
-    }
 }
 
 /*
@@ -662,22 +660,23 @@ void desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, EstadoTela
     DrawText(instrucao1, quadro_x + (largura_quadro - MeasureText(instrucao1, 24)) / 2, quadro_y + 88, 24, (Color){ 230, 220, 220, 255 });
     DrawText(instrucao2, quadro_x + (largura_quadro - MeasureText(instrucao2, tamanho_texto)) / 2, quadro_y + 122, tamanho_texto, (Color){ 230, 220, 220, 255 });
 
-    /* Indicadores visuais das teclas D, F, J, K */
-    const char *teclas[] = { "D", "F", "J", "K" };
+    /* Indicadores visuais das teclas D, F, G, J, K */
+    const char *teclas[] = { "D", "F", "G", "J", "K" };
     Color cores_teclas[] = {
         (Color){ 190, 60, 100, 255 },  /* Pista 1: Tom rosa/vinho */
         (Color){ 70, 120, 210, 255 },  /* Pista 2: Azul */
         (Color){ 220, 160, 40, 255 },  /* Pista 3: Dourado */
-        (Color){ 60, 170, 120, 255 }   /* Pista 4: Verde */
+        (Color){ 60, 170, 120, 255 },  /* Pista 4: Verde */
+        (Color){ 180, 90, 245, 255 }   /* Pista 5: Roxo */
     };
 
     float tamanho_tecla = 74.0f;
     float espaco_teclas = 24.0f;
-    float largura_total_teclas = (4 * tamanho_tecla) + (3 * espaco_teclas);
+    float largura_total_teclas = (TOTAL_PISTAS * tamanho_tecla) + ((TOTAL_PISTAS - 1) * espaco_teclas);
     float inicio_x_teclas = quadro_x + (largura_quadro - largura_total_teclas) / 2;
     float posicao_y_teclas = quadro_y + 168;
 
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < TOTAL_PISTAS; i++) {
         Rectangle ret_tecla = { inicio_x_teclas + i * (tamanho_tecla + espaco_teclas), posicao_y_teclas, tamanho_tecla, tamanho_tecla };
         DrawRectangleRec(ret_tecla, cores_teclas[i]);
         DrawRectangleLinesEx(ret_tecla, 2.5f, (Color){ 255, 255, 255, 220 });
@@ -705,12 +704,52 @@ void desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, EstadoTela
     }
 }
 
+/* Retorna a opcao escolhida: continuar, reiniciar, selecao ou menu. */
+int desenhar_menu_pausa(int largura, int altura, Vector2 mouse) {
+    DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
+    Rectangle painel = { (largura - 360) / 2.0f, (altura - 350) / 2.0f, 360, 350 };
+    DrawRectangleRec(painel, COR_PAINEL_FUNDO);
+    DrawRectangleLinesEx(painel, 2.0f, COR_DOURADO);
+    DrawText("PAUSADO", (largura - MeasureText("PAUSADO", 30)) / 2,
+             painel.y + 20, 30, COR_DOURADO);
+
+    const char *opcoes[] = { "CONTINUAR", "REINICIAR", "VOLTAR A SELECAO", "MENU INICIAL" };
+    for (int i = 0; i < 4; i++) {
+        Rectangle botao = { painel.x + 20, painel.y + 75 + i * 62, 320, 50 };
+        if (desenhar_botao(botao, opcoes[i], mouse, 22)) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
+void desenhar_confirmacao_saida(int largura, int altura, Vector2 mouse,
+                                bool *confirmar_saida, bool *deve_sair) {
+    DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
+    Rectangle painel = { (largura - 380) / 2.0f, (altura - 210) / 2.0f, 380, 210 };
+    DrawRectangleRec(painel, COR_PAINEL_FUNDO);
+    DrawRectangleLinesEx(painel, 2.0f, COR_DOURADO);
+    const char *pergunta = "Deseja sair do jogo?";
+    DrawText(pergunta, (largura - MeasureText(pergunta, 26)) / 2,
+             painel.y + 35, 26, COR_DOURADO);
+
+    Rectangle botao_sim = { painel.x + 25, painel.y + 110, 150, 55 };
+    Rectangle botao_nao = { painel.x + 205, painel.y + 110, 150, 55 };
+    if (desenhar_botao(botao_sim, "SIM", mouse, 24)) {
+        *deve_sair = true;
+    }
+    if (desenhar_botao(botao_nao, "NAO", mouse, 24)) {
+        *confirmar_saida = false;
+    }
+}
+
 int main(void) {
     const int largura_inicial = 900;
     const int altura_inicial = 600;
 
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(largura_inicial, altura_inicial, "FINAL ACT - Jogo de Ritmo");
+    SetExitKey(KEY_NULL);
     SetTargetFPS(60);
 
     /* Inicia o jogo diretamente em tela cheia */
@@ -729,6 +768,8 @@ int main(void) {
     int indice_musica_selecionada = 0;   /* Comeca com a primeira musica selecionada */
     bool musica_confirmada = false;
     bool deve_sair = false;
+    bool confirmar_saida = false;
+    bool partida_pausada = false;
 
     /* Variaveis da partida e lista encadeada */
     Nota *cabeca_notas = NULL;
@@ -752,12 +793,28 @@ int main(void) {
         int altura_atual = GetScreenHeight();
         Vector2 posicao_mouse = GetMousePosition();
 
+        /* O ESC e tratado uma unica vez por quadro, conforme a tela atual. */
+        if (IsKeyPressed(KEY_ESCAPE)) {
+            if (confirmar_saida) {
+                confirmar_saida = false;
+            } else if (estado_atual == TELA_PARTIDA) {
+                partida_pausada = !partida_pausada;
+            } else if (estado_atual == TELA_MENU_PRINCIPAL) {
+                confirmar_saida = true;
+            } else {
+                estado_atual = TELA_MENU_PRINCIPAL;
+            }
+        }
+
         BeginDrawing();
 
         /* Controle de telas atraves do estado atual */
         switch (estado_atual) {
             case TELA_MENU_PRINCIPAL:
-                desenhar_menu_principal(largura_atual, altura_atual, posicao_mouse, &estado_atual, &deve_sair);
+                /* Impede cliques no menu atras da confirmacao de saida. */
+                desenhar_menu_principal(largura_atual, altura_atual,
+                                        confirmar_saida ? (Vector2){ -1, -1 } : posicao_mouse,
+                                        &estado_atual, &confirmar_saida);
                 break;
 
             case TELA_SELECAO_MUSICAS:
@@ -775,12 +832,40 @@ int main(void) {
                 break;
 
             case TELA_PARTIDA:
-                desenhar_tela_partida(largura_atual, altura_atual, &estado_atual,
+                desenhar_tela_partida(largura_atual, altura_atual, partida_pausada,
                                       catalogo[indice_musica_selecionada], &cabeca_notas,
                                       &tempo_partida, &pontuacao, &combo,
                                       &maior_combo, &notas_acertadas, &notas_perdidas,
                                       &tempo_feedback, &pista_feedback);
+                if (partida_pausada) {
+                    int opcao = desenhar_menu_pausa(largura_atual, altura_atual, posicao_mouse);
+                    if (opcao == 1) {
+                        partida_pausada = false;
+                    } else if (opcao == 2) {
+                        carregar_notas_iniciais(&cabeca_notas, catalogo[indice_musica_selecionada].dificuldade);
+                        tempo_partida = 0.0f;
+                        pontuacao = 0;
+                        combo = 0;
+                        maior_combo = 0;
+                        notas_acertadas = 0;
+                        notas_perdidas = 0;
+                        tempo_feedback = 0.0f;
+                        pista_feedback = -1;
+                        partida_pausada = false;
+                    } else if (opcao == 3 || opcao == 4) {
+                        liberar_lista_notas(&cabeca_notas);
+                        partida_pausada = false;
+                        tempo_feedback = 0.0f;
+                        pista_feedback = -1;
+                        estado_atual = opcao == 3 ? TELA_SELECAO_MUSICAS : TELA_MENU_PRINCIPAL;
+                    }
+                }
                 break;
+        }
+
+        if (confirmar_saida) {
+            desenhar_confirmacao_saida(largura_atual, altura_atual, posicao_mouse,
+                                       &confirmar_saida, &deve_sair);
         }
 
         EndDrawing();

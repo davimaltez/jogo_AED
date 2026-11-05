@@ -43,7 +43,7 @@ void inserir_nota(Nota **cabeca, float tempo_alvo, int pista) {
 
 /*
  * Carrega uma sequencia inicial de notas sincronizadas com o tempo.
- * As notas sao geradas em sequencias ritmicas nas 4 pistas (0 a 3).
+ * As notas sao geradas em sequencias ritmicas nas 5 pistas (0 a 4).
  */
 void carregar_notas_iniciais(Nota **cabeca, int dificuldade) {
     /* Garante que a lista comece vazia antes de carregar */
@@ -56,7 +56,7 @@ void carregar_notas_iniciais(Nota **cabeca, int dificuldade) {
     if (intervalo < 0.45f) intervalo = 0.45f;
 
     /* Padrao de pistas ritmicas */
-    int padrao_pistas[] = { 0, 1, 2, 3, 2, 1, 0, 2, 1, 3, 0, 3, 1, 2, 0, 1 };
+    int padrao_pistas[] = { 0, 1, 2, 3, 4, 3, 2, 1, 0, 2, 4, 1, 3, 0, 4, 2 };
     int total_padrao = sizeof(padrao_pistas) / sizeof(padrao_pistas[0]);
 
     for (int i = 0; i < total_notas; i++) {
@@ -67,7 +67,7 @@ void carregar_notas_iniciais(Nota **cabeca, int dificuldade) {
 
         /* Em dificuldades maiores (>= 3), insere algumas notas duplas ocasionais */
         if (dificuldade >= 3 && i % 5 == 0 && i > 0) {
-            int pista_dupla = (pista + 2) % 4;
+            int pista_dupla = (pista + 2) % TOTAL_PISTAS;
             inserir_nota(cabeca, tempo, pista_dupla);
         }
     }
