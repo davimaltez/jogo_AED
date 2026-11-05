@@ -9,7 +9,7 @@ LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 TARGET = final_act
 
 # Arquivos fonte
-SRCS = principal.c catalogo_musicas.c
+SRCS = principal.c catalogo_musicas.c lista_notas.c
 
 # Regra padrao: compila o projeto
 all: $(TARGET)

@@ -1,7 +1,10 @@
 #include "raylib.h"
 #include "catalogo_musicas.h"
+#include "lista_notas.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 /*
  * Estados possiveis para a navegacao entre telas.
@@ -10,7 +13,8 @@
 typedef enum {
     TELA_MENU_PRINCIPAL,
     TELA_SELECAO_MUSICAS,
-    TELA_COMO_JOGAR
+    TELA_COMO_JOGAR,
+    TELA_PARTIDA
 } EstadoTela;
 
 /*
@@ -170,12 +174,15 @@ bool desenhar_botao_filtro(Rectangle retangulo, const char *texto, bool ativo, V
 /*
  * Desenha a tela de selecao de musicas do catalogo.
  * Exibe a lista de musicas, opcoes de ordenacao por Merge Sort,
- * detalhes da faixa selecionada e validacao de escolha.
+ * detalhes da faixa selecionada e botao para iniciar a partida.
  */
 void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, EstadoTela *estado,
                                    Musica catalogo[], int total_musicas,
                                    int *indice_selecionado, bool *confirmado,
-                                   CriterioOrdenacao *criterio_atual) {
+                                   CriterioOrdenacao *criterio_atual,
+                                   Nota **cabeca_notas, float *tempo_partida,
+                                   int *pontuacao, int *combo, int *maior_combo,
+                                   int *notas_acertadas, int *notas_perdidas) {
     desenhar_fundo_teatro(largura, altura);
 
     /* Titulo da secao */
@@ -359,23 +366,29 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
             }
         }
 
-        /* Botao de confirmacao SELECIONAR */
+        /* Botao INICIAR PARTIDA */
         float largura_botao_sel = largura_coluna_direita - 50;
         Rectangle ret_selecionar = { x_coluna_direita + 25, topo_y + 300, largura_botao_sel, 56 };
 
-        if (desenhar_botao(ret_selecionar, "SELECIONAR", mouse, 24)) {
+        if (desenhar_botao(ret_selecionar, "INICIAR PARTIDA", mouse, 24)) {
             *confirmado = true;
+            /* Carrega as notas na lista simplesmente encadeada */
+            carregar_notas_iniciais(cabeca_notas, musica.dificuldade);
+
+            /* Zera cronometro e pontuacoes */
+            *tempo_partida = 0.0f;
+            *pontuacao = 0;
+            *combo = 0;
+            *maior_combo = 0;
+            *notas_acertadas = 0;
+            *notas_perdidas = 0;
+
+            /* Transita para a tela de partida */
+            *estado = TELA_PARTIDA;
         }
 
-        /* Mensagem apos confirmacao */
-        if (*confirmado) {
-            Rectangle ret_msg = { x_coluna_direita + 20, topo_y + 375, largura_coluna_direita - 40, 86 };
-            DrawRectangleRec(ret_msg, (Color){ 20, 45, 30, 240 });
-            DrawRectangleLinesEx(ret_msg, 2.0f, (Color){ 80, 200, 120, 255 });
-
-            DrawText("Musica escolhida com sucesso!", ret_msg.x + 16, ret_msg.y + 16, 21, (Color){ 140, 255, 170, 255 });
-            DrawText("A partida sera iniciada na proxima etapa.", ret_msg.x + 16, ret_msg.y + 46, 18, WHITE);
-        }
+        /* Dica explicativa */
+        DrawText("Pressione INICIAR PARTIDA para jogar com a lista encadeada.", x_coluna_direita + 25, topo_y + 375, 16, (Color){ 200, 190, 210, 220 });
     } else {
         /* Mensagem orientando o jogador a selecionar */
         const char *aviso = "Clique em uma musica da lista ao lado\npara visualizar seus detalhes.";
@@ -389,6 +402,231 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
 
     if (desenhar_botao(ret_voltar, "VOLTAR AO MENU", mouse, 24)) {
         *estado = TELA_MENU_PRINCIPAL;
+    }
+}
+
+/*
+ * Renderiza e gerencia a partida do jogo.
+ * Utiliza a lista simplesmente encadeada de notas e sincroniza a queda pelo tempo.
+ */
+void desenhar_tela_partida(int largura, int altura, EstadoTela *estado,
+                           Musica musica_atual, Nota **cabeca_notas,
+                           float *tempo_partida, int *pontuacao, int *combo,
+                           int *maior_combo, int *notas_acertadas, int *notas_perdidas,
+                           float *tempo_feedback, int *pista_feedback) {
+    desenhar_fundo_teatro(largura, altura);
+
+    /* Atualiza o tempo decorrido da partida em segundos */
+    float delta = GetFrameTime();
+    *tempo_partida += delta;
+
+    /* Atualiza feedback de acerto */
+    if (*tempo_feedback > 0.0f) {
+        *tempo_feedback -= delta;
+    }
+
+    /* Leitura das teclas de acerto D, F, J, K */
+    int teclas[] = { KEY_D, KEY_F, KEY_J, KEY_K };
+
+    for (int p = 0; p < 4; p++) {
+        if (IsKeyPressed(teclas[p])) {
+            /* Verifica se ha acerto na lista encadeada */
+            if (verificar_acerto(*cabeca_notas, p, *tempo_partida, 0.20f)) {
+                *pontuacao += 100 + (*combo * 10);
+                (*combo)++;
+                if (*combo > *maior_combo) {
+                    *maior_combo = *combo;
+                }
+                (*notas_acertadas)++;
+                *pista_feedback = p;
+                *tempo_feedback = 0.30f;
+            } else {
+                *combo = 0;
+            }
+        }
+    }
+
+    /* Atualiza notas que ultrapassaram a linha sem acerto */
+    atualizar_notas(*cabeca_notas, *tempo_partida, 0.22f, combo, notas_perdidas);
+
+    /* Cores das 4 pistas (Guitar Hero) */
+    Color cores_pistas[] = {
+        (Color){ 225, 50, 110, 255 },  /* Pista 0: D (Rosa / Vinho) */
+        (Color){ 50, 140, 245, 255 },  /* Pista 1: F (Azul Vibrante) */
+        (Color){ 245, 195, 65, 255 },  /* Pista 2: J (Dourado Ouro) */
+        (Color){ 45, 210, 125, 255 }   /* Pista 3: K (Verde Esmeralda) */
+    };
+
+    /* 
+     * Geometria em Perspectiva 3D (Guitar Hero):
+     * A pista forma um trapezio que converge para o horizonte no topo da tela.
+     */
+    float centro_x = largura / 2.0f;
+    float y_topo = altura * 0.16f;        /* Linha do horizonte da pista */
+    float y_base = altura * 0.94f;        /* Fim da pista perto do jogador */
+    float y_alvo = altura * 0.82f;        /* Linha exata de acerto */
+
+    float largura_topo = largura * 0.20f; /* Pista estreita no horizonte */
+    float largura_base = largura * 0.56f; /* Pista larga perto do jogador */
+
+    /* Quatro vertices do trapezio da pista */
+    Vector2 p_topo_esq = { centro_x - (largura_topo / 2.0f), y_topo };
+    Vector2 p_topo_dir = { centro_x + (largura_topo / 2.0f), y_topo };
+    Vector2 p_base_dir = { centro_x + (largura_base / 2.0f), y_base };
+    Vector2 p_base_esq = { centro_x - (largura_base / 2.0f), y_base };
+
+    /* Desenha o corpo da pista com dois triangulos */
+    DrawTriangle(p_topo_esq, p_base_esq, p_base_dir, (Color){ 16, 9, 24, 235 });
+    DrawTriangle(p_topo_esq, p_base_dir, p_topo_dir, (Color){ 16, 9, 24, 235 });
+
+    /* Brilho suave no horizonte da pista */
+    Vector2 centro_horizonte = { centro_x, y_topo };
+    DrawCircleGradient(centro_horizonte, largura_topo * 0.6f, (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
+
+    /* Linhas divisórias das pistas convergindo para a perspectiva */
+    for (int p = 0; p <= 4; p++) {
+        float fracao = p / 4.0f;
+        Vector2 inicio_div = { (centro_x - largura_topo / 2.0f) + (fracao * largura_topo), y_topo };
+        Vector2 fim_div    = { (centro_x - largura_base / 2.0f) + (fracao * largura_base), y_base };
+
+        if (p == 0 || p == 4) {
+            /* Bordas externas da pista em dourado iluminado */
+            DrawLineEx(inicio_div, fim_div, 3.0f, COR_DOURADO);
+        } else {
+            /* Linhas internas divisórias sutis */
+            DrawLineEx(inicio_div, fim_div, 1.5f, (Color){ 110, 70, 120, 160 });
+        }
+    }
+
+    /* Linha de acerto em perspectiva no plano y_alvo */
+    float fator_alvo = (y_alvo - y_topo) / (y_base - y_topo);
+    float largura_alvo = largura_topo + (largura_base - largura_topo) * fator_alvo;
+    float x_alvo_esq = centro_x - (largura_alvo / 2.0f);
+    float x_alvo_dir = centro_x + (largura_alvo / 2.0f);
+
+    /* Faixa de acerto dourada luminosa */
+    Vector2 linha_alvo_inicio = { x_alvo_esq, y_alvo };
+    Vector2 linha_alvo_fim = { x_alvo_dir, y_alvo };
+    DrawLineEx(linha_alvo_inicio, linha_alvo_fim, 6.0f, COR_DOURADO);
+    DrawLineEx(linha_alvo_inicio, linha_alvo_fim, 2.0f, WHITE);
+
+    /* Teclas receptoras na base da linha de acerto */
+    const char *nomes_teclas[] = { "D", "F", "J", "K" };
+    float largura_coluna_alvo = largura_alvo / 4.0f;
+
+    for (int p = 0; p < 4; p++) {
+        float cx_rec = x_alvo_esq + (p + 0.5f) * largura_coluna_alvo;
+        float larg_rec = largura_coluna_alvo * 0.85f;
+        float alt_rec = 34.0f;
+
+        Rectangle ret_rec = { cx_rec - (larg_rec / 2.0f), y_alvo - (alt_rec / 2.0f), larg_rec, alt_rec };
+        bool ativa = IsKeyDown(teclas[p]);
+
+        Color cor_fundo_rec = ativa ? cores_pistas[p] : (Color){ 35, 18, 48, 230 };
+        Color cor_borda_rec = ativa ? WHITE : cores_pistas[p];
+
+        DrawRectangleRec(ret_rec, cor_fundo_rec);
+        DrawRectangleLinesEx(ret_rec, ativa ? 3.5f : 2.0f, cor_borda_rec);
+
+        /* Se ativa, desenha feixe de luz ascendente na pista */
+        if (ativa) {
+            float fracao_esq = (float)p / 4.0f;
+            float fracao_dir = (float)(p + 1) / 4.0f;
+            Vector2 t_esq = { (centro_x - largura_topo / 2.0f) + (fracao_esq * largura_topo), y_topo };
+            Vector2 t_dir = { (centro_x - largura_topo / 2.0f) + (fracao_dir * largura_topo), y_topo };
+            Vector2 b_esq = { (centro_x - largura_base / 2.0f) + (fracao_esq * largura_base), y_alvo };
+            Vector2 b_dir = { (centro_x - largura_base / 2.0f) + (fracao_dir * largura_base), y_alvo };
+
+            Color cor_feixe = cores_pistas[p];
+            cor_feixe.a = 40;
+            DrawTriangle(t_esq, b_esq, b_dir, cor_feixe);
+            DrawTriangle(t_esq, b_dir, t_dir, cor_feixe);
+        }
+
+        /* Letra indicativa da tecla */
+        int larg_letra = MeasureText(nomes_teclas[p], 24);
+        DrawText(nomes_teclas[p], cx_rec - (larg_letra / 2), y_alvo - 12, 24, WHITE);
+    }
+
+    /* 
+     * Desenho das notas da lista encadeada com perspectiva e aceleracao optica:
+     * O tempo de antecedencia define a visibilidade da nota a partir do horizonte.
+     */
+    float tempo_antecedencia = 1.9f;
+
+    Nota *atual = *cabeca_notas;
+    while (atual != NULL) {
+        if (atual->estado == NOTA_PENDENTE) {
+            float tempo_restante = atual->tempo_alvo - *tempo_partida;
+            float progresso_tempo = 1.0f - (tempo_restante / tempo_antecedencia);
+
+            /* A nota e visivel desde o horizonte (0.0) ate um pouco apos o acerto (1.15) */
+            if (progresso_tempo >= 0.0f && progresso_tempo <= 1.15f) {
+                /* Curva exponencial de perspectiva: acelera suavemente conforme se aproxima */
+                float fator_curva = (float)pow(progresso_tempo, 1.55);
+                float pos_y_nota = y_topo + (y_alvo - y_topo) * fator_curva;
+
+                /* Largura da pista e da nota na coordenada Y atual */
+                float fator_largura = (pos_y_nota - y_topo) / (y_base - y_topo);
+                if (fator_largura < 0.0f) fator_largura = 0.0f;
+                if (fator_largura > 1.0f) fator_largura = 1.0f;
+
+                float largura_pista_y = largura_topo + (largura_base - largura_topo) * fator_largura;
+                float x_esq_y = centro_x - (largura_pista_y / 2.0f);
+                float largura_coluna_y = largura_pista_y / 4.0f;
+
+                float cx_nota = x_esq_y + (atual->pista + 0.5f) * largura_coluna_y;
+                float larg_nota = largura_coluna_y * 0.85f;
+                float alt_nota = 14.0f + (18.0f * fator_largura);
+
+                Rectangle ret_nota = {
+                    cx_nota - (larg_nota / 2.0f),
+                    pos_y_nota - (alt_nota / 2.0f),
+                    larg_nota,
+                    alt_nota
+                };
+
+                /* Desenho da nota com corpo colorido, borda branca e reflexo superior */
+                DrawRectangleRec(ret_nota, cores_pistas[atual->pista]);
+                DrawRectangleLinesEx(ret_nota, 2.0f, WHITE);
+                DrawRectangle(ret_nota.x + 3, ret_nota.y + 2, ret_nota.width - 6, alt_nota * 0.35f, (Color){ 255, 255, 255, 170 });
+            }
+        }
+        atual = atual->proximo;
+    }
+
+    /* Painel HUD Superior: Informacoes da musica e pontuacao */
+    DrawText(musica_atual.titulo, 35, 25, 26, COR_DOURADO);
+    DrawText(musica_atual.filme, 35, 58, 19, (Color){ 215, 205, 225, 230 });
+
+    /* Canto Superior Direito: Pontuacao e Combo */
+    char texto_pontos[64];
+    snprintf(texto_pontos, sizeof(texto_pontos), "PONTOS: %d", *pontuacao);
+    int larg_pontos = MeasureText(texto_pontos, 26);
+    DrawText(texto_pontos, largura - larg_pontos - 35, 25, 26, COR_DOURADO);
+
+    if (*combo > 0) {
+        char texto_combo[32];
+        snprintf(texto_combo, sizeof(texto_combo), "COMBO: %dx", *combo);
+        int larg_combo = MeasureText(texto_combo, 24);
+        DrawText(texto_combo, largura - larg_combo - 35, 58, 24, (Color){ 140, 255, 170, 255 });
+    }
+
+    /* Feedback visual de acerto com efeito de impacto */
+    if (*tempo_feedback > 0.0f) {
+        const char *txt_feedback = "PERFEITO!";
+        int larg_fb = MeasureText(txt_feedback, 30);
+        DrawText(txt_feedback, (largura - larg_fb) / 2, y_alvo - 75, 30, COR_DOURADO_BRILHO);
+    }
+
+    /* Instrucao para sair com ESC */
+    const char *aviso_esc = "Pressione [ESC] para retornar a selecao";
+    int larg_esc = MeasureText(aviso_esc, 18);
+    DrawText(aviso_esc, (largura - larg_esc) / 2, altura - 28, 18, (Color){ 190, 180, 200, 220 });
+
+    if (IsKeyPressed(KEY_ESCAPE)) {
+        liberar_lista_notas(cabeca_notas);
+        *estado = TELA_SELECAO_MUSICAS;
     }
 }
 
@@ -492,6 +730,17 @@ int main(void) {
     bool musica_confirmada = false;
     bool deve_sair = false;
 
+    /* Variaveis da partida e lista encadeada */
+    Nota *cabeca_notas = NULL;
+    float tempo_partida = 0.0f;
+    int pontuacao = 0;
+    int combo = 0;
+    int maior_combo = 0;
+    int notas_acertadas = 0;
+    int notas_perdidas = 0;
+    float tempo_feedback = 0.0f;
+    int pista_feedback = -1;
+
     /* Loop principal do jogo */
     while (!WindowShouldClose() && !deve_sair) {
         /* Alterna entre tela cheia e modo janela ao pressionar F11 */
@@ -515,16 +764,30 @@ int main(void) {
                 desenhar_tela_selecao_musicas(largura_atual, altura_atual, posicao_mouse, &estado_atual,
                                               catalogo, total_musicas,
                                               &indice_musica_selecionada, &musica_confirmada,
-                                              &criterio_atual);
+                                              &criterio_atual,
+                                              &cabeca_notas, &tempo_partida,
+                                              &pontuacao, &combo, &maior_combo,
+                                              &notas_acertadas, &notas_perdidas);
                 break;
 
             case TELA_COMO_JOGAR:
                 desenhar_tela_como_jogar(largura_atual, altura_atual, posicao_mouse, &estado_atual);
                 break;
+
+            case TELA_PARTIDA:
+                desenhar_tela_partida(largura_atual, altura_atual, &estado_atual,
+                                      catalogo[indice_musica_selecionada], &cabeca_notas,
+                                      &tempo_partida, &pontuacao, &combo,
+                                      &maior_combo, &notas_acertadas, &notas_perdidas,
+                                      &tempo_feedback, &pista_feedback);
+                break;
         }
 
         EndDrawing();
     }
+
+    /* Libera a memoria alocada para a lista encadeada antes de sair */
+    liberar_lista_notas(&cabeca_notas);
 
     CloseWindow();
     return 0;
