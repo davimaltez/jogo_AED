@@ -15,7 +15,8 @@ typedef enum {
     TELA_MENU_PRINCIPAL,
     TELA_SELECAO_MUSICAS,
     TELA_COMO_JOGAR,
-    TELA_PARTIDA
+    TELA_PARTIDA,
+    TELA_RESULTADOS
 } EstadoTela;
 
 /*
@@ -183,7 +184,8 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
                                    CriterioOrdenacao *criterio_atual,
                                    Nota **cabeca_notas, float *tempo_partida,
                                    int *pontuacao, int *combo, int *maior_combo,
-                                   int *notas_acertadas, int *notas_perdidas) {
+                                   int *notas_acertadas, int *notas_perdidas,
+                                   char *erro_carregamento, size_t tamanho_erro) {
     desenhar_fundo_teatro(largura, altura);
 
     /* Titulo da secao */
@@ -294,6 +296,7 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
         if (mouse_em_cima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             *indice_selecionado = i;
             *confirmado = false;
+            erro_carregamento[0] = '\0';
         }
 
         /* Cores do item de acordo com o estado */
@@ -372,24 +375,31 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
         Rectangle ret_selecionar = { x_coluna_direita + 25, topo_y + 300, largura_botao_sel, 56 };
 
         if (desenhar_botao(ret_selecionar, "INICIAR PARTIDA", mouse, 24)) {
-            *confirmado = true;
-            /* Carrega as notas na lista simplesmente encadeada */
-            carregar_notas_iniciais(cabeca_notas, musica.dificuldade);
+            if (carregar_notas_arquivo(cabeca_notas, musica.caminho_notas,
+                                      erro_carregamento, tamanho_erro)) {
+                *confirmado = true;
 
-            /* Zera cronometro e pontuacoes */
-            *tempo_partida = 0.0f;
-            *pontuacao = 0;
-            *combo = 0;
-            *maior_combo = 0;
-            *notas_acertadas = 0;
-            *notas_perdidas = 0;
+                /* Zera cronometro e pontuacoes somente apos carregar tudo. */
+                *tempo_partida = 0.0f;
+                *pontuacao = 0;
+                *combo = 0;
+                *maior_combo = 0;
+                *notas_acertadas = 0;
+                *notas_perdidas = 0;
 
-            /* Transita para a tela de partida */
-            *estado = TELA_PARTIDA;
+                /* Transita para a tela de partida */
+                *estado = TELA_PARTIDA;
+            } else {
+                TraceLog(LOG_WARNING, "%s: %s", musica.caminho_notas, erro_carregamento);
+            }
         }
 
         /* Dica explicativa */
-        DrawText("Pressione INICIAR PARTIDA para jogar com a lista encadeada.", x_coluna_direita + 25, topo_y + 375, 16, (Color){ 200, 190, 210, 220 });
+        if (erro_carregamento[0] != '\0') {
+            DrawText(erro_carregamento, x_coluna_direita + 25, topo_y + 365, 14, RED);
+        } else {
+            DrawText("Pressione INICIAR PARTIDA para jogar com a lista encadeada.", x_coluna_direita + 25, topo_y + 375, 16, (Color){ 200, 190, 210, 220 });
+        }
     } else {
         /* Mensagem orientando o jogador a selecionar */
         const char *aviso = "Clique em uma musica da lista ao lado\npara visualizar seus detalhes.";
@@ -521,7 +531,13 @@ void desenhar_tela_partida(int largura, int altura, bool pausada, Desempenho *de
 
     /* Brilho suave no horizonte da pista */
     Vector2 centro_horizonte = { centro_x, y_topo };
+    /* A raylib 5.5 recebe coordenadas inteiras; a 6 recebe Vector2. */
+#if RAYLIB_VERSION_MAJOR >= 6
     DrawCircleGradient(centro_horizonte, largura_topo * 0.6f, (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
+#else
+    DrawCircleGradient((int)centro_horizonte.x, (int)centro_horizonte.y, largura_topo * 0.6f,
+                       (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
+#endif
 
     /* Linhas divisórias das pistas convergindo para a perspectiva */
     for (int p = 0; p <= TOTAL_PISTAS; p++) {
@@ -767,6 +783,46 @@ int desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over) 
     return 0;
 }
 
+/* Retorna os mesmos codigos do menu de pausa: 2 = reiniciar, 3 = catalogo. */
+int desenhar_tela_resultados(int largura, int altura, Vector2 mouse, Musica musica,
+                            int pontuacao, int acertos, int perdas, int maior_combo) {
+    desenhar_fundo_teatro(largura, altura);
+    float largura_painel = largura * 0.82f;
+    if (largura_painel > 640.0f) largura_painel = 640.0f;
+    float altura_painel = altura * 0.86f;
+    if (altura_painel > 520.0f) altura_painel = 520.0f;
+    Rectangle painel = { (largura - largura_painel) / 2.0f,
+                         (altura - altura_painel) / 2.0f, largura_painel, altura_painel };
+    DrawRectangleRec(painel, COR_PAINEL_FUNDO);
+    DrawRectangleLinesEx(painel, 2.0f, COR_DOURADO);
+    DrawText("VITORIA", (largura - MeasureText("VITORIA", 38)) / 2,
+             painel.y + 22, 38, COR_DOURADO_BRILHO);
+    DrawText("PARTIDA CONCLUIDA", (largura - MeasureText("PARTIDA CONCLUIDA", 20)) / 2,
+             painel.y + 68, 20, WHITE);
+    DrawText(musica.titulo, (largura - MeasureText(musica.titulo, 24)) / 2,
+             painel.y + 102, 24, COR_DOURADO);
+
+    const char *rotulos[] = { "PONTUACAO", "ACERTOS", "NOTAS PERDIDAS", "MAIOR COMBO" };
+    int valores[] = { pontuacao, acertos, perdas, maior_combo };
+    for (int i = 0; i < 4; i++) {
+        char texto[64];
+        snprintf(texto, sizeof(texto), "%s: %d", rotulos[i], valores[i]);
+        DrawText(texto, (largura - MeasureText(texto, 22)) / 2,
+                 painel.y + 155 + i * 36, 22, WHITE);
+    }
+
+    Rectangle jogar_novamente = { painel.x + 30, painel.y + painel.height - 136,
+                                  painel.width - 60, 48 };
+    Rectangle voltar_catalogo = { painel.x + 30, painel.y + painel.height - 78,
+                                  painel.width - 60, 48 };
+    if (desenhar_botao(jogar_novamente, "JOGAR NOVAMENTE", mouse, 22)) return 2;
+    if (desenhar_botao(voltar_catalogo, "VOLTAR AO CATALOGO", mouse, 22)) return 3;
+    const char *aviso = "[ESC] Voltar ao catalogo";
+    DrawText(aviso, (largura - MeasureText(aviso, 18)) / 2, altura - 24, 18,
+             (Color){ 190, 180, 200, 220 });
+    return 0;
+}
+
 void desenhar_confirmacao_saida(int largura, int altura, Vector2 mouse,
                                 bool *confirmar_saida, bool *deve_sair) {
     DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
@@ -814,6 +870,7 @@ int main(void) {
     bool deve_sair = false;
     bool confirmar_saida = false;
     bool partida_pausada = false;
+    char erro_carregamento[160] = "";
     Desempenho desempenho;
     iniciar_desempenho(&desempenho);
 
@@ -841,8 +898,15 @@ int main(void) {
 
         /* O ESC e tratado uma unica vez por quadro, conforme a tela atual. */
         if (IsKeyPressed(KEY_ESCAPE)) {
+            erro_carregamento[0] = '\0';
             if (confirmar_saida) {
                 confirmar_saida = false;
+            } else if (estado_atual == TELA_RESULTADOS) {
+                liberar_lista_notas(&cabeca_notas);
+                partida_pausada = false;
+                tempo_feedback = 0.0f;
+                pista_feedback = -1;
+                estado_atual = TELA_SELECAO_MUSICAS;
             } else if (estado_atual == TELA_PARTIDA) {
                 if (desempenho.game_over) {
                     liberar_lista_notas(&cabeca_notas);
@@ -876,7 +940,8 @@ int main(void) {
                                               &criterio_atual,
                                               &cabeca_notas, &tempo_partida,
                                               &pontuacao, &combo, &maior_combo,
-                                              &notas_acertadas, &notas_perdidas);
+                                              &notas_acertadas, &notas_perdidas,
+                                              erro_carregamento, sizeof(erro_carregamento));
                 if (estado_atual == TELA_PARTIDA) {
                     iniciar_desempenho(&desempenho);
                     partida_pausada = false;
@@ -890,34 +955,63 @@ int main(void) {
                 break;
 
             case TELA_PARTIDA:
-                desenhar_tela_partida(largura_atual, altura_atual, partida_pausada, &desempenho,
-                                      catalogo[indice_musica_selecionada], &cabeca_notas,
-                                      &tempo_partida, &pontuacao, &combo,
-                                      &maior_combo, &notas_acertadas, &notas_perdidas,
-                                      &tempo_feedback, &pista_feedback);
-                if (partida_pausada || desempenho.game_over) {
-                    int opcao = desenhar_menu_pausa(largura_atual, altura_atual, posicao_mouse,
-                                                   desempenho.game_over);
+            case TELA_RESULTADOS:
+                if (estado_atual == TELA_PARTIDA) {
+                    desenhar_tela_partida(largura_atual, altura_atual, partida_pausada, &desempenho,
+                                          catalogo[indice_musica_selecionada], &cabeca_notas,
+                                          &tempo_partida, &pontuacao, &combo,
+                                          &maior_combo, &notas_acertadas, &notas_perdidas,
+                                          &tempo_feedback, &pista_feedback);
+                    /* As penalizacoes do quadro sao aplicadas antes de decidir a vitoria. */
+                    if (!partida_pausada && !desempenho.game_over && todas_notas_resolvidas(cabeca_notas)) {
+                        estado_atual = TELA_RESULTADOS;
+                        erro_carregamento[0] = '\0';
+                        /* Exibe os botoes no proximo quadro, sem aproveitar um clique da partida. */
+                        break;
+                    }
+                }
+                if (estado_atual == TELA_RESULTADOS || partida_pausada || desempenho.game_over) {
+                    int opcao;
+                    if (estado_atual == TELA_RESULTADOS) {
+                        opcao = desenhar_tela_resultados(largura_atual, altura_atual, posicao_mouse,
+                                                        catalogo[indice_musica_selecionada], pontuacao,
+                                                        notas_acertadas, notas_perdidas, maior_combo);
+                    } else {
+                        opcao = desenhar_menu_pausa(largura_atual, altura_atual, posicao_mouse,
+                                                    desempenho.game_over);
+                    }
                     if (opcao == 1) {
                         partida_pausada = false;
+                        erro_carregamento[0] = '\0';
                     } else if (opcao == 2) {
-                        iniciar_desempenho(&desempenho);
-                        carregar_notas_iniciais(&cabeca_notas, catalogo[indice_musica_selecionada].dificuldade);
-                        tempo_partida = 0.0f;
-                        pontuacao = 0;
-                        combo = 0;
-                        maior_combo = 0;
-                        notas_acertadas = 0;
-                        notas_perdidas = 0;
-                        tempo_feedback = 0.0f;
-                        pista_feedback = -1;
-                        partida_pausada = false;
+                        if (carregar_notas_arquivo(&cabeca_notas,
+                                                  catalogo[indice_musica_selecionada].caminho_notas,
+                                                  erro_carregamento, sizeof(erro_carregamento))) {
+                            iniciar_desempenho(&desempenho);
+                            tempo_partida = 0.0f;
+                            pontuacao = 0;
+                            combo = 0;
+                            maior_combo = 0;
+                            notas_acertadas = 0;
+                            notas_perdidas = 0;
+                            tempo_feedback = 0.0f;
+                            pista_feedback = -1;
+                            partida_pausada = false;
+                            estado_atual = TELA_PARTIDA;
+                        } else {
+                            TraceLog(LOG_WARNING, "%s: %s",
+                                     catalogo[indice_musica_selecionada].caminho_notas, erro_carregamento);
+                        }
                     } else if (opcao == 3 || opcao == 4) {
                         liberar_lista_notas(&cabeca_notas);
                         partida_pausada = false;
                         tempo_feedback = 0.0f;
                         pista_feedback = -1;
                         estado_atual = opcao == 3 ? TELA_SELECAO_MUSICAS : TELA_MENU_PRINCIPAL;
+                        erro_carregamento[0] = '\0';
+                    }
+                    if (erro_carregamento[0] != '\0') {
+                        DrawText(erro_carregamento, 20, altura_atual - 55, 16, RED);
                     }
                 }
                 break;

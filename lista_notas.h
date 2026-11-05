@@ -2,6 +2,7 @@
 #define LISTA_NOTAS_H
 
 #include <stdbool.h>
+#include <stddef.h>
 
 #define TOTAL_PISTAS 5
 
@@ -39,6 +40,16 @@ void inserir_nota(Nota **cabeca, float tempo_alvo, int pista);
  */
 void carregar_notas_iniciais(Nota **cabeca, int dificuldade);
 
+/* Ordena por tempo, preservando a ordem relativa das notas simultaneas. */
+void merge_sort_notas(Nota **cabeca);
+
+/*
+ * Carrega e ordena o arquivo inteiro antes de substituir a lista anterior.
+ * Em caso de falha, preserva *cabeca e informa a causa, se houver buffer.
+ */
+bool carregar_notas_arquivo(Nota **cabeca, const char *caminho,
+                           char *mensagem_erro, size_t tamanho_mensagem);
+
 /*
  * Verifica se a tecla pressionada pelo jogador corresponde a uma nota pendente na pista.
  * Retorna true em caso de acerto dentro da janela de tolerancia.
@@ -50,6 +61,9 @@ bool verificar_acerto(Nota *cabeca, int pista, float tempo_atual, float janela_a
  * Atualiza os contadores de combo e erros.
  */
 void atualizar_notas(Nota *cabeca, float tempo_atual, float limite_perda, int *combo, int *erros);
+
+/* Retorna true somente para uma lista nao vazia com todas as notas resolvidas. */
+bool todas_notas_resolvidas(const Nota *cabeca);
 
 /*
  * Libera toda a memoria alocada para os nos da lista encadeada.

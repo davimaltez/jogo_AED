@@ -289,7 +289,7 @@ Não tratar os itens abaixo como decisões já tomadas:
 -   identidade visual, paleta de cores e estilo da interface;
 -   quantidade final de músicas;
 -   músicas e arquivos de áudio que serão utilizados;
--   formato definitivo dos arquivos de notas;
+-   formato de futuras extensões dos arquivos de notas (o formato atual está definido abaixo);
 -   valores dos níveis de dificuldade para cada música;
 -   quantidade definitiva de pistas/teclas;
 -   janela de acerto e regras exatas de pontuação;
@@ -308,9 +308,31 @@ A struct `Musica` guarda esses caminhos nos campos `caminho_audio`,
 `assets/interface/fontes/` e `assets/interface/imagens/`.
 
 Essa organização não altera a lista encadeada nem o Merge Sort.
-As pastas foram preparadas sem arquivos de mídia ou notas. O carregamento
-desses recursos ainda não foi implementado, e o formato do arquivo de
-notas continua em aberto.
+As pastas contêm arquivos `notas.txt` de demonstração. O carregamento das
+notas está implementado; áudio e imagens ainda não são carregados.
+
+## Arquivos de notas e preparação da partida (decisão confirmada)
+
+Cada linha de `notas.txt` contém `tempo pista`: tempo decimal em segundos,
+finito, não negativo e representável em `float`; pista inteira de 0 a 4,
+correspondente a D, F, G, J e K. Espaços e tabulações separam os campos.
+Linhas vazias e comentários em linhas próprias iniciadas por `#` são aceitos.
+O limite é 255 caracteres por linha, sem contar LF/CRLF. Arquivos sem notas,
+campos extras, bytes nulos e conversões numéricas com erro são rejeitados.
+O README documenta limites e exemplos completos.
+
+`carregar_notas_arquivo` usa `Musica.caminho_notas` para montar uma lista
+temporária, valida a leitura completa e aplica Merge Sort estável por tempo,
+reorganizando os ponteiros dos nós. Só depois substitui a lista anterior.
+Falhas liberam a lista temporária e preservam a lista e os indicadores da
+partida. Início e reinício só avançam em caso de sucesso; erros aparecem na
+tela e no terminal. Não existe fallback automático para notas geradas.
+
+Os cinco arquivos demonstram eventos fora de ordem, reproduzindo os tempos
+e pistas do gerador anterior. O gerador foi mantido para testes. A ordenação
+ocorre uma vez por carregamento, antes da utilização da lista na partida.
+O relógio continua baseado em `GetFrameTime`, sem reprodução ou sincronização
+de áudio. Pontuação, combos, medidor e controles permanecem com suas regras.
 
 ## Medidor de desempenho (implementação solicitada)
 
@@ -322,6 +344,29 @@ O Game Over reutiliza as ações de reinício e retorno da pausa, sem permitir
 continuar a partida perdida. Nova partida e reinício restauram o medidor.
 Esses valores iniciais podem ser ajustados após avaliação de jogabilidade.
 Lista encadeada, catálogo em vetor e Merge Sort permanecem preservados.
+
+## Conclusão normal e tela de resultados (implementação confirmada)
+
+A partida é concluída quando a lista não vazia tem todas as notas acertadas
+ou perdidas e o medidor não acionou Game Over. A consulta
+`todas_notas_resolvidas` não altera os nós. A decisão ocorre depois dos
+acertos, perdas e penalizações do quadro, com prioridade para a derrota.
+Durante a pausa, não ocorre conclusão. Uma nota pendente, inclusive em um
+acorde, impede a vitória; as janelas existentes de acerto (0,20 s) e perda
+(tempo estritamente maior que alvo + 0,22 s) são preservadas.
+
+`TELA_RESULTADOS` congela a partida e apresenta vitória, música, pontuação,
+acertos, notas perdidas e maior combo, usando o fundo teatral e as cores
+existentes. "Notas perdidas" não inclui teclas pressionadas sem acerto.
+Concluir significa sobreviver aos eventos: uma sequência curta com todas
+as notas perdidas pode terminar normalmente se o medidor não chegar a zero.
+
+JOGAR NOVAMENTE reutiliza o recarregamento validado e só restaura os dados
+depois do sucesso. Falhas mantêm os resultados e exibem a causa. VOLTAR AO
+CATÁLOGO e ESC liberam a lista e retornam à seleção. O fechamento do jogo
+também libera os nós. Carregador, Merge Sort, regras de pontuação e medidor
+permanecem com suas implementações anteriores. Áudio e sincronização não
+foram implementados.
 
 ## 11. Resumo rápido da arquitetura
 
