@@ -9,12 +9,13 @@ LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 TARGET = final_act
 
 # Arquivos fonte
-SRCS = principal.c catalogo_musicas.c lista_notas.c
+SRCS = principal.c catalogo_musicas.c lista_notas.c desempenho.c
+HEADERS = catalogo_musicas.h lista_notas.h desempenho.h
 
 # Regra padrao: compila o projeto
 all: $(TARGET)
 
-$(TARGET): $(SRCS)
+$(TARGET): $(SRCS) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET) $(LIBS)
 
 # Regra para compilar e executar diretamente

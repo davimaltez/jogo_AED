@@ -3,7 +3,7 @@
 
 /*
  * Preenche o vetor com as musicas iniciais baseadas em filmes musicais.
- * Os caminhos de audio e notas sao provisorios, para utilizacao futura.
+ * Cada musica possui uma pasta de recursos; o carregamento sera implementado depois.
  */
 void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     *quantidade = 5;
@@ -14,10 +14,12 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[0].filme, "Wicked", sizeof(catalogo[0].filme) - 1);
     catalogo[0].filme[sizeof(catalogo[0].filme) - 1] = '\0';
     catalogo[0].dificuldade = 4;
-    strncpy(catalogo[0].caminho_audio, "assets/audio/defying_gravity.mp3", sizeof(catalogo[0].caminho_audio) - 1);
+    strncpy(catalogo[0].caminho_audio, "assets/musicas/defying_gravity/audio.mp3", sizeof(catalogo[0].caminho_audio) - 1);
     catalogo[0].caminho_audio[sizeof(catalogo[0].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[0].caminho_notas, "assets/notas/defying_gravity.txt", sizeof(catalogo[0].caminho_notas) - 1);
+    strncpy(catalogo[0].caminho_notas, "assets/musicas/defying_gravity/notas.txt", sizeof(catalogo[0].caminho_notas) - 1);
     catalogo[0].caminho_notas[sizeof(catalogo[0].caminho_notas) - 1] = '\0';
+    strncpy(catalogo[0].caminho_fundo, "assets/musicas/defying_gravity/fundo.png", sizeof(catalogo[0].caminho_fundo) - 1);
+    catalogo[0].caminho_fundo[sizeof(catalogo[0].caminho_fundo) - 1] = '\0';
 
     /* Musica 2 - Mamma Mia! */
     strncpy(catalogo[1].titulo, "Dancing Queen", sizeof(catalogo[1].titulo) - 1);
@@ -25,10 +27,12 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[1].filme, "Mamma Mia!", sizeof(catalogo[1].filme) - 1);
     catalogo[1].filme[sizeof(catalogo[1].filme) - 1] = '\0';
     catalogo[1].dificuldade = 2;
-    strncpy(catalogo[1].caminho_audio, "assets/audio/dancing_queen.mp3", sizeof(catalogo[1].caminho_audio) - 1);
+    strncpy(catalogo[1].caminho_audio, "assets/musicas/dancing_queen/audio.mp3", sizeof(catalogo[1].caminho_audio) - 1);
     catalogo[1].caminho_audio[sizeof(catalogo[1].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[1].caminho_notas, "assets/notas/dancing_queen.txt", sizeof(catalogo[1].caminho_notas) - 1);
+    strncpy(catalogo[1].caminho_notas, "assets/musicas/dancing_queen/notas.txt", sizeof(catalogo[1].caminho_notas) - 1);
     catalogo[1].caminho_notas[sizeof(catalogo[1].caminho_notas) - 1] = '\0';
+    strncpy(catalogo[1].caminho_fundo, "assets/musicas/dancing_queen/fundo.png", sizeof(catalogo[1].caminho_fundo) - 1);
+    catalogo[1].caminho_fundo[sizeof(catalogo[1].caminho_fundo) - 1] = '\0';
 
     /* Musica 3 - La La Land */
     strncpy(catalogo[2].titulo, "City of Stars", sizeof(catalogo[2].titulo) - 1);
@@ -36,10 +40,12 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[2].filme, "La La Land", sizeof(catalogo[2].filme) - 1);
     catalogo[2].filme[sizeof(catalogo[2].filme) - 1] = '\0';
     catalogo[2].dificuldade = 1;
-    strncpy(catalogo[2].caminho_audio, "assets/audio/city_of_stars.mp3", sizeof(catalogo[2].caminho_audio) - 1);
+    strncpy(catalogo[2].caminho_audio, "assets/musicas/city_of_stars/audio.mp3", sizeof(catalogo[2].caminho_audio) - 1);
     catalogo[2].caminho_audio[sizeof(catalogo[2].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[2].caminho_notas, "assets/notas/city_of_stars.txt", sizeof(catalogo[2].caminho_notas) - 1);
+    strncpy(catalogo[2].caminho_notas, "assets/musicas/city_of_stars/notas.txt", sizeof(catalogo[2].caminho_notas) - 1);
     catalogo[2].caminho_notas[sizeof(catalogo[2].caminho_notas) - 1] = '\0';
+    strncpy(catalogo[2].caminho_fundo, "assets/musicas/city_of_stars/fundo.png", sizeof(catalogo[2].caminho_fundo) - 1);
+    catalogo[2].caminho_fundo[sizeof(catalogo[2].caminho_fundo) - 1] = '\0';
 
     /* Musica 4 - The Greatest Showman */
     strncpy(catalogo[3].titulo, "This Is Me", sizeof(catalogo[3].titulo) - 1);
@@ -47,10 +53,12 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[3].filme, "The Greatest Showman", sizeof(catalogo[3].filme) - 1);
     catalogo[3].filme[sizeof(catalogo[3].filme) - 1] = '\0';
     catalogo[3].dificuldade = 3;
-    strncpy(catalogo[3].caminho_audio, "assets/audio/this_is_me.mp3", sizeof(catalogo[3].caminho_audio) - 1);
+    strncpy(catalogo[3].caminho_audio, "assets/musicas/this_is_me/audio.mp3", sizeof(catalogo[3].caminho_audio) - 1);
     catalogo[3].caminho_audio[sizeof(catalogo[3].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[3].caminho_notas, "assets/notas/this_is_me.txt", sizeof(catalogo[3].caminho_notas) - 1);
+    strncpy(catalogo[3].caminho_notas, "assets/musicas/this_is_me/notas.txt", sizeof(catalogo[3].caminho_notas) - 1);
     catalogo[3].caminho_notas[sizeof(catalogo[3].caminho_notas) - 1] = '\0';
+    strncpy(catalogo[3].caminho_fundo, "assets/musicas/this_is_me/fundo.png", sizeof(catalogo[3].caminho_fundo) - 1);
+    catalogo[3].caminho_fundo[sizeof(catalogo[3].caminho_fundo) - 1] = '\0';
 
     /* Musica 5 - High School Musical */
     strncpy(catalogo[4].titulo, "Breaking Free", sizeof(catalogo[4].titulo) - 1);
@@ -58,10 +66,12 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[4].filme, "High School Musical", sizeof(catalogo[4].filme) - 1);
     catalogo[4].filme[sizeof(catalogo[4].filme) - 1] = '\0';
     catalogo[4].dificuldade = 2;
-    strncpy(catalogo[4].caminho_audio, "assets/audio/breaking_free.mp3", sizeof(catalogo[4].caminho_audio) - 1);
+    strncpy(catalogo[4].caminho_audio, "assets/musicas/breaking_free/audio.mp3", sizeof(catalogo[4].caminho_audio) - 1);
     catalogo[4].caminho_audio[sizeof(catalogo[4].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[4].caminho_notas, "assets/notas/breaking_free.txt", sizeof(catalogo[4].caminho_notas) - 1);
+    strncpy(catalogo[4].caminho_notas, "assets/musicas/breaking_free/notas.txt", sizeof(catalogo[4].caminho_notas) - 1);
     catalogo[4].caminho_notas[sizeof(catalogo[4].caminho_notas) - 1] = '\0';
+    strncpy(catalogo[4].caminho_fundo, "assets/musicas/breaking_free/fundo.png", sizeof(catalogo[4].caminho_fundo) - 1);
+    catalogo[4].caminho_fundo[sizeof(catalogo[4].caminho_fundo) - 1] = '\0';
 }
 
 /*

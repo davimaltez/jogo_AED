@@ -299,6 +299,30 @@ Não tratar os itens abaixo como decisões já tomadas:
 -   formato de armazenamento dos melhores resultados;
 -   funcionalidades extras após a primeira versão.
 
+## Organização dos recursos por música (decisão confirmada)
+
+Cada música possui uma pasta própria em `assets/musicas/<nome_da_musica>/`,
+com os caminhos previstos para `audio.mp3`, `fundo.png` e `notas.txt`.
+A struct `Musica` guarda esses caminhos nos campos `caminho_audio`,
+`caminho_fundo` e `caminho_notas`. Recursos compartilhados ficam em
+`assets/interface/fontes/` e `assets/interface/imagens/`.
+
+Essa organização não altera a lista encadeada nem o Merge Sort.
+As pastas foram preparadas sem arquivos de mídia ou notas. O carregamento
+desses recursos ainda não foi implementado, e o formato do arquivo de
+notas continua em aberto.
+
+## Medidor de desempenho (implementação solicitada)
+
+O módulo `desempenho.c/.h` mantém um indicador de 0 a 100, inicialmente em
+75. Cada acerto soma 3; cada tecla sem acerto ou nota perdida subtrai 8.
+As regiões são vermelho abaixo de 30, amarelo de 30 a 59 e verde de 60 a
+100. Ao atingir zero, a partida é encerrada por excesso de erros.
+O Game Over reutiliza as ações de reinício e retorno da pausa, sem permitir
+continuar a partida perdida. Nova partida e reinício restauram o medidor.
+Esses valores iniciais podem ser ajustados após avaliação de jogabilidade.
+Lista encadeada, catálogo em vetor e Merge Sort permanecem preservados.
+
 ## 11. Resumo rápido da arquitetura
 
   -----------------------------------------------------------------------

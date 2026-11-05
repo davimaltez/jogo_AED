@@ -1,6 +1,7 @@
 #include "raylib.h"
 #include "catalogo_musicas.h"
 #include "lista_notas.h"
+#include "desempenho.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -405,11 +406,39 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
     }
 }
 
-/*
- * Renderiza e gerencia a partida do jogo.
- * Utiliza a lista simplesmente encadeada de notas e sincroniza a queda pelo tempo.
- */
-void desenhar_tela_partida(int largura, int altura, bool pausada,
+/* O semicirculo cresce do vermelho (esquerda) ao verde (direita). */
+void desenhar_medidor(int largura, int altura, int valor) {
+    float raio = largura * 0.085f;
+    if (raio > 110.0f) raio = 110.0f;
+    Vector2 centro = { largura * 0.11f, altura * 0.48f };
+    const int segmentos = 100;
+    for (int i = 0; i < segmentos; i++) {
+        float angulo_inicio = PI + PI * i / segmentos;
+        float angulo_fim = PI + PI * (i + 1) / segmentos;
+        Vector2 inicio = { centro.x + cosf(angulo_inicio) * raio,
+                           centro.y + sinf(angulo_inicio) * raio };
+        Vector2 fim = { centro.x + cosf(angulo_fim) * raio,
+                        centro.y + sinf(angulo_fim) * raio };
+        Color cor = i < LIMITE_VERMELHO ? (Color){ 225, 65, 80, 255 } :
+                    (i < LIMITE_VERDE ? COR_DOURADO : (Color){ 45, 210, 125, 255 });
+        DrawLineEx(inicio, fim, raio * 0.15f, cor);
+    }
+    float angulo = PI + PI * valor / DESEMPENHO_MAXIMO;
+    Vector2 ponta = { centro.x + cosf(angulo) * raio * 0.8f,
+                      centro.y + sinf(angulo) * raio * 0.8f };
+    DrawLineEx(centro, ponta, 3.0f, WHITE);
+    DrawCircleV(centro, 5.0f, COR_DOURADO);
+    int fonte = raio < 75.0f ? 12 : 16;
+    const char *titulo = "DESEMPENHO";
+    DrawText(titulo, centro.x - MeasureText(titulo, fonte) / 2, centro.y - raio - 32,
+             fonte, COR_DOURADO);
+    char texto[32];
+    snprintf(texto, sizeof(texto), "%d / 100", valor);
+    DrawText(texto, centro.x - MeasureText(texto, fonte) / 2, centro.y + 15, fonte, WHITE);
+}
+
+/* Gerencia a partida usando a lista de notas e a posicao calculada pelo tempo. */
+void desenhar_tela_partida(int largura, int altura, bool pausada, Desempenho *desempenho,
                            Musica musica_atual, Nota **cabeca_notas,
                            float *tempo_partida, int *pontuacao, int *combo,
                            int *maior_combo, int *notas_acertadas, int *notas_perdidas,
@@ -417,7 +446,8 @@ void desenhar_tela_partida(int largura, int altura, bool pausada,
     desenhar_fundo_teatro(largura, altura);
 
     /* Atualiza o tempo decorrido da partida em segundos */
-    float delta = pausada ? 0.0f : GetFrameTime();
+    bool bloqueada = pausada || desempenho->game_over;
+    float delta = bloqueada ? 0.0f : GetFrameTime();
     *tempo_partida += delta;
 
     /* Atualiza feedback de acerto */
@@ -429,7 +459,7 @@ void desenhar_tela_partida(int largura, int altura, bool pausada,
     int teclas[] = { KEY_D, KEY_F, KEY_G, KEY_J, KEY_K };
 
     for (int p = 0; p < TOTAL_PISTAS; p++) {
-        if (!pausada && IsKeyPressed(teclas[p])) {
+        if (!bloqueada && !desempenho->game_over && IsKeyPressed(teclas[p])) {
             /* Verifica se ha acerto na lista encadeada */
             if (verificar_acerto(*cabeca_notas, p, *tempo_partida, 0.20f)) {
                 *pontuacao += 100 + (*combo * 10);
@@ -438,17 +468,24 @@ void desenhar_tela_partida(int largura, int altura, bool pausada,
                     *maior_combo = *combo;
                 }
                 (*notas_acertadas)++;
+                registrar_desempenho(desempenho, true);
                 *pista_feedback = p;
                 *tempo_feedback = 0.30f;
             } else {
                 *combo = 0;
+                registrar_desempenho(desempenho, false);
             }
         }
     }
 
     /* Atualiza notas que ultrapassaram a linha sem acerto */
-    if (!pausada) {
+    if (!bloqueada && !desempenho->game_over) {
+        int perdas_anteriores = *notas_perdidas;
         atualizar_notas(*cabeca_notas, *tempo_partida, 0.22f, combo, notas_perdidas);
+        /* Cada nota perdida e penalizada uma unica vez, inclusive em acordes. */
+        for (int i = perdas_anteriores; i < *notas_perdidas; i++) {
+            registrar_desempenho(desempenho, false);
+        }
     }
 
     /* Cores das 5 pistas (Guitar Hero) */
@@ -599,6 +636,7 @@ void desenhar_tela_partida(int largura, int altura, bool pausada,
     }
 
     /* Painel HUD Superior: Informacoes da musica e pontuacao */
+    desenhar_medidor(largura, altura, desempenho->valor);
     DrawText(musica_atual.titulo, 35, 25, 26, COR_DOURADO);
     DrawText(musica_atual.filme, 35, 58, 19, (Color){ 215, 205, 225, 230 });
 
@@ -705,16 +743,22 @@ void desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, EstadoTela
 }
 
 /* Retorna a opcao escolhida: continuar, reiniciar, selecao ou menu. */
-int desenhar_menu_pausa(int largura, int altura, Vector2 mouse) {
+int desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over) {
     DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
     Rectangle painel = { (largura - 360) / 2.0f, (altura - 350) / 2.0f, 360, 350 };
     DrawRectangleRec(painel, COR_PAINEL_FUNDO);
     DrawRectangleLinesEx(painel, 2.0f, COR_DOURADO);
-    DrawText("PAUSADO", (largura - MeasureText("PAUSADO", 30)) / 2,
+    const char *titulo = game_over ? "GAME OVER" : "PAUSADO";
+    DrawText(titulo, (largura - MeasureText(titulo, 30)) / 2,
              painel.y + 20, 30, COR_DOURADO);
+    if (game_over) {
+        const char *motivo = "Voce perdeu por excesso de erros.";
+        DrawText(motivo, (largura - MeasureText(motivo, 17)) / 2,
+                 painel.y + 72, 17, WHITE);
+    }
 
     const char *opcoes[] = { "CONTINUAR", "REINICIAR", "VOLTAR A SELECAO", "MENU INICIAL" };
-    for (int i = 0; i < 4; i++) {
+    for (int i = game_over ? 1 : 0; i < 4; i++) {
         Rectangle botao = { painel.x + 20, painel.y + 75 + i * 62, 320, 50 };
         if (desenhar_botao(botao, opcoes[i], mouse, 22)) {
             return i + 1;
@@ -770,6 +814,8 @@ int main(void) {
     bool deve_sair = false;
     bool confirmar_saida = false;
     bool partida_pausada = false;
+    Desempenho desempenho;
+    iniciar_desempenho(&desempenho);
 
     /* Variaveis da partida e lista encadeada */
     Nota *cabeca_notas = NULL;
@@ -798,7 +844,13 @@ int main(void) {
             if (confirmar_saida) {
                 confirmar_saida = false;
             } else if (estado_atual == TELA_PARTIDA) {
-                partida_pausada = !partida_pausada;
+                if (desempenho.game_over) {
+                    liberar_lista_notas(&cabeca_notas);
+                    partida_pausada = false;
+                    estado_atual = TELA_SELECAO_MUSICAS;
+                } else {
+                    partida_pausada = !partida_pausada;
+                }
             } else if (estado_atual == TELA_MENU_PRINCIPAL) {
                 confirmar_saida = true;
             } else {
@@ -825,6 +877,12 @@ int main(void) {
                                               &cabeca_notas, &tempo_partida,
                                               &pontuacao, &combo, &maior_combo,
                                               &notas_acertadas, &notas_perdidas);
+                if (estado_atual == TELA_PARTIDA) {
+                    iniciar_desempenho(&desempenho);
+                    partida_pausada = false;
+                    tempo_feedback = 0.0f;
+                    pista_feedback = -1;
+                }
                 break;
 
             case TELA_COMO_JOGAR:
@@ -832,16 +890,18 @@ int main(void) {
                 break;
 
             case TELA_PARTIDA:
-                desenhar_tela_partida(largura_atual, altura_atual, partida_pausada,
+                desenhar_tela_partida(largura_atual, altura_atual, partida_pausada, &desempenho,
                                       catalogo[indice_musica_selecionada], &cabeca_notas,
                                       &tempo_partida, &pontuacao, &combo,
                                       &maior_combo, &notas_acertadas, &notas_perdidas,
                                       &tempo_feedback, &pista_feedback);
-                if (partida_pausada) {
-                    int opcao = desenhar_menu_pausa(largura_atual, altura_atual, posicao_mouse);
+                if (partida_pausada || desempenho.game_over) {
+                    int opcao = desenhar_menu_pausa(largura_atual, altura_atual, posicao_mouse,
+                                                   desempenho.game_over);
                     if (opcao == 1) {
                         partida_pausada = false;
                     } else if (opcao == 2) {
+                        iniciar_desempenho(&desempenho);
                         carregar_notas_iniciais(&cabeca_notas, catalogo[indice_musica_selecionada].dificuldade);
                         tempo_partida = 0.0f;
                         pontuacao = 0;
