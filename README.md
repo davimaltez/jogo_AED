@@ -6,7 +6,18 @@ Projeto acadêmico de Algoritmos e Estruturas de Dados: um jogo de ritmo com tem
 
 O jogador escolhe uma música e pressiona as teclas **D, F, G, J e K** quando as notas chegam à linha de acerto, acumulando pontos e combos.
 
-## Organização
+## Navegação dos menus
+
+- Use as setas para destacar uma opção e **Enter** para confirmar.
+- No catálogo, **cima/baixo** percorrem as músicas e os demais controles;
+  **esquerda/direita** percorrem os filtros. Com uma música em foco,
+  **Enter** inicia a partida e **direita** leva ao botão de iniciar.
+- **ESC** mantém o retorno entre telas e a pausa durante a partida.
+- Pausa, Game Over, resultados e confirmação de saída também aceitam o
+  teclado. A confirmação começa em **Não**.
+- O mouse continua disponível; a opção em foco tem uma borda dourada clara.
+
+## Organização dos arquivos
 
 - `principal.c`: interface, menus e partida.
 - `catalogo_musicas.c/.h`: catálogo e ordenação com Merge Sort.
