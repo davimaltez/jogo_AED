@@ -40,6 +40,26 @@ typedef enum {
 
 #define COR_PAINEL_FUNDO      (Color){ 28, 14, 38, 235 }
 
+/* O indice de foco pertence ao menu atual e e mantido pelo main. */
+void navegar_menu(int *foco, int quantidade) {
+    if (foco == NULL || quantidade <= 0) return;
+    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_LEFT)) {
+        *foco = (*foco + quantidade - 1) % quantidade;
+    } else if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_RIGHT)) {
+        *foco = (*foco + 1) % quantidade;
+    }
+}
+
+bool item_em_foco(Rectangle retangulo, Vector2 mouse, int *foco, int indice) {
+    Vector2 movimento = GetMouseDelta();
+    bool apontado = CheckCollisionPointRec(mouse, retangulo);
+    if (foco != NULL && apontado &&
+        (movimento.x != 0 || movimento.y != 0 || IsMouseButtonPressed(MOUSE_BUTTON_LEFT))) {
+        *foco = indice;
+    }
+    return foco != NULL && *foco == indice;
+}
+
 /*
  * Desenha o fundo visual do jogo com elementos de um palco de teatro:
  * cortinas sutis nas laterais e feixes de luz cruzando a tela.
@@ -188,10 +208,19 @@ bool desenhar_botao(Rectangle retangulo, const char *texto, Vector2 mouse, int t
     return clicado;
 }
 
+bool desenhar_botao_navegavel(Rectangle retangulo, const char *texto, Vector2 mouse,
+                             int tamanho_fonte, int *foco, int indice) {
+    bool selecionado = item_em_foco(retangulo, mouse, foco, indice);
+    bool clicado = desenhar_botao(retangulo, texto, mouse, tamanho_fonte);
+    if (selecionado) DrawRectangleLinesEx(retangulo, 4.0f, COR_DOURADO_BRILHO);
+    return clicado || (selecionado && IsKeyPressed(KEY_ENTER));
+}
+
 /*
  * Renderiza o menu inicial com titulo em destaque e botoes de navegacao.
  */
-void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela *estado, bool *confirmar_saida) {
+void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela *estado, bool *confirmar_saida, int *foco) {
+    navegar_menu(foco, 3);
     desenhar_fundo_teatro(largura, altura);
 
     /* Titulo principal: FINAL ACT cinematografico */
@@ -225,19 +254,19 @@ void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela 
 
     /* Botao JOGAR */
     Rectangle ret_jogar = { posicao_x_botao, inicio_y_botoes, largura_botao, altura_botao };
-    if (desenhar_botao(ret_jogar, "JOGAR", mouse, 26)) {
+    if (desenhar_botao_navegavel(ret_jogar, "JOGAR", mouse, 26, foco, 0)) {
         *estado = TELA_SELECAO_MUSICAS;
     }
 
     /* Botao COMO JOGAR */
     Rectangle ret_como_jogar = { posicao_x_botao, inicio_y_botoes + (altura_botao + espaco_entre_botoes), largura_botao, altura_botao };
-    if (desenhar_botao(ret_como_jogar, "COMO JOGAR", mouse, 26)) {
+    if (desenhar_botao_navegavel(ret_como_jogar, "COMO JOGAR", mouse, 26, foco, 1)) {
         *estado = TELA_COMO_JOGAR;
     }
 
     /* Botao SAIR */
     Rectangle ret_sair = { posicao_x_botao, inicio_y_botoes + 2 * (altura_botao + espaco_entre_botoes), largura_botao, altura_botao };
-    if (desenhar_botao(ret_sair, "SAIR", mouse, 26)) {
+    if (desenhar_botao_navegavel(ret_sair, "SAIR", mouse, 26, foco, 2)) {
         *confirmar_saida = true;
     }
 }
@@ -246,7 +275,8 @@ void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela 
  * Desenha um botao compacto para a selecao de filtros de ordenacao.
  * Retorna true caso o botao tenha sido clicado.
  */
-bool desenhar_botao_filtro(Rectangle retangulo, const char *texto, bool ativo, Vector2 mouse) {
+bool desenhar_botao_filtro(Rectangle retangulo, const char *texto, bool ativo, Vector2 mouse, int *foco, int indice) {
+    bool selecionado = item_em_foco(retangulo, mouse, foco, indice);
     bool mouse_em_cima = CheckCollisionPointRec(mouse, retangulo);
     bool clicado = mouse_em_cima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
 
@@ -264,7 +294,8 @@ bool desenhar_botao_filtro(Rectangle retangulo, const char *texto, bool ativo, V
 
     DrawText(texto, pos_x, pos_y, tamanho_fonte, cor_texto);
 
-    return clicado;
+    if (selecionado) DrawRectangleLinesEx(retangulo, 4.0f, COR_DOURADO_BRILHO);
+    return clicado || (selecionado && IsKeyPressed(KEY_ENTER));
 }
 
 /*
@@ -279,7 +310,23 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
                                    Nota **cabeca_notas, float *tempo_partida,
                                    int *pontuacao, int *combo, int *maior_combo,
                                    int *notas_acertadas, int *notas_perdidas,
-                                   char *erro_carregamento, size_t tamanho_erro) {
+                                   char *erro_carregamento, size_t tamanho_erro, int *foco) {
+    /* Ordem de foco: tres filtros, musicas, iniciar e voltar. */
+    int foco_anterior = *foco;
+    if (*foco < 3 && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT))) {
+        *foco = (*foco + (IsKeyPressed(KEY_LEFT) ? 2 : 1)) % 3;
+    } else if (*foco >= 3 && *foco < total_musicas + 3 && IsKeyPressed(KEY_RIGHT)) {
+        *foco = total_musicas + 3;
+    } else if (*foco == total_musicas + 3 && IsKeyPressed(KEY_LEFT)) {
+        *foco = *indice_selecionado + 3;
+    } else {
+        navegar_menu(foco, total_musicas + 5);
+    }
+    if (*foco != foco_anterior && *foco >= 3 && *foco < total_musicas + 3) {
+        *indice_selecionado = *foco - 3;
+        *confirmado = false;
+        erro_carregamento[0] = '\0';
+    }
     desenhar_fundo_teatro(largura, altura);
 
     /* Titulo da secao */
@@ -320,21 +367,21 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
     CriterioOrdenacao novo_criterio = *criterio_atual;
     bool trocou_criterio = false;
 
-    if (desenhar_botao_filtro(ret_filtro_az, "Titulo A-Z", (*criterio_atual == ORDEM_TITULO_AZ), mouse)) {
+    if (desenhar_botao_filtro(ret_filtro_az, "Titulo A-Z", (*criterio_atual == ORDEM_TITULO_AZ), mouse, foco, 0)) {
         if (*criterio_atual != ORDEM_TITULO_AZ) {
             novo_criterio = ORDEM_TITULO_AZ;
             trocou_criterio = true;
         }
     }
 
-    if (desenhar_botao_filtro(ret_filtro_cresc, "Dif. Cresc.", (*criterio_atual == ORDEM_DIFICULDADE_CRESCENTE), mouse)) {
+    if (desenhar_botao_filtro(ret_filtro_cresc, "Dif. Cresc.", (*criterio_atual == ORDEM_DIFICULDADE_CRESCENTE), mouse, foco, 1)) {
         if (*criterio_atual != ORDEM_DIFICULDADE_CRESCENTE) {
             novo_criterio = ORDEM_DIFICULDADE_CRESCENTE;
             trocou_criterio = true;
         }
     }
 
-    if (desenhar_botao_filtro(ret_filtro_decr, "Dif. Decr.", (*criterio_atual == ORDEM_DIFICULDADE_DECRESCENTE), mouse)) {
+    if (desenhar_botao_filtro(ret_filtro_decr, "Dif. Decr.", (*criterio_atual == ORDEM_DIFICULDADE_DECRESCENTE), mouse, foco, 2)) {
         if (*criterio_atual != ORDEM_DIFICULDADE_DECRESCENTE) {
             novo_criterio = ORDEM_DIFICULDADE_DECRESCENTE;
             trocou_criterio = true;
@@ -384,10 +431,12 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
         };
 
         bool mouse_em_cima = CheckCollisionPointRec(mouse, ret_item);
+        bool tem_foco = item_em_foco(ret_item, mouse, foco, i + 3);
         bool esta_selecionada = (*indice_selecionado == i);
 
         /* Se o usuario clicar na musica da lista, atualiza a selecao */
-        if (mouse_em_cima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        if ((mouse_em_cima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
+            (tem_foco && IsKeyPressed(KEY_ENTER))) {
             *indice_selecionado = i;
             *confirmado = false;
             erro_carregamento[0] = '\0';
@@ -407,6 +456,7 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
 
         DrawRectangleRec(ret_item, cor_fundo_item);
         DrawRectangleLinesEx(ret_item, esta_selecionada ? 3.5f : 1.5f, cor_borda_item);
+        if (tem_foco) DrawRectangleLinesEx(ret_item, 4.0f, COR_DOURADO_BRILHO);
 
         /* Barra vertical dourada marcante na lateral esquerda do item selecionado */
         float offset_texto_x = 14.0f;
@@ -468,7 +518,8 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
         float largura_botao_sel = largura_coluna_direita - 50;
         Rectangle ret_selecionar = { x_coluna_direita + 25, topo_y + 300, largura_botao_sel, 56 };
 
-        if (desenhar_botao(ret_selecionar, "INICIAR PARTIDA", mouse, 24)) {
+        bool iniciar_pela_lista = *foco >= 3 && *foco < total_musicas + 3 && IsKeyPressed(KEY_ENTER);
+        if (desenhar_botao_navegavel(ret_selecionar, "INICIAR PARTIDA", mouse, 24, foco, total_musicas + 3) || iniciar_pela_lista) {
             if (carregar_notas_arquivo(cabeca_notas, musica.caminho_notas,
                                       erro_carregamento, tamanho_erro)) {
                 *confirmado = true;
@@ -505,7 +556,7 @@ void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, Estad
     float altura_voltar = 50.0f;
     Rectangle ret_voltar = { (largura - largura_voltar) / 2, altura * 0.89f, largura_voltar, altura_voltar };
 
-    if (desenhar_botao(ret_voltar, "VOLTAR AO MENU", mouse, 24)) {
+    if (desenhar_botao_navegavel(ret_voltar, "VOLTAR AO MENU", mouse, 24, foco, total_musicas + 4)) {
         *estado = TELA_MENU_PRINCIPAL;
     }
 }
@@ -780,7 +831,8 @@ void desenhar_tela_partida(int largura, int altura, bool pausada, Desempenho *de
 /*
  * Renderiza a tela explicativa de instrucoes do jogo.
  */
-void desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, EstadoTela *estado) {
+void desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, EstadoTela *estado, int *foco) {
+    navegar_menu(foco, 1);
     desenhar_fundo_teatro(largura, altura);
 
     /* Painel centralizado amplo */
@@ -848,13 +900,14 @@ void desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, EstadoTela
     float altura_botao = 50.0f;
     Rectangle ret_voltar = { quadro_x + (largura_quadro - largura_botao) / 2, quadro_y + altura_quadro - 68, largura_botao, altura_botao };
 
-    if (desenhar_botao(ret_voltar, "VOLTAR AO MENU", mouse, 24)) {
+    if (desenhar_botao_navegavel(ret_voltar, "VOLTAR AO MENU", mouse, 24, foco, 0)) {
         *estado = TELA_MENU_PRINCIPAL;
     }
 }
 
 /* Retorna a opcao escolhida: continuar, reiniciar, selecao ou menu. */
-int desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over) {
+int desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over, int *foco) {
+    navegar_menu(foco, game_over ? 3 : 4);
     DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
     Rectangle painel = { (largura - 360) / 2.0f, (altura - 350) / 2.0f, 360, 350 };
     DrawRectangleRec(painel, COR_PAINEL_FUNDO);
@@ -871,7 +924,7 @@ int desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over) 
     const char *opcoes[] = { "CONTINUAR", "REINICIAR", "VOLTAR A SELECAO", "MENU INICIAL" };
     for (int i = game_over ? 1 : 0; i < 4; i++) {
         Rectangle botao = { painel.x + 20, painel.y + 75 + i * 62, 320, 50 };
-        if (desenhar_botao(botao, opcoes[i], mouse, 22)) {
+        if (desenhar_botao_navegavel(botao, opcoes[i], mouse, 22, foco, game_over ? i - 1 : i)) {
             return i + 1;
         }
     }
@@ -880,7 +933,8 @@ int desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over) 
 
 /* Retorna os mesmos codigos do menu de pausa: 2 = reiniciar, 3 = catalogo. */
 int desenhar_tela_resultados(int largura, int altura, Vector2 mouse, Musica musica,
-                            int pontuacao, int acertos, int perdas, int maior_combo) {
+                            int pontuacao, int acertos, int perdas, int maior_combo, int *foco) {
+    navegar_menu(foco, 2);
     desenhar_fundo_teatro(largura, altura);
     float largura_painel = largura * 0.82f;
     if (largura_painel > 640.0f) largura_painel = 640.0f;
@@ -910,8 +964,8 @@ int desenhar_tela_resultados(int largura, int altura, Vector2 mouse, Musica musi
                                   painel.width - 60, 48 };
     Rectangle voltar_catalogo = { painel.x + 30, painel.y + painel.height - 78,
                                   painel.width - 60, 48 };
-    if (desenhar_botao(jogar_novamente, "JOGAR NOVAMENTE", mouse, 22)) return 2;
-    if (desenhar_botao(voltar_catalogo, "VOLTAR AO CATALOGO", mouse, 22)) return 3;
+    if (desenhar_botao_navegavel(jogar_novamente, "JOGAR NOVAMENTE", mouse, 22, foco, 0)) return 2;
+    if (desenhar_botao_navegavel(voltar_catalogo, "VOLTAR AO CATALOGO", mouse, 22, foco, 1)) return 3;
     const char *aviso = "[ESC] Voltar ao catalogo";
     DrawText(aviso, (largura - MeasureText(aviso, 18)) / 2, altura - 24, 18,
              (Color){ 190, 180, 200, 220 });
@@ -919,7 +973,8 @@ int desenhar_tela_resultados(int largura, int altura, Vector2 mouse, Musica musi
 }
 
 void desenhar_confirmacao_saida(int largura, int altura, Vector2 mouse,
-                                bool *confirmar_saida, bool *deve_sair) {
+                                bool *confirmar_saida, bool *deve_sair, int *foco) {
+    navegar_menu(foco, 2);
     DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
     Rectangle painel = { (largura - 380) / 2.0f, (altura - 210) / 2.0f, 380, 210 };
     DrawRectangleRec(painel, COR_PAINEL_FUNDO);
@@ -930,10 +985,10 @@ void desenhar_confirmacao_saida(int largura, int altura, Vector2 mouse,
 
     Rectangle botao_sim = { painel.x + 25, painel.y + 110, 150, 55 };
     Rectangle botao_nao = { painel.x + 205, painel.y + 110, 150, 55 };
-    if (desenhar_botao(botao_sim, "SIM", mouse, 24)) {
+    if (desenhar_botao_navegavel(botao_sim, "SIM", mouse, 24, foco, 0)) {
         *deve_sair = true;
     }
-    if (desenhar_botao(botao_nao, "NAO", mouse, 24)) {
+    if (desenhar_botao_navegavel(botao_nao, "NAO", mouse, 24, foco, 1)) {
         *confirmar_saida = false;
     }
 }
@@ -966,6 +1021,8 @@ int main(void) {
     bool deve_sair = false;
     bool confirmar_saida = false;
     bool partida_pausada = false;
+    int foco_menu = 0;
+    int menu_anterior = -1;
     char erro_carregamento[160] = "";
     Desempenho desempenho;
     iniciar_desempenho(&desempenho);
@@ -1024,6 +1081,16 @@ int main(void) {
                                      (partida_pausada || desempenho.game_over));
         }
 
+        bool confirmacao_no_inicio = confirmar_saida;
+        int menu_atual = confirmar_saida ? 10 :
+                         (estado_atual == TELA_PARTIDA ?
+                          (desempenho.game_over ? 12 : (partida_pausada ? 11 : -1)) : (int)estado_atual);
+        if (menu_atual != menu_anterior) {
+            foco_menu = confirmar_saida ? 1 :
+                        (estado_atual == TELA_SELECAO_MUSICAS ? indice_musica_selecionada + 3 : 0);
+            menu_anterior = menu_atual;
+        }
+
         BeginDrawing();
 
         /* Controle de telas atraves do estado atual */
@@ -1032,7 +1099,8 @@ int main(void) {
                 /* Impede cliques no menu atras da confirmacao de saida. */
                 desenhar_menu_principal(largura_atual, altura_atual,
                                         confirmar_saida ? (Vector2){ -1, -1 } : posicao_mouse,
-                                        &estado_atual, &confirmar_saida);
+                                        &estado_atual, &confirmar_saida,
+                                        confirmar_saida ? NULL : &foco_menu);
                 break;
 
             case TELA_SELECAO_MUSICAS:
@@ -1043,7 +1111,7 @@ int main(void) {
                                               &cabeca_notas, &tempo_partida,
                                               &pontuacao, &combo, &maior_combo,
                                               &notas_acertadas, &notas_perdidas,
-                                              erro_carregamento, sizeof(erro_carregamento));
+                                              erro_carregamento, sizeof(erro_carregamento), &foco_menu);
                 if (estado_atual == TELA_PARTIDA) {
                     carregar_midia_partida(&catalogo[indice_musica_selecionada]);
                     iniciar_desempenho(&desempenho);
@@ -1054,7 +1122,7 @@ int main(void) {
                 break;
 
             case TELA_COMO_JOGAR:
-                desenhar_tela_como_jogar(largura_atual, altura_atual, posicao_mouse, &estado_atual);
+                desenhar_tela_como_jogar(largura_atual, altura_atual, posicao_mouse, &estado_atual, &foco_menu);
                 break;
 
             case TELA_PARTIDA:
@@ -1074,14 +1142,20 @@ int main(void) {
                     }
                 }
                 if (estado_atual == TELA_RESULTADOS || partida_pausada || desempenho.game_over) {
+                    int menu_partida = estado_atual == TELA_RESULTADOS ? (int)TELA_RESULTADOS :
+                                       (desempenho.game_over ? 12 : 11);
+                    if (menu_anterior != menu_partida) {
+                        foco_menu = 0;
+                        menu_anterior = menu_partida;
+                    }
                     int opcao;
                     if (estado_atual == TELA_RESULTADOS) {
                         opcao = desenhar_tela_resultados(largura_atual, altura_atual, posicao_mouse,
                                                         catalogo[indice_musica_selecionada], pontuacao,
-                                                        notas_acertadas, notas_perdidas, maior_combo);
+                                                        notas_acertadas, notas_perdidas, maior_combo, &foco_menu);
                     } else {
                         opcao = desenhar_menu_pausa(largura_atual, altura_atual, posicao_mouse,
-                                                    desempenho.game_over);
+                                                    desempenho.game_over, &foco_menu);
                     }
                     if (opcao == 1) {
                         partida_pausada = false;
@@ -1121,9 +1195,9 @@ int main(void) {
                 break;
         }
 
-        if (confirmar_saida) {
+        if (confirmar_saida && confirmacao_no_inicio) {
             desenhar_confirmacao_saida(largura_atual, altura_atual, posicao_mouse,
-                                       &confirmar_saida, &deve_sair);
+                                       &confirmar_saida, &deve_sair, &foco_menu);
         }
 
         EndDrawing();

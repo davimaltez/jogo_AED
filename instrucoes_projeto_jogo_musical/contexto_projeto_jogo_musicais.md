@@ -368,6 +368,16 @@ também libera os nós. Carregador, Merge Sort, regras de pontuação e medidor
 permanecem com suas implementações anteriores. Áudio e sincronização não
 foram implementados.
 
+## Navegação por teclado (implementação confirmada)
+
+Os menus aceitam setas para mover o foco e Enter para confirmar, mantendo
+o mouse e o ESC. O foco recebe uma borda dourada clara e é reiniciado na
+troca de menu. No catálogo, cima/baixo percorrem os controles e músicas,
+esquerda/direita percorrem os filtros e direita numa música acessa iniciar.
+Enter numa música também inicia a partida usando o carregamento validado.
+Pausa, Game Over e resultados reutilizam as ações existentes. A confirmação
+de saída começa em Não e bloqueia as entradas do menu que fica atrás dela.
+
 ## 11. Resumo rápido da arquitetura
 
   -----------------------------------------------------------------------

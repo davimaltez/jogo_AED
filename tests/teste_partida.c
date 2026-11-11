@@ -319,9 +319,104 @@ static void testar_fluxos_conclusao(void) {
     puts("OK: vitoria, resultados congelados, reinicio, catalogo, simultaneas e prioridade da derrota.");
 }
 
+static void testar_navegacao_teclado(void) {
+    Vector2 mouse = {-1, -1};
+    int foco = 0;
+    EstadoTela estado = TELA_MENU_PRINCIPAL;
+    bool confirmar = false, sair = false;
+    clique_teste = false;
+    BeginDrawing();
+    tecla_teste = KEY_UP;
+    navegar_menu(&foco, 3);
+    assert(foco == 2);
+    tecla_teste = KEY_DOWN;
+    navegar_menu(&foco, 3);
+    assert(foco == 0);
+    desenhar_menu_principal(900, 600, mouse, &estado, &confirmar, &foco);
+    assert(foco == 1);
+    tecla_teste = KEY_ENTER;
+    desenhar_menu_principal(900, 600, mouse, &estado, &confirmar, &foco);
+    assert(estado == TELA_COMO_JOGAR && !confirmar);
+    foco = 0;
+    desenhar_tela_como_jogar(900, 600, mouse, &estado, &foco);
+    assert(estado == TELA_MENU_PRINCIPAL);
+    /* A confirmacao bloqueia o teclado do menu que fica atras. */
+    desenhar_menu_principal(900, 600, mouse, &estado, &confirmar, NULL);
+    assert(estado == TELA_MENU_PRINCIPAL && !confirmar);
+    confirmar = true;
+    foco = 1;
+    desenhar_confirmacao_saida(900, 600, mouse, &confirmar, &sair, &foco);
+    assert(!confirmar && !sair);
+    confirmar = true;
+    foco = 0;
+    desenhar_confirmacao_saida(900, 600, mouse, &confirmar, &sair, &foco);
+    assert(sair);
+
+    foco = 0;
+    assert(desenhar_menu_pausa(900, 600, mouse, false, &foco) == 1);
+    assert(desenhar_menu_pausa(900, 600, mouse, true, &foco) == 2);
+    tecla_teste = KEY_DOWN;
+    assert(desenhar_menu_pausa(900, 600, mouse, true, &foco) == 0 && foco == 1);
+    tecla_teste = KEY_ENTER;
+    assert(desenhar_menu_pausa(900, 600, mouse, true, &foco) == 3);
+    Musica catalogo[MAX_MUSICAS];
+    int total, selecionada = 0, pontos = 0, combo = 0, maior = 0, acertos = 0, perdas = 0;
+    inicializar_catalogo(catalogo, &total);
+    assert(desenhar_tela_resultados(900, 600, mouse, catalogo[0], 0, 0, 0, 0, &foco) == 3);
+    CriterioOrdenacao criterio = ORDEM_TITULO_AZ;
+    ordenar_catalogo(catalogo, total, criterio);
+    Nota *notas = NULL;
+    bool confirmada = false;
+    float tempo = 9.0f;
+    char erro[160] = "";
+    estado = TELA_SELECAO_MUSICAS;
+    foco = 3;
+    tecla_teste = KEY_DOWN;
+    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
+        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
+        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
+    assert(foco == 4 && selecionada == 1 && estado == TELA_SELECAO_MUSICAS);
+    tecla_teste = KEY_RIGHT;
+    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
+        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
+        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
+    assert(foco == total + 3);
+    tecla_teste = KEY_ENTER;
+    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
+        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
+        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
+    assert(estado == TELA_PARTIDA && notas != NULL && tempo == 0.0f);
+    liberar_lista_notas(&notas);
+    estado = TELA_SELECAO_MUSICAS;
+    foco = 0;
+    tecla_teste = KEY_RIGHT;
+    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
+        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
+        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
+    assert(foco == 1);
+    char titulo_selecionado[64];
+    strcpy(titulo_selecionado, catalogo[selecionada].titulo);
+    tecla_teste = KEY_ENTER;
+    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
+        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
+        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
+    assert(criterio == ORDEM_DIFICULDADE_CRESCENTE && estado == TELA_SELECAO_MUSICAS);
+    assert(strcmp(titulo_selecionado, catalogo[selecionada].titulo) == 0);
+    foco = selecionada + 3;
+    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
+        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
+        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
+    assert(estado == TELA_PARTIDA && notas != NULL);
+    liberar_lista_notas(&notas);
+    EndDrawing();
+    tecla_teste = KEY_NULL;
+    puts("OK: setas, Enter, menu, instrucoes, confirmacao, pausa, derrota, resultados e catalogo.");
+}
+
 int main(int argc, char **argv) {
     SetConfigFlags(FLAG_WINDOW_HIDDEN);
     InitWindow(900, 600, "Teste de partida");
+    testar_navegacao_teclado();
     Desempenho desempenho;
     iniciar_desempenho(&desempenho);
     Musica musica = {0};
@@ -369,14 +464,14 @@ int main(int argc, char **argv) {
 
     clique_teste = true;
     /* Continuar existe apenas na pausa. Os outros botoes mantem seus codigos. */
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 225}, false) == 1);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 225}, true) == 0);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 287}, true) == 2);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 349}, true) == 3);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 411}, true) == 4);
+    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 225}, false, NULL) == 1);
+    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 225}, true, NULL) == 0);
+    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 287}, true, NULL) == 2);
+    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 349}, true, NULL) == 3);
+    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 411}, true, NULL) == 4);
     desenhar_tela_partida(900, 600, false, &desempenho, musica, &notas,
         &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    desenhar_menu_pausa(900, 600, (Vector2){-1, -1}, true);
+    desenhar_menu_pausa(900, 600, (Vector2){-1, -1}, true, NULL);
     EndDrawing();
     if (argc > 2) TakeScreenshot(argv[2]);
     liberar_lista_notas(&notas);
