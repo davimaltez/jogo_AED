@@ -69,6 +69,100 @@ void desenhar_fundo_teatro(int largura, int altura) {
 }
 
 /*
+ * Midia da musica em execucao: audio (stream) e imagem de fundo.
+ * Carregada ao iniciar a partida e liberada ao sair dela.
+ */
+static Music musica_em_execucao;
+static bool musica_em_execucao_carregada = false;
+static Texture2D fundo_partida;
+static bool fundo_partida_carregado = false;
+
+void descarregar_midia_partida(void) {
+    if (musica_em_execucao_carregada) {
+        StopMusicStream(musica_em_execucao);
+        UnloadMusicStream(musica_em_execucao);
+        musica_em_execucao_carregada = false;
+    }
+    if (fundo_partida_carregado) {
+        UnloadTexture(fundo_partida);
+        fundo_partida_carregado = false;
+    }
+}
+
+void carregar_midia_partida(const Musica *musica) {
+    descarregar_midia_partida();
+
+    if (!IsAudioDeviceReady()) {
+        TraceLog(LOG_WARNING, "Dispositivo de audio indisponivel; partida sem som.");
+    } else if (!FileExists(musica->caminho_audio)) {
+        TraceLog(LOG_WARNING, "Audio nao encontrado: %s", musica->caminho_audio);
+    } else {
+        /*
+         * Buffer maior (~186 ms a 44.1 kHz) evita que o audio esvazie entre um
+         * quadro e outro, o que causava chiado/estalos.
+         */
+        SetAudioStreamBufferSizeDefault(8192);
+        musica_em_execucao = LoadMusicStream(musica->caminho_audio);
+        if (IsMusicValid(musica_em_execucao)) {
+            musica_em_execucao.looping = false;
+            musica_em_execucao_carregada = true;
+            PlayMusicStream(musica_em_execucao);
+        }
+    }
+
+    if (!FileExists(musica->caminho_fundo)) {
+        TraceLog(LOG_WARNING, "Fundo nao encontrado: %s", musica->caminho_fundo);
+    } else {
+        fundo_partida = LoadTexture(musica->caminho_fundo);
+        if (IsTextureValid(fundo_partida)) {
+            SetTextureFilter(fundo_partida, TEXTURE_FILTER_BILINEAR);
+            fundo_partida_carregado = true;
+        }
+    }
+}
+
+/* Recomeca o audio do inicio (usado ao reiniciar a partida). */
+void reiniciar_musica_partida(void) {
+    if (musica_em_execucao_carregada) {
+        StopMusicStream(musica_em_execucao);
+        PlayMusicStream(musica_em_execucao);
+    }
+}
+
+/* Deve ser chamada a cada quadro para alimentar o stream de audio. */
+void atualizar_musica_partida(bool pausada) {
+    if (!musica_em_execucao_carregada) {
+        return;
+    }
+    if (pausada) {
+        PauseMusicStream(musica_em_execucao);
+    } else {
+        ResumeMusicStream(musica_em_execucao);
+        UpdateMusicStream(musica_em_execucao);
+    }
+}
+
+/*
+ * Desenha a imagem de fundo da musica cobrindo a tela inteira (sem distorcer),
+ * com uma camada escura por cima para manter as notas legiveis.
+ */
+void desenhar_fundo_musica(int largura, int altura) {
+    if (!fundo_partida_carregado) {
+        return;
+    }
+    float escala_x = (float)largura / fundo_partida.width;
+    float escala_y = (float)altura / fundo_partida.height;
+    float escala = escala_x > escala_y ? escala_x : escala_y;
+    float largura_desenho = fundo_partida.width * escala;
+    float altura_desenho = fundo_partida.height * escala;
+    Rectangle origem = { 0, 0, (float)fundo_partida.width, (float)fundo_partida.height };
+    Rectangle destino = { (largura - largura_desenho) / 2.0f, (altura - altura_desenho) / 2.0f,
+                          largura_desenho, altura_desenho };
+    DrawTexturePro(fundo_partida, origem, destino, (Vector2){ 0, 0 }, 0.0f, WHITE);
+    DrawRectangle(0, 0, largura, altura, Fade(BLACK, 0.55f));
+}
+
+/*
  * Desenha um botao com texto centralizado e efeito visual ao passar o mouse.
  * Retorna true caso o botao tenha sido clicado.
  */
@@ -454,6 +548,7 @@ void desenhar_tela_partida(int largura, int altura, bool pausada, Desempenho *de
                            int *maior_combo, int *notas_acertadas, int *notas_perdidas,
                            float *tempo_feedback, int *pista_feedback) {
     desenhar_fundo_teatro(largura, altura);
+    desenhar_fundo_musica(largura, altura);
 
     /* Atualiza o tempo decorrido da partida em segundos */
     bool bloqueada = pausada || desempenho->game_over;
@@ -851,6 +946,7 @@ int main(void) {
     InitWindow(largura_inicial, altura_inicial, "FINAL ACT - Jogo de Ritmo");
     SetExitKey(KEY_NULL);
     SetTargetFPS(60);
+    InitAudioDevice();
 
     /* Inicia o jogo diretamente em tela cheia */
     ToggleFullscreen();
@@ -922,6 +1018,12 @@ int main(void) {
             }
         }
 
+        /* O audio acompanha a partida: pausa junto com o jogo e segue na tela de resultados. */
+        if (estado_atual == TELA_PARTIDA || estado_atual == TELA_RESULTADOS) {
+            atualizar_musica_partida(estado_atual == TELA_PARTIDA &&
+                                     (partida_pausada || desempenho.game_over));
+        }
+
         BeginDrawing();
 
         /* Controle de telas atraves do estado atual */
@@ -943,6 +1045,7 @@ int main(void) {
                                               &notas_acertadas, &notas_perdidas,
                                               erro_carregamento, sizeof(erro_carregamento));
                 if (estado_atual == TELA_PARTIDA) {
+                    carregar_midia_partida(&catalogo[indice_musica_selecionada]);
                     iniciar_desempenho(&desempenho);
                     partida_pausada = false;
                     tempo_feedback = 0.0f;
@@ -998,6 +1101,7 @@ int main(void) {
                             pista_feedback = -1;
                             partida_pausada = false;
                             estado_atual = TELA_PARTIDA;
+                            reiniciar_musica_partida();
                         } else {
                             TraceLog(LOG_WARNING, "%s: %s",
                                      catalogo[indice_musica_selecionada].caminho_notas, erro_carregamento);
@@ -1023,11 +1127,18 @@ int main(void) {
         }
 
         EndDrawing();
+
+        /* Qualquer saida da partida (menu, selecao) libera audio e fundo. */
+        if (estado_atual != TELA_PARTIDA && estado_atual != TELA_RESULTADOS) {
+            descarregar_midia_partida();
+        }
     }
 
     /* Libera a memoria alocada para a lista encadeada antes de sair */
     liberar_lista_notas(&cabeca_notas);
+    descarregar_midia_partida();
 
+    CloseAudioDevice();
     CloseWindow();
     return 0;
 }

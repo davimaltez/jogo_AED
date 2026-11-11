@@ -9,16 +9,16 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     *quantidade = 5;
 
     /* Musica 1 - Wicked */
-    strncpy(catalogo[0].titulo, "Defying Gravity", sizeof(catalogo[0].titulo) - 1);
+    strncpy(catalogo[0].titulo, "Popular", sizeof(catalogo[0].titulo) - 1);
     catalogo[0].titulo[sizeof(catalogo[0].titulo) - 1] = '\0';
     strncpy(catalogo[0].filme, "Wicked", sizeof(catalogo[0].filme) - 1);
     catalogo[0].filme[sizeof(catalogo[0].filme) - 1] = '\0';
     catalogo[0].dificuldade = 4;
-    strncpy(catalogo[0].caminho_audio, "assets/musicas/defying_gravity/audio.mp3", sizeof(catalogo[0].caminho_audio) - 1);
+    strncpy(catalogo[0].caminho_audio, "assets/musicas/popular/popular.mp3", sizeof(catalogo[0].caminho_audio) - 1);
     catalogo[0].caminho_audio[sizeof(catalogo[0].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[0].caminho_notas, "assets/musicas/defying_gravity/notas.txt", sizeof(catalogo[0].caminho_notas) - 1);
+    strncpy(catalogo[0].caminho_notas, "assets/musicas/popular/notas.txt", sizeof(catalogo[0].caminho_notas) - 1);
     catalogo[0].caminho_notas[sizeof(catalogo[0].caminho_notas) - 1] = '\0';
-    strncpy(catalogo[0].caminho_fundo, "assets/musicas/defying_gravity/fundo.png", sizeof(catalogo[0].caminho_fundo) - 1);
+    strncpy(catalogo[0].caminho_fundo, "assets/musicas/popular/fundo.png", sizeof(catalogo[0].caminho_fundo) - 1);
     catalogo[0].caminho_fundo[sizeof(catalogo[0].caminho_fundo) - 1] = '\0';
 
     /* Musica 2 - Mamma Mia! */

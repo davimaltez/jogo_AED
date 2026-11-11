@@ -173,20 +173,18 @@ static void testar_arquivos_do_catalogo(void) {
     int quantidade;
     inicializar_catalogo(catalogo, &quantidade);
     for (int i = 0; i < quantidade; i++) {
-        Nota *geradas = NULL, *carregadas = NULL;
+        /* Cada musica pode ter seu proprio mapa: valida o arquivo, nao o conteudo exato. */
+        Nota *carregadas = NULL;
         char erro[160];
-        carregar_notas_iniciais(&geradas, catalogo[i].dificuldade);
         assert(carregar_notas_arquivo(&carregadas, catalogo[i].caminho_notas, erro, sizeof(erro)));
-        Nota *gerada = geradas, *carregada = carregadas;
-        while (gerada != NULL) {
-            assert(carregada != NULL);
-            assert(gerada->tempo_alvo == carregada->tempo_alvo);
-            assert(gerada->pista == carregada->pista && carregada->estado == NOTA_PENDENTE);
-            gerada = gerada->proximo;
-            carregada = carregada->proximo;
+        assert(carregadas != NULL);
+        for (Nota *carregada = carregadas; carregada != NULL; carregada = carregada->proximo) {
+            assert(carregada->pista >= 0 && carregada->pista <= 4);
+            assert(carregada->tempo_alvo >= 0.0f && carregada->estado == NOTA_PENDENTE);
+            if (carregada->proximo != NULL) {
+                assert(carregada->tempo_alvo <= carregada->proximo->tempo_alvo);
+            }
         }
-        assert(carregada == NULL);
-        liberar_lista_notas(&geradas);
         liberar_lista_notas(&carregadas);
     }
 }
