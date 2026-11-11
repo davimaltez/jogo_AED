@@ -14,7 +14,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[0].filme, "Wicked", sizeof(catalogo[0].filme) - 1);
     catalogo[0].filme[sizeof(catalogo[0].filme) - 1] = '\0';
     catalogo[0].dificuldade = 4;
-    strncpy(catalogo[0].caminho_audio, "assets/musicas/popular/popular.mp3", sizeof(catalogo[0].caminho_audio) - 1);
+    strncpy(catalogo[0].caminho_audio, "assets/musicas/popular/popular.wav", sizeof(catalogo[0].caminho_audio) - 1);
     catalogo[0].caminho_audio[sizeof(catalogo[0].caminho_audio) - 1] = '\0';
     strncpy(catalogo[0].caminho_notas, "assets/musicas/popular/notas.txt", sizeof(catalogo[0].caminho_notas) - 1);
     catalogo[0].caminho_notas[sizeof(catalogo[0].caminho_notas) - 1] = '\0';
