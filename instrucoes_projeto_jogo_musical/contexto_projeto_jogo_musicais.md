@@ -295,8 +295,6 @@ Não tratar os itens abaixo como decisões já tomadas:
 -   janela de acerto e regras exatas de pontuação;
 -   se notas serão removidas da lista ou apenas marcadas como
     resolvidas;
--   organização dos módulos e arquivos `.c`/`.h`;
--   formato de armazenamento dos melhores resultados;
 -   funcionalidades extras após a primeira versão.
 
 ## Organização dos recursos por música (decisão confirmada)
@@ -309,7 +307,8 @@ A struct `Musica` guarda esses caminhos nos campos `caminho_audio`,
 
 Essa organização não altera a lista encadeada nem o Merge Sort.
 As pastas contêm arquivos `notas.txt` de demonstração. O carregamento das
-notas está implementado; áudio e imagens ainda não são carregados.
+notas está implementado; áudio e fundo são carregados por `midia_partida.c`
+quando os arquivos existem (ver a seção de organização e áudio abaixo).
 
 ## Arquivos de notas e preparação da partida (decisão confirmada)
 
@@ -331,8 +330,8 @@ tela e no terminal. Não existe fallback automático para notas geradas.
 Os cinco arquivos demonstram eventos fora de ordem, reproduzindo os tempos
 e pistas do gerador anterior. O gerador foi mantido para testes. A ordenação
 ocorre uma vez por carregamento, antes da utilização da lista na partida.
-O relógio continua baseado em `GetFrameTime`, sem reprodução ou sincronização
-de áudio. Pontuação, combos, medidor e controles permanecem com suas regras.
+O relógio segue o áudio quando há música tocando e usa `GetFrameTime` quando
+não há (ver a seção de organização e áudio abaixo). Pontuação, combos, medidor e controles permanecem com suas regras.
 
 ## Medidor de desempenho (implementação solicitada)
 
@@ -365,8 +364,8 @@ JOGAR NOVAMENTE reutiliza o recarregamento validado e só restaura os dados
 depois do sucesso. Falhas mantêm os resultados e exibem a causa. VOLTAR AO
 CATÁLOGO e ESC liberam a lista e retornam à seleção. O fechamento do jogo
 também libera os nós. Carregador, Merge Sort, regras de pontuação e medidor
-permanecem com suas implementações anteriores. Áudio e sincronização não
-foram implementados.
+permanecem com suas implementações anteriores. Depois da vitória, o jogador
+passa pela tela de registro do nome no ranking antes dos resultados.
 
 ## Navegação por teclado (implementação confirmada)
 
@@ -377,6 +376,37 @@ esquerda/direita percorrem os filtros e direita numa música acessa iniciar.
 Enter numa música também inicia a partida usando o carregamento validado.
 Pausa, Game Over e resultados reutilizam as ações existentes. A confirmação
 de saída começa em Não e bloqueia as entradas do menu que fica atrás dela.
+
+## Organização, áudio, ranking e interface (implementação confirmada)
+
+Decisões aprovadas pela estudante em 11/11/2026:
+
+-   **Módulos:** `principal.c` (struct `Jogo`, laço e transições),
+    `interface.c` (telas), `partida.c` (regras sem raylib),
+    `midia_partida.c` (áudio e fundo) e `ranking.c`. Não há variáveis
+    globais mutáveis; o estado fica nas structs `Jogo`, `Partida` e
+    `MidiaPartida`.
+-   **Reinicialização centralizada:** `reiniciar_estado_partida` é o único
+    lugar que zera tempo, pontos, combos, contadores, medidor, pausa e
+    feedback. `preparar_partida` carrega as notas e só reinicia em caso de
+    sucesso; é usada para iniciar, reiniciar e jogar novamente.
+-   **Atualização separada da renderização:** cada quadro executa
+    atualizar (ESC, tempo, regras, digitação), desenhar e aplicar a ação
+    escolhida no menu. A partida é atualizada por `atualizar_partida`,
+    que não desenha; `desenhar_tela_partida` só desenha. Os menus seguem o
+    padrão de interface imediata da raylib (o botão é desenhado e consultado
+    no mesmo lugar), mas apenas devolvem uma `AcaoMenu`; a mudança de estado
+    ocorre em `aplicar_acao`.
+-   **Áudio:** o tempo da partida vem de `GetMusicTimePlayed` enquanto a
+    música toca; sem áudio, de `GetFrameTime`. Pausa e Game Over pausam o
+    áudio; reiniciar volta notas e áudio a zero juntos.
+-   **Ranking:** por música, top 10 em `assets/musicas/<pasta>/ranking.txt`
+    (`pontuacao;nome`), apenas vitórias. Ordenado com Merge Sort em vetor:
+    pontuação decrescente, empate por nome A-Z, estável. Esta é a terceira
+    aplicação do Merge Sort (catálogo, notas e ranking); a ordenação não
+    fica restrita ao ranking.
+-   **Janelas menores:** escala calculada sobre a referência 1280x720,
+    tamanho mínimo de janela 640x360.
 
 ## 11. Resumo rápido da arquitetura
 
