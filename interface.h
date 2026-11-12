@@ -25,6 +25,7 @@ typedef enum {
     ACAO_ORDENAR_DIFICULDADE_CRESCENTE,
     ACAO_ORDENAR_DIFICULDADE_DECRESCENTE,
     ACAO_INICIAR_PARTIDA,
+    ACAO_VER_RANKING,
     ACAO_CONTINUAR,
     ACAO_REINICIAR,
     ACAO_VOLTAR_SELECAO
@@ -49,7 +50,7 @@ AcaoMenu desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, int *f
 
 /*
  * Ordem do foco: 0-2 filtros, 3 ate total+2 musicas,
- * total+3 iniciar partida e total+4 voltar ao menu.
+ * total+3 iniciar partida, total+4 ver ranking e total+5 voltar ao menu.
  * Clicar ou navegar ate uma musica altera *indice_selecionado.
  */
 AcaoMenu desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse,
@@ -71,6 +72,11 @@ AcaoMenu desenhar_tela_resultados(int largura, int altura, Vector2 mouse,
                                   const Musica *musica, const Partida *partida,
                                   const Ranking *ranking, int posicao_ranking,
                                   const char *aviso_ranking, int *foco);
+
+/* Top 10 da musica escolhida no catalogo, sem precisar jogar. */
+AcaoMenu desenhar_tela_ranking_musica(int largura, int altura, Vector2 mouse,
+                                      const Musica *musica, const Ranking *ranking,
+                                      const char *aviso_ranking, int *foco);
 
 AcaoMenu desenhar_confirmacao_saida(int largura, int altura, Vector2 mouse, int *foco);
 

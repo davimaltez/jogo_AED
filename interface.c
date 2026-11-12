@@ -288,10 +288,10 @@ static void navegar_selecao(int *foco, int total_musicas, int indice_selecionado
         *foco = (*foco + (IsKeyPressed(KEY_LEFT) ? 2 : 1)) % 3;
     } else if (*foco >= primeiro_item && *foco < botao_iniciar && IsKeyPressed(KEY_RIGHT)) {
         *foco = botao_iniciar;
-    } else if (*foco == botao_iniciar && IsKeyPressed(KEY_LEFT)) {
+    } else if ((*foco == botao_iniciar || *foco == botao_iniciar + 1) && IsKeyPressed(KEY_LEFT)) {
         *foco = indice_selecionado + primeiro_item;
     } else {
-        navegar_menu(foco, total_musicas + 5);
+        navegar_menu(foco, total_musicas + 6);
     }
 }
 
@@ -385,9 +385,9 @@ static bool desenhar_lista_musicas(Rectangle painel, float y_inicio, float escal
 }
 
 /* Painel da direita: dados da musica selecionada e botao de iniciar. */
-static bool desenhar_detalhes_musica(Rectangle painel, float escala, Vector2 mouse,
-                                     const Musica *musica, int indice_botao,
-                                     const char *mensagem_erro, int *foco) {
+static AcaoMenu desenhar_detalhes_musica(Rectangle painel, float escala, Vector2 mouse,
+                                         const Musica *musica, int indice_botao,
+                                         const char *mensagem_erro, int *foco) {
     float x = painel.x + escalar(25, escala);
     float largura_texto = painel.width - escalar(50, escala);
     float y = painel.y;
@@ -417,10 +417,20 @@ static bool desenhar_detalhes_musica(Rectangle painel, float escala, Vector2 mou
     }
 
     Rectangle iniciar = { x, y + escalar(300, escala), largura_texto, (float)escalar(54, escala) };
-    bool clicou = desenhar_botao_navegavel(iniciar, "INICIAR PARTIDA", mouse, fonte(22, escala),
-                                           foco, indice_botao);
+    AcaoMenu acao = ACAO_NENHUMA;
+    if (desenhar_botao_navegavel(iniciar, "INICIAR PARTIDA", mouse, fonte(22, escala),
+                                 foco, indice_botao)) {
+        acao = ACAO_INICIAR_PARTIDA;
+    }
 
-    float y_aviso = y + escalar(370, escala);
+    /* Abre o top 10 desta musica sem precisar vence-la. */
+    Rectangle ver_ranking = { x, y + escalar(366, escala), largura_texto, (float)escalar(46, escala) };
+    if (desenhar_botao_navegavel(ver_ranking, "VER RANKING", mouse, fonte(20, escala),
+                                 foco, indice_botao + 1)) {
+        acao = ACAO_VER_RANKING;
+    }
+
+    float y_aviso = y + escalar(426, escala);
     if (mensagem_erro != NULL && mensagem_erro[0] != '\0') {
         int tamanho = fonte_que_cabe(mensagem_erro, fonte(15, escala), largura_texto);
         DrawText(mensagem_erro, (int)x, (int)y_aviso, tamanho, RED);
@@ -429,7 +439,7 @@ static bool desenhar_detalhes_musica(Rectangle painel, float escala, Vector2 mou
         int tamanho = fonte_que_cabe(dica, fonte(15, escala), largura_texto);
         DrawText(dica, (int)x, (int)y_aviso, tamanho, COR_TEXTO_SUAVE);
     }
-    return clicou;
+    return acao;
 }
 
 AcaoMenu desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse,
@@ -484,16 +494,18 @@ AcaoMenu desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse,
              COR_LINHA_DOURADA);
 
     if (*indice_selecionado >= 0 && *indice_selecionado < total_musicas) {
-        if (desenhar_detalhes_musica(painel_detalhes, escala, mouse, &catalogo[*indice_selecionado],
-                                     total_musicas + 3, mensagem_erro, foco)) {
-            acao = ACAO_INICIAR_PARTIDA;
+        AcaoMenu acao_detalhes = desenhar_detalhes_musica(painel_detalhes, escala, mouse,
+                                                          &catalogo[*indice_selecionado],
+                                                          total_musicas + 3, mensagem_erro, foco);
+        if (acao_detalhes != ACAO_NENHUMA) {
+            acao = acao_detalhes;
         }
     }
 
     float largura_voltar = (float)escalar(260, escala);
     float altura_voltar = (float)escalar(48, escala);
     Rectangle voltar = { (largura - largura_voltar) / 2.0f, altura - escalar(72, escala), largura_voltar, altura_voltar };
-    if (desenhar_botao_navegavel(voltar, "VOLTAR AO MENU", mouse, fonte(22, escala), foco, total_musicas + 4)) {
+    if (desenhar_botao_navegavel(voltar, "VOLTAR AO MENU", mouse, fonte(22, escala), foco, total_musicas + 5)) {
         acao = ACAO_VOLTAR_MENU;
     }
     return acao;
@@ -900,6 +912,57 @@ AcaoMenu desenhar_tela_resultados(int largura, int altura, Vector2 mouse,
     desenhar_texto_centralizado("[ESC] Voltar ao catalogo", centro_x, altura - escalar(22, escala),
                                 fonte(16, escala), (Color){ 190, 180, 200, 220 });
     return acao;
+}
+
+/* ================= Ranking pelo catalogo ================= */
+
+AcaoMenu desenhar_tela_ranking_musica(int largura, int altura, Vector2 mouse,
+                                      const Musica *musica, const Ranking *ranking,
+                                      const char *aviso_ranking, int *foco) {
+    float escala = calcular_escala(largura, altura);
+    navegar_menu(foco, 1);
+    desenhar_fundo_teatro(largura, altura);
+
+    float largura_painel = (float)escalar(560, escala);
+    if (largura_painel > largura * 0.94f) largura_painel = largura * 0.94f;
+    float altura_painel = (float)escalar(520, escala);
+    Rectangle painel = { (largura - largura_painel) / 2.0f, (altura - altura_painel) / 2.0f,
+                         largura_painel, altura_painel };
+    desenhar_painel(painel, COR_DOURADO);
+    float centro_x = largura / 2.0f;
+    float largura_texto = largura_painel - escalar(60, escala);
+
+    int fonte_titulo = fonte_que_cabe(musica->titulo, fonte(34, escala), largura_texto);
+    desenhar_texto_centralizado(musica->titulo, centro_x, painel.y + escalar(20, escala),
+                                fonte_titulo, COR_DOURADO);
+    int fonte_filme = fonte_que_cabe(musica->filme, fonte(18, escala), largura_texto);
+    desenhar_texto_centralizado(musica->filme, centro_x, painel.y + escalar(62, escala),
+                                fonte_filme, COR_TEXTO_SUAVE);
+    float y_linha = painel.y + escalar(92, escala);
+    DrawLine((int)(painel.x + escalar(30, escala)), (int)y_linha,
+             (int)(painel.x + largura_painel - escalar(30, escala)), (int)y_linha, COR_LINHA_DOURADA);
+
+    /* Sem destaque (-1): aqui so se consulta o ranking. */
+    Rectangle area = { painel.x + escalar(30, escala), painel.y + escalar(106, escala),
+                       largura_texto, (float)escalar(280, escala) };
+    desenhar_lista_ranking(area, escala, ranking, -1);
+
+    if (aviso_ranking != NULL && aviso_ranking[0] != '\0') {
+        int tamanho = fonte_que_cabe(aviso_ranking, fonte(16, escala), largura_texto);
+        desenhar_texto_centralizado(aviso_ranking, centro_x, painel.y + escalar(392, escala), tamanho, RED);
+    }
+
+    float largura_botao = (float)escalar(300, escala);
+    float altura_botao = (float)escalar(48, escala);
+    Rectangle voltar = { centro_x - largura_botao / 2.0f,
+                         painel.y + altura_painel - altura_botao - escalar(20, escala),
+                         largura_botao, altura_botao };
+    if (desenhar_botao_navegavel(voltar, "VOLTAR AO CATALOGO", mouse, fonte(22, escala), foco, 0)) {
+        return ACAO_VOLTAR_SELECAO;
+    }
+    desenhar_texto_centralizado("[ESC] Voltar ao catalogo", centro_x, altura - escalar(22, escala),
+                                fonte(16, escala), (Color){ 190, 180, 200, 220 });
+    return ACAO_NENHUMA;
 }
 
 /* ================= Confirmacao de saida ================= */

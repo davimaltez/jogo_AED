@@ -21,7 +21,8 @@ typedef enum {
     TELA_COMO_JOGAR,
     TELA_PARTIDA,
     TELA_REGISTRO_RANKING,
-    TELA_RESULTADOS
+    TELA_RESULTADOS,
+    TELA_RANKING_MUSICA     /* top 10 aberto pelo catalogo */
 } EstadoTela;
 
 /*
@@ -163,6 +164,18 @@ static void abrir_registro_ranking(Jogo *jogo) {
     jogo->tela = TELA_REGISTRO_RANKING;
 }
 
+/* Botao VER RANKING do catalogo: le o arquivo da musica selecionada e mostra. */
+static void abrir_ranking_musica(Jogo *jogo) {
+    Musica *musica = musica_atual(jogo);
+    jogo->posicao_ranking = -1;   /* so consulta: nenhuma linha destacada */
+    jogo->aviso_ranking[0] = '\0';
+    if (!carregar_ranking(&jogo->ranking, musica->caminho_ranking)) {
+        snprintf(jogo->aviso_ranking, sizeof(jogo->aviso_ranking), "Nao foi possivel ler o ranking.");
+        TraceLog(LOG_WARNING, "Falha ao ler %s", musica->caminho_ranking);
+    }
+    jogo->tela = TELA_RANKING_MUSICA;
+}
+
 /* Le as letras digitadas neste quadro e o Backspace. */
 static void ler_nome_jogador(Jogo *jogo) {
     size_t tamanho = strlen(jogo->nome_jogador);
@@ -251,6 +264,9 @@ static void tratar_tecla_esc(Jogo *jogo) {
             break;
         case TELA_MENU_PRINCIPAL:
             jogo->confirmar_saida = true;
+            break;
+        case TELA_RANKING_MUSICA:
+            jogo->tela = TELA_SELECAO_MUSICAS;
             break;
         default:
             jogo->tela = TELA_MENU_PRINCIPAL;
@@ -378,6 +394,10 @@ static AcaoMenu desenhar_jogo(Jogo *jogo, int largura, int altura, Vector2 mouse
                                             jogo->aviso_ranking, foco_tela);
             desenhar_mensagem_erro(largura, altura, jogo->mensagem_erro);
             break;
+        case TELA_RANKING_MUSICA:
+            acao = desenhar_tela_ranking_musica(largura, altura, mouse_tela, musica, &jogo->ranking,
+                                                jogo->aviso_ranking, foco_tela);
+            break;
     }
 
     if (jogo->confirmar_saida) {
@@ -430,6 +450,9 @@ static void aplicar_acao(Jogo *jogo, AcaoMenu acao) {
         case ACAO_INICIAR_PARTIDA:
             iniciar_partida(jogo);
             break;
+        case ACAO_VER_RANKING:
+            abrir_ranking_musica(jogo);
+            break;
         case ACAO_CONTINUAR:
             jogo->partida.pausada = false;
             jogo->mensagem_erro[0] = '\0';
@@ -438,7 +461,11 @@ static void aplicar_acao(Jogo *jogo, AcaoMenu acao) {
             reiniciar_partida(jogo);
             break;
         case ACAO_VOLTAR_SELECAO:
-            sair_da_partida(jogo, TELA_SELECAO_MUSICAS);
+            if (tela_de_partida(jogo->tela)) {
+                sair_da_partida(jogo, TELA_SELECAO_MUSICAS);
+            } else {
+                jogo->tela = TELA_SELECAO_MUSICAS;   /* vindo da tela de ranking */
+            }
             break;
         case ACAO_NENHUMA:
             break;

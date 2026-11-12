@@ -1,26 +1,19 @@
-# Makefile para o projeto FINAL ACT (Jogo de Ritmo)
-# Configuracao para ambiente Linux / WSL
-
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c99
 LIBS = -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
-# Nome do executavel final
 TARGET = final_act
 
-# Arquivos fonte
 SRCS = principal.c interface.c partida.c midia_partida.c ranking.c catalogo_musicas.c lista_notas.c desempenho.c
 HEADERS = interface.h partida.h midia_partida.h ranking.h catalogo_musicas.h lista_notas.h desempenho.h
 TEST_FLAGS = $(CFLAGS) -Werror -I.
 TEST_BINS = /tmp/final_act_teste_carregamento_notas /tmp/final_act_teste_merge_sort_notas /tmp/final_act_teste_desempenho /tmp/final_act_teste_conclusao_partida /tmp/final_act_teste_logica_partida /tmp/final_act_teste_ranking /tmp/final_act_teste_partida
 
-# Regra padrao: compila o projeto
 all: $(TARGET)
 
 $(TARGET): $(SRCS) $(HEADERS)
 	$(CC) $(CFLAGS) $(SRCS) -o $(TARGET) $(LIBS)
 
-# Regra para compilar e executar diretamente
 run: $(TARGET)
 	./$(TARGET)
 
@@ -56,7 +49,6 @@ test: /tmp/final_act_teste_carregamento_notas /tmp/final_act_teste_merge_sort_no
 test-grafico: /tmp/final_act_teste_partida
 	/tmp/final_act_teste_partida
 
-# Regra para limpar os arquivos gerados
 clean:
 	rm -f $(TARGET) $(TEST_BINS)
 

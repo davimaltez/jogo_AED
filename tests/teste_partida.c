@@ -1,10 +1,4 @@
 #define _POSIX_C_SOURCE 200809L
-/*
- * Teste do jogo completo com uma janela oculta.
- * O jogo e conduzido por um roteiro de teclas (sem mouse), chamando
- * executar_quadro, a mesma funcao que o main usa a cada quadro.
- * As funcoes de entrada da raylib sao substituidas com --wrap.
- */
 #define main main_do_jogo
 #include "../principal.c"
 #undef main
@@ -217,6 +211,26 @@ static void testar_fluxo_completo(void) {
     quadro(&jogo, KEY_ESCAPE);
     assert(jogo.tela == TELA_SELECAO_MUSICAS && jogo.partida.notas == NULL);
 
+    /* VER RANKING pelo catalogo: direita leva a INICIAR, baixo leva a VER RANKING. */
+    quadro(&jogo, KEY_RIGHT);
+    quadro(&jogo, KEY_DOWN);
+    assert(jogo.foco_menu == jogo.total_musicas + 4);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_RANKING_MUSICA && jogo.posicao_ranking == -1);
+    assert(jogo.ranking.quantidade == 1 && jogo.partida.notas == NULL);
+    quadro(&jogo, KEY_NULL);
+    assert(apareceu("RANKING DA MUSICA") && apareceu("Lais") && apareceu("City of Stars"));
+    quadro(&jogo, KEY_ENTER);   /* botao VOLTAR AO CATALOGO */
+    assert(jogo.tela == TELA_SELECAO_MUSICAS);
+    quadro(&jogo, KEY_NULL);
+    quadro(&jogo, KEY_RIGHT);
+    quadro(&jogo, KEY_DOWN);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_RANKING_MUSICA);
+    quadro(&jogo, KEY_NULL);
+    quadro(&jogo, KEY_ESCAPE);  /* ESC tambem volta ao catalogo */
+    assert(jogo.tela == TELA_SELECAO_MUSICAS && jogo.foco_menu == jogo.indice_musica + 3);
+
     /* Filtro Dif. Decr. (Merge Sort do catalogo) mantendo a musica selecionada. */
     for (int i = 0; i < 2; i++) quadro(&jogo, KEY_UP);     /* foco 4 -> 2 */
     assert(jogo.foco_menu == 2);
@@ -273,8 +287,10 @@ static void testar_ranking_existente(void) {
 static void testar_tamanhos(bool salvar_capturas) {
     const int tamanhos[][2] = { { 1920, 1080 }, { 1280, 720 }, { 900, 600 }, { 640, 360 }, { 640, 480 } };
     const EstadoTela telas[] = { TELA_MENU_PRINCIPAL, TELA_SELECAO_MUSICAS, TELA_COMO_JOGAR,
-                                 TELA_PARTIDA, TELA_REGISTRO_RANKING, TELA_RESULTADOS };
-    const char *nomes[] = { "menu", "selecao", "como_jogar", "partida", "registro", "resultados" };
+                                 TELA_PARTIDA, TELA_REGISTRO_RANKING, TELA_RESULTADOS,
+                                 TELA_RANKING_MUSICA };
+    const char *nomes[] = { "menu", "selecao", "como_jogar", "partida", "registro", "resultados",
+                            "ranking" };
     int total_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
 
     for (int t = 0; t < total_tamanhos; t++) {
@@ -282,10 +298,10 @@ static void testar_tamanhos(bool salvar_capturas) {
         for (int espera = 0; espera < 5; espera++) { BeginDrawing(); EndDrawing(); }
         assert(GetScreenWidth() == tamanhos[t][0] && GetScreenHeight() == tamanhos[t][1]);
 
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < 7; i++) {
             Jogo jogo;
             preparar_jogo_de_teste(&jogo);
-            if (telas[i] == TELA_PARTIDA || telas[i] == TELA_REGISTRO_RANKING || telas[i] == TELA_RESULTADOS) {
+            if (telas[i] != TELA_MENU_PRINCIPAL && telas[i] != TELA_SELECAO_MUSICAS && telas[i] != TELA_COMO_JOGAR) {
                 assert(preparar_partida(&jogo.partida, caminho_notas, jogo.mensagem_erro, sizeof(jogo.mensagem_erro)));
                 jogo.partida.tempo = 0.6f;
                 jogo.partida.pontuacao = 12340;
@@ -294,6 +310,10 @@ static void testar_tamanhos(bool salvar_capturas) {
                 assert(carregar_ranking(&jogo.ranking, caminho_ranking));
                 jogo.posicao_ranking = 1;
                 strcpy(jogo.aviso_ranking, "Voce ficou em 2o lugar!");
+            }
+            if (telas[i] == TELA_RANKING_MUSICA) {
+                jogo.posicao_ranking = -1;
+                jogo.aviso_ranking[0] = '\0';
             }
             jogo.tela = telas[i];
             quadro(&jogo, KEY_NULL);
