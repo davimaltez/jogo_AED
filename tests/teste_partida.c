@@ -1,487 +1,399 @@
 #define _POSIX_C_SOURCE 200809L
-/* Exercita a partida real com entradas controladas e uma janela oculta. */
+/*
+ * Teste do jogo completo com uma janela oculta.
+ * O jogo e conduzido por um roteiro de teclas (sem mouse), chamando
+ * executar_quadro, a mesma funcao que o main usa a cada quadro.
+ * As funcoes de entrada da raylib sao substituidas com --wrap.
+ */
 #define main main_do_jogo
 #include "../principal.c"
 #undef main
 #include <assert.h>
-#include <string.h>
+#include <math.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
-static int tecla_teste = KEY_NULL;
-static bool clique_teste = false;
-static float delta_teste = 0.0f;
+/* ---------- Entradas controladas pelo teste ---------- */
+static int teclas_do_quadro[6];
+static int total_teclas_do_quadro = 0;
+static const char *letras_do_quadro = "";
+static float tempo_do_quadro = 0.0f;
+static bool usar_tempo_real = false;
 
-static bool fluxo_ativo = false;
-static int quadro = -1;
-static int cargas = 0;
-static int inicializacoes = 0;
-static int avancos_tempo = 0;
-static Nota **lista_fluxo = NULL;
-static Nota *lista_antes_da_falha = NULL;
-static Desempenho *desempenho_fluxo = NULL;
-static bool erro_exibido = false;
-static bool pausa_exibida = false;
-static bool derrota_exibida = false;
-static char pontos_exibidos[64];
+/* ---------- Textos desenhados no ultimo quadro ---------- */
+static char textos_desenhados[8192];
+static bool texto_fora_da_janela = false;
+static char texto_que_saiu[128];
 
-typedef struct {
-    float delta;
-    unsigned int pistas;
-    bool clicar;
-    Vector2 mouse;
-    bool escape;
-    bool falhar_carga;
-} PassoConclusao;
-
-enum { CENARIO_VITORIA = 1, CENARIO_TODAS_PERDIDAS, CENARIO_DERROTA_FINAL, CENARIO_DERROTA_ANTECIPADA };
-static int cenario_conclusao = 0;
-static const PassoConclusao *roteiro_conclusao = NULL;
-static int total_quadros_conclusao = 0;
-static char caminho_conclusao[] = "/tmp/final_act_conclusao_XXXXXX";
-static bool vitoria_exibida = false;
-static bool catalogo_exibido = false;
-static int pontos_resultado, acertos_resultado, perdas_resultado, combo_resultado;
-static const char *captura_vitoria = NULL;
-static void verificar_quadro_conclusao(void);
-
-bool __real_carregar_notas_arquivo(Nota **cabeca, const char *caminho, char *erro, size_t tamanho);
-void __real_iniciar_desempenho(Desempenho *desempenho);
+int __real_GetCharPressed(void);
+float __real_GetFrameTime(void);
 void __real_SetConfigFlags(unsigned int flags);
 void __real_DrawText(const char *texto, int x, int y, int tamanho, Color cor);
 
 bool __wrap_IsKeyPressed(int tecla) {
-    if (roteiro_conclusao != NULL) {
-        if (tecla == KEY_ESCAPE) return roteiro_conclusao[quadro].escape;
-        const int teclas[] = { KEY_D, KEY_F, KEY_G, KEY_J, KEY_K };
-        for (int p = 0; p < TOTAL_PISTAS; p++) {
-            if (tecla == teclas[p]) return (roteiro_conclusao[quadro].pistas & (1u << p)) != 0;
-        }
-        return false;
+    for (int i = 0; i < total_teclas_do_quadro; i++) {
+        if (teclas_do_quadro[i] == tecla) return true;
     }
-    if (!fluxo_ativo) return tecla == tecla_teste;
-    return (quadro == 3 && tecla == KEY_D) ||
-           ((quadro == 4 || quadro == 12) && tecla == KEY_ESCAPE);
+    return false;
 }
 
-bool __wrap_IsMouseButtonPressed(int botao) {
-    if (roteiro_conclusao != NULL) return roteiro_conclusao[quadro].clicar && botao == MOUSE_BUTTON_LEFT;
-    if (!fluxo_ativo) return clique_teste && botao == MOUSE_BUTTON_LEFT;
-    bool clicar = quadro == 0 || quadro == 1 || quadro == 2 || quadro == 4 ||
-                  quadro == 6 || quadro == 8 || quadro == 10 || quadro == 12;
-    return clicar && botao == MOUSE_BUTTON_LEFT;
+bool __wrap_IsKeyPressedRepeat(int tecla) { (void)tecla; return false; }
+bool __wrap_IsMouseButtonPressed(int botao) { (void)botao; return false; }
+Vector2 __wrap_GetMousePosition(void) { return (Vector2){ -1, -1 }; }
+void __wrap_ToggleFullscreen(void) { /* mantem a janela de teste oculta */ }
+void __wrap_SetConfigFlags(unsigned int flags) { __real_SetConfigFlags(flags | FLAG_WINDOW_HIDDEN); }
+
+int __wrap_GetCharPressed(void) {
+    if (*letras_do_quadro == '\0') return 0;
+    return (unsigned char)*letras_do_quadro++;
 }
 
 float __wrap_GetFrameTime(void) {
-    if (roteiro_conclusao != NULL) {
-        avancos_tempo++;
-        return roteiro_conclusao[quadro].delta;
-    }
-    if (!fluxo_ativo) return delta_teste;
-    avancos_tempo++;
-    return quadro == 3 ? 2.0f : quadro == 7 ? 100.0f : 0.0f;
-}
-
-Vector2 __wrap_GetMousePosition(void) {
-    if (roteiro_conclusao != NULL) return roteiro_conclusao[quadro].mouse;
-    if (quadro == 0) return (Vector2){450, 280};
-    if (quadro == 1 || quadro == 2) return (Vector2){650, 390};
-    if (quadro == 12) return (Vector2){450, 349};
-    return (Vector2){450, 287};
-}
-
-void __wrap_SetConfigFlags(unsigned int flags) {
-    __real_SetConfigFlags(flags | FLAG_WINDOW_HIDDEN);
-}
-
-void __wrap_ToggleFullscreen(void) { /* Mantem a janela de teste oculta. */ }
-
-void __wrap_iniciar_desempenho(Desempenho *desempenho) {
-    __real_iniciar_desempenho(desempenho);
-    if (fluxo_ativo || roteiro_conclusao != NULL) {
-        desempenho_fluxo = desempenho;
-        inicializacoes++;
-        /* Cria uma condicao de fronteira, sem mudar as regras do jogo. */
-        if (cenario_conclusao == CENARIO_DERROTA_FINAL || cenario_conclusao == CENARIO_DERROTA_ANTECIPADA) {
-            desempenho->valor = PERDA_ERRO;
-        }
-    }
-}
-
-bool __wrap_carregar_notas_arquivo(Nota **cabeca, const char *caminho, char *erro, size_t tamanho) {
-    if (roteiro_conclusao != NULL) {
-        assert(strcmp(caminho, "assets/musicas/breaking_free/notas.txt") == 0);
-        cargas++;
-        lista_fluxo = cabeca;
-        bool falhar = roteiro_conclusao[quadro].falhar_carga;
-        if (falhar) lista_antes_da_falha = *cabeca;
-        bool resultado = __real_carregar_notas_arquivo(cabeca, falhar ? "/dev/null" : caminho_conclusao, erro, tamanho);
-        assert(resultado != falhar);
-        if (falhar) assert(*cabeca == lista_antes_da_falha);
-        return resultado;
-    }
-    if (!fluxo_ativo) return __real_carregar_notas_arquivo(cabeca, caminho, erro, tamanho);
-    cargas++;
-    lista_fluxo = cabeca;
-    /* O catalogo inicia por titulo: Breaking Free deve fornecer o caminho. */
-    assert(strcmp(caminho, "assets/musicas/breaking_free/notas.txt") == 0);
-    bool falhar = quadro == 1 || quadro == 4 || quadro == 8;
-    if (falhar) lista_antes_da_falha = *cabeca;
-    bool resultado = __real_carregar_notas_arquivo(cabeca, falhar ? "/dev/null" : caminho, erro, tamanho);
-    assert(resultado != falhar);
-    if (falhar) assert(*cabeca == lista_antes_da_falha);
-    return resultado;
+    return usar_tempo_real ? __real_GetFrameTime() : tempo_do_quadro;
 }
 
 void __wrap_DrawText(const char *texto, int x, int y, int tamanho, Color cor) {
-    if (fluxo_ativo || roteiro_conclusao != NULL) {
-        if (strstr(texto, "Arquivo sem notas") != NULL) erro_exibido = true;
-        if (strcmp(texto, "PAUSADO") == 0) pausa_exibida = true;
-        if (strcmp(texto, "GAME OVER") == 0) derrota_exibida = true;
-        if (strncmp(texto, "PONTOS:", 7) == 0) snprintf(pontos_exibidos, sizeof(pontos_exibidos), "%s", texto);
-        if (strcmp(texto, "VITORIA") == 0) vitoria_exibida = true;
-        if (strcmp(texto, "SELECAO DE MUSICAS") == 0) catalogo_exibido = true;
-        sscanf(texto, "PONTUACAO: %d", &pontos_resultado);
-        sscanf(texto, "ACERTOS: %d", &acertos_resultado);
-        sscanf(texto, "NOTAS PERDIDAS: %d", &perdas_resultado);
-        sscanf(texto, "MAIOR COMBO: %d", &combo_resultado);
+    size_t usado = strlen(textos_desenhados);
+    snprintf(textos_desenhados + usado, sizeof(textos_desenhados) - usado, "%s\n", texto);
+    /* Nenhum texto pode sair da janela, em nenhum tamanho. */
+    int largura_texto = MeasureText(texto, tamanho);
+    if (x < 0 || y < 0 || x + largura_texto > GetScreenWidth() || y + tamanho > GetScreenHeight()) {
+        if (!texto_fora_da_janela) {
+            snprintf(texto_que_saiu, sizeof(texto_que_saiu), "'%s' em %dx%d", texto,
+                     GetScreenWidth(), GetScreenHeight());
+        }
+        texto_fora_da_janela = true;
     }
     __real_DrawText(texto, x, y, tamanho, cor);
 }
 
-bool __wrap_WindowShouldClose(void) {
-    if (roteiro_conclusao != NULL) {
-        if (quadro >= 0) verificar_quadro_conclusao();
-        if (captura_vitoria != NULL && cenario_conclusao == CENARIO_VITORIA && quadro == 7) {
-            TakeScreenshot(captura_vitoria);
-        }
-        erro_exibido = pausa_exibida = derrota_exibida = false;
-        vitoria_exibida = catalogo_exibido = false;
-        quadro++;
-        return quadro >= total_quadros_conclusao;
-    }
-    /* Verifica o quadro anterior antes que as variaveis locais do main expirem. */
-    if (quadro == 1) {
-        assert(cargas == 1 && inicializacoes == 1 && avancos_tempo == 0);
-        assert(*lista_fluxo == NULL && erro_exibido);
-    } else if (quadro == 2 || quadro == 6 || quadro == 10) {
-        int esperadas = quadro == 2 ? 2 : quadro == 6 ? 3 : 4;
-        assert(inicializacoes == esperadas && !erro_exibido);
-        assert(desempenho_fluxo->valor == 75 && !desempenho_fluxo->game_over);
-        Nota *atual = *lista_fluxo;
-        assert(atual != NULL && atual->tempo_alvo == 2.0f && atual->pista == 0);
-        while (atual != NULL) {
-            assert(atual->estado == NOTA_PENDENTE);
-            if (atual->proximo != NULL) assert(atual->tempo_alvo <= atual->proximo->tempo_alvo);
-            atual = atual->proximo;
-        }
-    } else if (quadro >= 3 && quadro <= 5) {
-        assert(desempenho_fluxo->valor == 78 && inicializacoes == 2 && avancos_tempo == 1);
-        assert((*lista_fluxo)->estado == NOTA_ACERTADA);
-        assert(strcmp(pontos_exibidos, "PONTOS: 100") == 0);
-        if (quadro >= 4) {
-            assert(cargas == 3 && *lista_fluxo == lista_antes_da_falha);
-            assert(erro_exibido && pausa_exibida);
-        }
-    } else if (quadro >= 7 && quadro <= 9) {
-        assert(desempenho_fluxo->game_over && desempenho_fluxo->valor == 0);
-        assert(inicializacoes == 3 && avancos_tempo == 2 && derrota_exibida);
-        if (quadro >= 8) assert(cargas == 5 && *lista_fluxo == lista_antes_da_falha && erro_exibido);
-    } else if (quadro == 11) {
-        assert(strcmp(pontos_exibidos, "PONTOS: 0") == 0);
-        assert(avancos_tempo == 3 && desempenho_fluxo->valor == 75);
-    } else if (quadro == 12) {
-        assert(*lista_fluxo == NULL && cargas == 6 && inicializacoes == 4);
-    }
-    erro_exibido = pausa_exibida = derrota_exibida = false;
-    quadro++;
-    return quadro >= 13;
+static bool apareceu(const char *trecho) {
+    return strstr(textos_desenhados, trecho) != NULL;
 }
 
-static void verificar_resultados(int pontos, int acertos, int perdas, int maior_combo) {
-    assert(vitoria_exibida && !derrota_exibida && !pausa_exibida);
-    assert(pontos_resultado == pontos && acertos_resultado == acertos);
-    assert(perdas_resultado == perdas && combo_resultado == maior_combo);
+/* Roda um quadro com ate duas teclas pressionadas (KEY_NULL = nenhuma). */
+static void quadro_com(Jogo *jogo, float tempo, int tecla1, int tecla2) {
+    total_teclas_do_quadro = 0;
+    if (tecla1 != KEY_NULL) teclas_do_quadro[total_teclas_do_quadro++] = tecla1;
+    if (tecla2 != KEY_NULL) teclas_do_quadro[total_teclas_do_quadro++] = tecla2;
+    tempo_do_quadro = tempo;
+    textos_desenhados[0] = '\0';
+    executar_quadro(jogo);
+    total_teclas_do_quadro = 0;
+    letras_do_quadro = "";
 }
 
-static void verificar_quadro_conclusao(void) {
-    if (quadro < 2) return;
-    assert(lista_fluxo != NULL && desempenho_fluxo != NULL);
-    if (cenario_conclusao == CENARIO_VITORIA) {
-        if (quadro >= 2 && quadro <= 5) {
-            assert(!vitoria_exibida && !derrota_exibida && !todas_notas_resolvidas(*lista_fluxo));
-        }
-        if (quadro == 5) assert(strcmp(pontos_exibidos, "PONTOS: 210") == 0);
-        if (quadro == 6 || quadro == 12 || quadro == 18) {
-            assert(todas_notas_resolvidas(*lista_fluxo) && !desempenho_fluxo->game_over);
-            assert(strcmp(pontos_exibidos, "PONTOS: 330") == 0);
-        }
-        if (quadro >= 7 && quadro <= 9) {
-            verificar_resultados(330, 3, 0, 3);
-            assert(avancos_tempo == 5 && inicializacoes == 2 && desempenho_fluxo->valor == 84);
-            if (quadro >= 8) assert(erro_exibido && *lista_fluxo == lista_antes_da_falha && cargas == 2);
-        }
-        if (quadro == 10) {
-            verificar_resultados(330, 3, 0, 3);
-            assert(cargas == 3 && inicializacoes == 3 && avancos_tempo == 5);
-            assert(!erro_exibido && desempenho_fluxo->valor == 75 && !todas_notas_resolvidas(*lista_fluxo));
-        }
-        if (quadro == 11 || quadro == 17) {
-            assert(strcmp(pontos_exibidos, "PONTOS: 100") == 0 && desempenho_fluxo->valor == 78);
-        }
-        if (quadro == 13 || quadro == 14 || quadro == 19) verificar_resultados(330, 3, 0, 3);
-        if (quadro == 14 || quadro == 15 || quadro == 20) assert(*lista_fluxo == NULL);
-        if (quadro == 15 || quadro == 20) assert(catalogo_exibido);
-        if (quadro == 20) assert(cargas == 4 && inicializacoes == 4 && avancos_tempo == 9);
-    } else if (cenario_conclusao == CENARIO_TODAS_PERDIDAS) {
-        if (quadro == 2) {
-            assert(!todas_notas_resolvidas(*lista_fluxo) && !vitoria_exibida);
-            assert(desempenho_fluxo->valor == 67);
-        } else {
-            assert(todas_notas_resolvidas(*lista_fluxo));
-            assert(!desempenho_fluxo->game_over && desempenho_fluxo->valor == 51);
-            assert(avancos_tempo == 2);
-            if (quadro >= 4) verificar_resultados(0, 0, 3, 0);
-        }
-    } else {
-        assert(desempenho_fluxo->game_over && desempenho_fluxo->valor == 0);
-        assert(!vitoria_exibida && derrota_exibida && avancos_tempo == 1);
-        assert(todas_notas_resolvidas(*lista_fluxo) == (cenario_conclusao == CENARIO_DERROTA_FINAL));
-    }
-}
+static void quadro(Jogo *jogo, int tecla) { quadro_com(jogo, 0.0f, tecla, KEY_NULL); }
 
-static void executar_cenario_conclusao(int cenario, const PassoConclusao *roteiro,
-                                     int quantidade, const char *eventos) {
-    FILE *arquivo = fopen(caminho_conclusao, "w");
-    assert(arquivo != NULL && fputs(eventos, arquivo) >= 0 && fclose(arquivo) == 0);
-    cenario_conclusao = cenario;
-    roteiro_conclusao = roteiro;
-    total_quadros_conclusao = quantidade;
-    quadro = -1;
-    cargas = inicializacoes = avancos_tempo = 0;
-    lista_fluxo = NULL;
-    desempenho_fluxo = NULL;
-    erro_exibido = pausa_exibida = derrota_exibida = false;
-    vitoria_exibida = catalogo_exibido = false;
-    assert(main_do_jogo() == 0);
-    roteiro_conclusao = NULL;
-    cenario_conclusao = 0;
-}
+/* ---------- Arquivos temporarios ---------- */
+static char caminho_notas[] = "/tmp/final_act_notas_XXXXXX";
+static char caminho_ranking[] = "/tmp/final_act_ranking_XXXXXX";
 
-static void testar_fluxos_conclusao(void) {
-    int descritor = mkstemp(caminho_conclusao);
+static void criar_temporario(char *caminho, const char *conteudo) {
+    int descritor = mkstemp(caminho);
     assert(descritor >= 0 && close(descritor) == 0);
-    const PassoConclusao vitoria[] = {
-        [0] = { .clicar = true, .mouse = {450, 280} },
-        [1] = { .clicar = true, .mouse = {650, 390} },
-        [2] = { .delta = 0.5f },
-        [3] = { .delta = 0.5f, .pistas = 1 },
-        [4] = { .delta = 0.8f },
-        [5] = { .delta = 0.2f, .pistas = 1 },
-        [6] = { .pistas = 16 },
-        [7] = { .delta = 100.0f, .pistas = 31 },
-        [8] = { .clicar = true, .mouse = {450, 445}, .falhar_carga = true },
-        [9] = {0},
-        [10] = { .clicar = true, .mouse = {450, 445} },
-        [11] = { .delta = 1.0f, .pistas = 1 },
-        [12] = { .delta = 1.0f, .pistas = 17 },
-        [13] = {0},
-        [14] = { .clicar = true, .mouse = {450, 505} },
-        [15] = {0},
-        [16] = { .clicar = true, .mouse = {650, 390} },
-        [17] = { .delta = 1.0f, .pistas = 1 },
-        [18] = { .delta = 1.0f, .pistas = 17 },
-        [19] = {0},
-        [20] = { .escape = true }
-    };
-    executar_cenario_conclusao(CENARIO_VITORIA, vitoria, sizeof(vitoria) / sizeof(vitoria[0]), "2 4\n1 0\n2 0\n");
-
-    float limite = 2.0f + 0.22f;
-    const PassoConclusao perdidas[] = {
-        [0] = { .clicar = true, .mouse = {450, 280} },
-        [1] = { .clicar = true, .mouse = {650, 390} },
-        [2] = { .delta = limite },
-        [3] = { .delta = nextafterf(limite, INFINITY) - limite },
-        [4] = {0},
-        [5] = { .delta = 100.0f, .pistas = 31 }
-    };
-    executar_cenario_conclusao(CENARIO_TODAS_PERDIDAS, perdidas, sizeof(perdidas) / sizeof(perdidas[0]), "2 4\n1 0\n2 0\n");
-
-    const PassoConclusao derrota[] = {
-        [0] = { .clicar = true, .mouse = {450, 280} },
-        [1] = { .clicar = true, .mouse = {650, 390} },
-        [2] = { .delta = 2.23f },
-        [3] = { .delta = 1000.0f, .pistas = 31 }
-    };
-    executar_cenario_conclusao(CENARIO_DERROTA_FINAL, derrota, sizeof(derrota) / sizeof(derrota[0]), "2 0\n");
-    executar_cenario_conclusao(CENARIO_DERROTA_ANTECIPADA, derrota, sizeof(derrota) / sizeof(derrota[0]), "2 0\n100 4\n");
-    assert(unlink(caminho_conclusao) == 0);
-    puts("OK: vitoria, resultados congelados, reinicio, catalogo, simultaneas e prioridade da derrota.");
+    FILE *arquivo = fopen(caminho, "w");
+    assert(arquivo != NULL && fputs(conteudo, arquivo) >= 0 && fclose(arquivo) == 0);
 }
 
-static void testar_navegacao_teclado(void) {
-    Vector2 mouse = {-1, -1};
-    int foco = 0;
-    EstadoTela estado = TELA_MENU_PRINCIPAL;
-    bool confirmar = false, sair = false;
-    clique_teste = false;
-    BeginDrawing();
-    tecla_teste = KEY_UP;
-    navegar_menu(&foco, 3);
-    assert(foco == 2);
-    tecla_teste = KEY_DOWN;
-    navegar_menu(&foco, 3);
-    assert(foco == 0);
-    desenhar_menu_principal(900, 600, mouse, &estado, &confirmar, &foco);
-    assert(foco == 1);
-    tecla_teste = KEY_ENTER;
-    desenhar_menu_principal(900, 600, mouse, &estado, &confirmar, &foco);
-    assert(estado == TELA_COMO_JOGAR && !confirmar);
-    foco = 0;
-    desenhar_tela_como_jogar(900, 600, mouse, &estado, &foco);
-    assert(estado == TELA_MENU_PRINCIPAL);
-    /* A confirmacao bloqueia o teclado do menu que fica atras. */
-    desenhar_menu_principal(900, 600, mouse, &estado, &confirmar, NULL);
-    assert(estado == TELA_MENU_PRINCIPAL && !confirmar);
-    confirmar = true;
-    foco = 1;
-    desenhar_confirmacao_saida(900, 600, mouse, &confirmar, &sair, &foco);
-    assert(!confirmar && !sair);
-    confirmar = true;
-    foco = 0;
-    desenhar_confirmacao_saida(900, 600, mouse, &confirmar, &sair, &foco);
-    assert(sair);
+/* Aponta o catalogo para os temporarios e remove o audio (tempo controlado pelo teste). */
+static void preparar_jogo_de_teste(Jogo *jogo) {
+    iniciar_jogo(jogo);
+    for (int i = 0; i < jogo->total_musicas; i++) {
+        snprintf(jogo->catalogo[i].caminho_notas, sizeof(jogo->catalogo[i].caminho_notas), "%s", caminho_notas);
+        snprintf(jogo->catalogo[i].caminho_ranking, sizeof(jogo->catalogo[i].caminho_ranking), "%s", caminho_ranking);
+        snprintf(jogo->catalogo[i].caminho_audio, sizeof(jogo->catalogo[i].caminho_audio), "/tmp/sem_audio.wav");
+    }
+}
 
-    foco = 0;
-    assert(desenhar_menu_pausa(900, 600, mouse, false, &foco) == 1);
-    assert(desenhar_menu_pausa(900, 600, mouse, true, &foco) == 2);
-    tecla_teste = KEY_DOWN;
-    assert(desenhar_menu_pausa(900, 600, mouse, true, &foco) == 0 && foco == 1);
-    tecla_teste = KEY_ENTER;
-    assert(desenhar_menu_pausa(900, 600, mouse, true, &foco) == 3);
-    Musica catalogo[MAX_MUSICAS];
-    int total, selecionada = 0, pontos = 0, combo = 0, maior = 0, acertos = 0, perdas = 0;
-    inicializar_catalogo(catalogo, &total);
-    assert(desenhar_tela_resultados(900, 600, mouse, catalogo[0], 0, 0, 0, 0, &foco) == 3);
-    CriterioOrdenacao criterio = ORDEM_TITULO_AZ;
-    ordenar_catalogo(catalogo, total, criterio);
-    Nota *notas = NULL;
-    bool confirmada = false;
-    float tempo = 9.0f;
-    char erro[160] = "";
-    estado = TELA_SELECAO_MUSICAS;
-    foco = 3;
-    tecla_teste = KEY_DOWN;
-    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
-        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
-        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
-    assert(foco == 4 && selecionada == 1 && estado == TELA_SELECAO_MUSICAS);
-    tecla_teste = KEY_RIGHT;
-    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
-        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
-        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
-    assert(foco == total + 3);
-    tecla_teste = KEY_ENTER;
-    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
-        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
-        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
-    assert(estado == TELA_PARTIDA && notas != NULL && tempo == 0.0f);
-    liberar_lista_notas(&notas);
-    estado = TELA_SELECAO_MUSICAS;
-    foco = 0;
-    tecla_teste = KEY_RIGHT;
-    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
-        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
-        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
-    assert(foco == 1);
-    char titulo_selecionado[64];
-    strcpy(titulo_selecionado, catalogo[selecionada].titulo);
-    tecla_teste = KEY_ENTER;
-    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
-        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
-        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
-    assert(criterio == ORDEM_DIFICULDADE_CRESCENTE && estado == TELA_SELECAO_MUSICAS);
-    assert(strcmp(titulo_selecionado, catalogo[selecionada].titulo) == 0);
-    foco = selecionada + 3;
-    desenhar_tela_selecao_musicas(900, 600, mouse, &estado, catalogo, total,
-        &selecionada, &confirmada, &criterio, &notas, &tempo, &pontos, &combo,
-        &maior, &acertos, &perdas, erro, sizeof(erro), &foco);
-    assert(estado == TELA_PARTIDA && notas != NULL);
-    liberar_lista_notas(&notas);
-    EndDrawing();
-    tecla_teste = KEY_NULL;
-    puts("OK: setas, Enter, menu, instrucoes, confirmacao, pausa, derrota, resultados e catalogo.");
+static void ler_arquivo(const char *caminho, char *destino, size_t tamanho) {
+    FILE *arquivo = fopen(caminho, "r");
+    assert(arquivo != NULL);
+    size_t lidos = fread(destino, 1, tamanho - 1, arquivo);
+    destino[lidos] = '\0';
+    fclose(arquivo);
+}
+
+/* Vence a partida atual (notas 1.0/D e 2.0/D+K) e chega ao registro do nome. */
+static void vencer_partida(Jogo *jogo) {
+    quadro_com(jogo, 1.0f, KEY_D, KEY_NULL);
+    quadro_com(jogo, 1.0f, KEY_D, KEY_K);
+    assert(jogo->tela == TELA_REGISTRO_RANKING);
+    assert(jogo->partida.pontuacao == 330 && jogo->partida.maior_combo == 3);
+}
+
+static void testar_fluxo_completo(void) {
+    Jogo jogo;
+    preparar_jogo_de_teste(&jogo);
+    char conteudo[256];
+
+    /* Menu -> selecao */
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_SELECAO_MUSICAS);
+
+    /* Seta para baixo seleciona a segunda musica (ordem A-Z: City of Stars). */
+    quadro(&jogo, KEY_DOWN);
+    assert(jogo.indice_musica == 1 && jogo.foco_menu == 4);
+    assert(strcmp(jogo.catalogo[1].titulo, "City of Stars") == 0);
+
+    /* Arquivo invalido: continua na selecao e mostra o erro. */
+    snprintf(jogo.catalogo[1].caminho_notas, sizeof(jogo.catalogo[1].caminho_notas), "/dev/null");
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_SELECAO_MUSICAS && jogo.partida.notas == NULL);
+    quadro(&jogo, KEY_NULL);
+    assert(apareceu("Arquivo sem notas"));
+
+    /* Arquivo valido: entra na partida. */
+    snprintf(jogo.catalogo[1].caminho_notas, sizeof(jogo.catalogo[1].caminho_notas), "%s", caminho_notas);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_PARTIDA && jogo.partida.notas != NULL && jogo.partida.tempo == 0.0f);
+    assert(jogo.mensagem_erro[0] == '\0');
+
+    quadro_com(&jogo, 1.0f, KEY_D, KEY_NULL);
+    assert(jogo.partida.pontuacao == 100 && apareceu("PONTOS: 100"));
+
+    /* ESC pausa: o tempo nao anda. Enter em CONTINUAR volta. */
+    quadro(&jogo, KEY_ESCAPE);
+    assert(jogo.partida.pausada && apareceu("PAUSADO"));
+    quadro_com(&jogo, 5.0f, KEY_NULL, KEY_NULL);
+    assert(jogo.partida.tempo == 1.0f);
+    quadro(&jogo, KEY_ENTER);
+    assert(!jogo.partida.pausada);
+
+    /* Acorde final: vitoria vai para o registro do nome. */
+    quadro_com(&jogo, 1.0f, KEY_D, KEY_K);
+    assert(jogo.tela == TELA_REGISTRO_RANKING);
+    letras_do_quadro = "Lais@;";   /* '@' e ';' sao recusados */
+    quadro(&jogo, KEY_NULL);
+    assert(strcmp(jogo.nome_jogador, "Lais") == 0 && apareceu("VITORIA!"));
+    quadro(&jogo, KEY_BACKSPACE);
+    assert(strcmp(jogo.nome_jogador, "Lai") == 0);
+    letras_do_quadro = "s";
+    quadro(&jogo, KEY_NULL);
+
+    /* Enter salva: Merge Sort no ranking e gravacao no arquivo. */
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_RESULTADOS && jogo.posicao_ranking == 0);
+    ler_arquivo(caminho_ranking, conteudo, sizeof(conteudo));
+    assert(strcmp(conteudo, "330;Lais\n") == 0);
+    quadro(&jogo, KEY_NULL);
+    assert(apareceu("VITORIA") && apareceu("PONTUACAO: 330") && apareceu("Lais") && apareceu("1o lugar"));
+
+    /* JOGAR NOVAMENTE (foco 0) reinicia tudo pelo ponto central. */
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_PARTIDA && jogo.partida.pontuacao == 0 && jogo.partida.tempo == 0.0f);
+    assert(jogo.partida.desempenho.valor == 75);
+
+    /* Game Over: o medidor e colocado no limite e a nota passa. */
+    jogo.partida.desempenho.valor = PERDA_ERRO;
+    quadro_com(&jogo, 10.0f, KEY_NULL, KEY_NULL);
+    assert(jogo.partida.desempenho.game_over && jogo.tela == TELA_PARTIDA);
+    quadro(&jogo, KEY_NULL);
+    assert(apareceu("GAME OVER") && !apareceu("CONTINUAR"));
+    quadro(&jogo, KEY_ENTER);   /* REINICIAR e o primeiro botao do Game Over */
+    assert(!jogo.partida.desempenho.game_over && jogo.partida.tempo == 0.0f);
+
+    /* Pausa -> VOLTAR A SELECAO libera a lista. */
+    quadro(&jogo, KEY_ESCAPE);
+    quadro(&jogo, KEY_DOWN);
+    quadro(&jogo, KEY_DOWN);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_SELECAO_MUSICAS && jogo.partida.notas == NULL);
+
+    /* Nova vitoria, mas ESC pula o registro: o arquivo nao muda. */
+    quadro(&jogo, KEY_NULL);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_PARTIDA);
+    vencer_partida(&jogo);
+    char antes[256];
+    ler_arquivo(caminho_ranking, antes, sizeof(antes));
+    quadro(&jogo, KEY_ESCAPE);
+    assert(jogo.tela == TELA_RESULTADOS && jogo.posicao_ranking == -1);
+    ler_arquivo(caminho_ranking, conteudo, sizeof(conteudo));
+    assert(strcmp(antes, conteudo) == 0);
+    quadro(&jogo, KEY_NULL);
+    assert(apareceu("Pontuacao nao registrada.") && apareceu("Lais"));
+    quadro(&jogo, KEY_ESCAPE);
+    assert(jogo.tela == TELA_SELECAO_MUSICAS && jogo.partida.notas == NULL);
+
+    /* Filtro Dif. Decr. (Merge Sort do catalogo) mantendo a musica selecionada. */
+    for (int i = 0; i < 2; i++) quadro(&jogo, KEY_UP);     /* foco 4 -> 2 */
+    assert(jogo.foco_menu == 2);
+    char titulo[64];
+    strcpy(titulo, jogo.catalogo[jogo.indice_musica].titulo);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.criterio == ORDEM_DIFICULDADE_DECRESCENTE);
+    assert(strcmp(jogo.catalogo[jogo.indice_musica].titulo, titulo) == 0);
+    for (int i = 0; i + 1 < jogo.total_musicas; i++) {
+        assert(jogo.catalogo[i].dificuldade >= jogo.catalogo[i + 1].dificuldade);
+    }
+
+    /* Saida: ESC volta ao menu, ESC abre a confirmacao (comeca em NAO). */
+    quadro(&jogo, KEY_ESCAPE);
+    assert(jogo.tela == TELA_MENU_PRINCIPAL);
+    quadro(&jogo, KEY_ESCAPE);
+    assert(jogo.confirmar_saida && jogo.foco_menu == 1 && apareceu("Deseja sair do jogo?"));
+    quadro(&jogo, KEY_ENTER);
+    assert(!jogo.confirmar_saida && !jogo.deve_sair && jogo.tela == TELA_MENU_PRINCIPAL);
+    quadro(&jogo, KEY_ESCAPE);
+    quadro(&jogo, KEY_LEFT);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.deve_sair);
+
+    liberar_jogo(&jogo);
+    puts("OK: menu, selecao, erro, partida, pausa, vitoria, nome, ranking, reinicio, Game Over, filtros e saida.");
+}
+
+/* Ranking com pontuacoes ja existentes: a nova entra na posicao certa. */
+static void testar_ranking_existente(void) {
+    FILE *arquivo = fopen(caminho_ranking, "w");
+    assert(arquivo != NULL);
+    fputs("120;Caio\n500;Bia\n", arquivo);   /* fora de ordem de proposito */
+    assert(fclose(arquivo) == 0);
+
+    Jogo jogo;
+    preparar_jogo_de_teste(&jogo);
+    quadro(&jogo, KEY_ENTER);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.tela == TELA_PARTIDA);
+    vencer_partida(&jogo);
+    letras_do_quadro = "Lais";
+    quadro(&jogo, KEY_NULL);
+    quadro(&jogo, KEY_ENTER);
+    assert(jogo.posicao_ranking == 1 && strstr(jogo.aviso_ranking, "2o lugar") != NULL);
+    char conteudo[256];
+    ler_arquivo(caminho_ranking, conteudo, sizeof(conteudo));
+    assert(strcmp(conteudo, "500;Bia\n330;Lais\n120;Caio\n") == 0);
+    liberar_jogo(&jogo);
+    puts("OK: ranking existente reordenado e gravado (500 Bia, 330 Lais, 120 Caio).");
+}
+
+/* Desenha cada tela em varios tamanhos e confere que nenhum texto sai da janela. */
+static void testar_tamanhos(bool salvar_capturas) {
+    const int tamanhos[][2] = { { 1920, 1080 }, { 1280, 720 }, { 900, 600 }, { 640, 360 }, { 640, 480 } };
+    const EstadoTela telas[] = { TELA_MENU_PRINCIPAL, TELA_SELECAO_MUSICAS, TELA_COMO_JOGAR,
+                                 TELA_PARTIDA, TELA_REGISTRO_RANKING, TELA_RESULTADOS };
+    const char *nomes[] = { "menu", "selecao", "como_jogar", "partida", "registro", "resultados" };
+    int total_tamanhos = sizeof(tamanhos) / sizeof(tamanhos[0]);
+
+    for (int t = 0; t < total_tamanhos; t++) {
+        SetWindowSize(tamanhos[t][0], tamanhos[t][1]);
+        for (int espera = 0; espera < 5; espera++) { BeginDrawing(); EndDrawing(); }
+        assert(GetScreenWidth() == tamanhos[t][0] && GetScreenHeight() == tamanhos[t][1]);
+
+        for (int i = 0; i < 6; i++) {
+            Jogo jogo;
+            preparar_jogo_de_teste(&jogo);
+            if (telas[i] == TELA_PARTIDA || telas[i] == TELA_REGISTRO_RANKING || telas[i] == TELA_RESULTADOS) {
+                assert(preparar_partida(&jogo.partida, caminho_notas, jogo.mensagem_erro, sizeof(jogo.mensagem_erro)));
+                jogo.partida.tempo = 0.6f;
+                jogo.partida.pontuacao = 12340;
+                jogo.partida.combo = 7;
+                strcpy(jogo.nome_jogador, "MARIA EDUARDA");
+                assert(carregar_ranking(&jogo.ranking, caminho_ranking));
+                jogo.posicao_ranking = 1;
+                strcpy(jogo.aviso_ranking, "Voce ficou em 2o lugar!");
+            }
+            jogo.tela = telas[i];
+            quadro(&jogo, KEY_NULL);
+            quadro(&jogo, KEY_NULL);
+            if (!texto_fora_da_janela && salvar_capturas) {
+                char arquivo[256];
+                /* A raylib grava a captura na pasta atual. */
+                snprintf(arquivo, sizeof(arquivo), "captura_%s_%dx%d.png", nomes[i],
+                         tamanhos[t][0], tamanhos[t][1]);
+                TakeScreenshot(arquivo);
+            }
+            if (telas[i] == TELA_PARTIDA) {
+                /* Pausa e Game Over por cima da partida. */
+                jogo.partida.desempenho.game_over = true;
+                quadro(&jogo, KEY_NULL);
+                jogo.partida.desempenho.game_over = false;
+                jogo.partida.pausada = true;
+                quadro(&jogo, KEY_NULL);
+            }
+            if (telas[i] == TELA_MENU_PRINCIPAL) {
+                jogo.confirmar_saida = true;
+                quadro(&jogo, KEY_NULL);
+            }
+            liberar_jogo(&jogo);
+            if (texto_fora_da_janela) {
+                printf("FALHA: texto fora da janela: %s (tela %s)\n", texto_que_saiu, nomes[i]);
+            }
+            assert(!texto_fora_da_janela);
+        }
+    }
+    SetWindowSize(900, 600);
+    puts("OK: todas as telas cabem em 1920x1080, 1280x720, 900x600, 640x360 e 640x480.");
+}
+
+/* So roda se houver dispositivo de audio e o arquivo da musica Popular. */
+static void testar_audio_sincronizado(void) {
+    InitAudioDevice();
+    Jogo jogo;
+    iniciar_jogo(&jogo);
+    int indice = buscar_indice_por_titulo(jogo.catalogo, jogo.total_musicas, "Popular");
+    if (!IsAudioDeviceReady() || indice < 0 || !FileExists(jogo.catalogo[indice].caminho_audio)) {
+        puts("AVISO: sem dispositivo de audio ou sem popular.wav; teste de audio pulado.");
+        if (IsAudioDeviceReady()) CloseAudioDevice();
+        return;
+    }
+    snprintf(jogo.catalogo[indice].caminho_ranking, sizeof(jogo.catalogo[indice].caminho_ranking), "%s", caminho_ranking);
+    /* Uma unica nota bem no futuro: nenhuma perda atrapalha a medicao. */
+    FILE *arquivo = fopen(caminho_notas, "w");
+    assert(arquivo != NULL && fputs("200 0\n", arquivo) >= 0 && fclose(arquivo) == 0);
+    jogo.indice_musica = indice;
+    aplicar_acao(&jogo, ACAO_INICIAR_PARTIDA);
+    assert(jogo.tela == TELA_PARTIDA && jogo.midia.musica_carregada);
+
+    /* O tempo do quadro fica em zero: so o audio pode fazer o tempo andar. */
+    for (int i = 0; i < 15; i++) { WaitTime(0.02); quadro(&jogo, KEY_NULL); }
+    float tempo_tocando = jogo.partida.tempo;
+    assert(tempo_tocando > 0.05f);
+    /* O audio continua tocando depois do quadro; a partida nunca fica a frente dele. */
+    assert(tempo_tocando <= tempo_audio_partida(&jogo.midia) + 0.01f);
+
+    /* Pausa: tempo da partida e do audio param juntos. */
+    quadro(&jogo, KEY_ESCAPE);
+    float tempo_pausa = jogo.partida.tempo;
+    float audio_pausa = tempo_audio_partida(&jogo.midia);
+    for (int i = 0; i < 10; i++) { WaitTime(0.02); quadro(&jogo, KEY_NULL); }
+    assert(jogo.partida.tempo == tempo_pausa);
+    assert(fabsf(tempo_audio_partida(&jogo.midia) - audio_pausa) < 0.01f);
+
+    /* Continuar: volta a andar a partir do mesmo ponto. */
+    quadro(&jogo, KEY_ESCAPE);
+    for (int i = 0; i < 5; i++) { WaitTime(0.02); quadro(&jogo, KEY_NULL); }
+    assert(jogo.partida.tempo > tempo_pausa);
+
+    /* Reiniciar: audio e notas voltam ao zero juntos. */
+    aplicar_acao(&jogo, ACAO_REINICIAR);
+    assert(jogo.partida.tempo == 0.0f);
+    quadro(&jogo, KEY_NULL);
+    assert(jogo.partida.tempo < tempo_pausa);
+
+    aplicar_acao(&jogo, ACAO_VOLTAR_SELECAO);
+    assert(!jogo.midia.musica_carregada && jogo.partida.notas == NULL);
+    liberar_jogo(&jogo);
+    CloseAudioDevice();
+    printf("OK: audio sincronizado (tocou %.2f s, pausa congelou, reinicio voltou ao zero).\n", tempo_tocando);
 }
 
 int main(int argc, char **argv) {
-    SetConfigFlags(FLAG_WINDOW_HIDDEN);
-    InitWindow(900, 600, "Teste de partida");
-    testar_navegacao_teclado();
-    Desempenho desempenho;
-    iniciar_desempenho(&desempenho);
-    Musica musica = {0};
-    Nota *notas = NULL;
-    inserir_nota(&notas, 2.0f, 0);
-    inserir_nota(&notas, 3.0f, 4);
-    float tempo = 2.0f, feedback = 0.0f;
-    int pontos = 0, combo = 0, maior_combo = 0, acertos = 0, perdas = 0, pista = -1;
+    setvbuf(stdout, NULL, _IOLBF, 0);
+    SetConfigFlags(0);
+    InitWindow(900, 600, "Teste FINAL ACT");
+    SetTraceLogLevel(LOG_WARNING);
+    criar_temporario(caminho_notas, "2 4\n1 0\n2 0\n");
+    criar_temporario(caminho_ranking, "");
 
-    BeginDrawing();
-    tecla_teste = KEY_D;
-    desenhar_tela_partida(900, 600, false, &desempenho, musica, &notas,
-        &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    assert(desempenho.valor == 78 && pontos == 100 && acertos == 1 && combo == 1);
-    EndDrawing();
-    if (argc > 1) TakeScreenshot(argv[1]);
-    BeginDrawing();
+    testar_fluxo_completo();
+    testar_ranking_existente();
+    testar_tamanhos(argc > 1 && strcmp(argv[1], "capturas") == 0);
+    testar_audio_sincronizado();
 
-    tecla_teste = KEY_F;
-    desenhar_tela_partida(900, 600, false, &desempenho, musica, &notas,
-        &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    assert(desempenho.valor == 70 && combo == 0 && pontos == 100);
-
-    delta_teste = 2.0f;
-    desenhar_tela_partida(900, 600, true, &desempenho, musica, &notas,
-        &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    assert(tempo == 2.0f && desempenho.valor == 70 && perdas == 0);
-
-    tecla_teste = KEY_NULL;
-    desenhar_tela_partida(900, 600, false, &desempenho, musica, &notas,
-        &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    assert(tempo == 4.0f && desempenho.valor == 62 && perdas == 1);
-
-    delta_teste = 0.0f;
-    tecla_teste = KEY_F;
-    for (int i = 0; i < 8; i++) {
-        desenhar_tela_partida(900, 600, false, &desempenho, musica, &notas,
-            &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    }
-    assert(desempenho.game_over && desempenho.valor == 0);
-    delta_teste = 5.0f;
-    desenhar_tela_partida(900, 600, false, &desempenho, musica, &notas,
-        &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    assert(tempo == 4.0f && pontos == 100 && perdas == 1);
-
-    clique_teste = true;
-    /* Continuar existe apenas na pausa. Os outros botoes mantem seus codigos. */
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 225}, false, NULL) == 1);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 225}, true, NULL) == 0);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 287}, true, NULL) == 2);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 349}, true, NULL) == 3);
-    assert(desenhar_menu_pausa(900, 600, (Vector2){450, 411}, true, NULL) == 4);
-    desenhar_tela_partida(900, 600, false, &desempenho, musica, &notas,
-        &tempo, &pontos, &combo, &maior_combo, &acertos, &perdas, &feedback, &pista);
-    desenhar_menu_pausa(900, 600, (Vector2){-1, -1}, true, NULL);
-    EndDrawing();
-    if (argc > 2) TakeScreenshot(argv[2]);
-    liberar_lista_notas(&notas);
+    assert(unlink(caminho_notas) == 0 && unlink(caminho_ranking) == 0);
     CloseWindow();
-    puts("OK: partida real, acerto, erro, perda, pausa, bloqueio apos derrota e botoes.");
-    fluxo_ativo = true;
-    assert(main_do_jogo() == 0);
-    puts("OK: inicio por arquivo, erro visivel, pausa e Game Over preservados, reinicio e retorno.");
-    fluxo_ativo = false;
-    if (argc > 3) captura_vitoria = argv[3];
-    testar_fluxos_conclusao();
     return 0;
 }
