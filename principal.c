@@ -1,1217 +1,501 @@
 #include "raylib.h"
 #include "catalogo_musicas.h"
 #include "lista_notas.h"
-#include "desempenho.h"
+#include "partida.h"
+#include "midia_partida.h"
+#include "ranking.h"
+#include "interface.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <math.h>
 
-/*
- * Estados possiveis para a navegacao entre telas.
- * Cada valor representa uma tela visivel do jogo.
- */
+#define LARGURA_INICIAL 900
+#define ALTURA_INICIAL 600
+#define LARGURA_MINIMA_JANELA 640
+#define ALTURA_MINIMA_JANELA 360
+
+/* Telas do jogo. A tela atual decide o que e atualizado e desenhado. */
 typedef enum {
     TELA_MENU_PRINCIPAL,
     TELA_SELECAO_MUSICAS,
     TELA_COMO_JOGAR,
     TELA_PARTIDA,
+    TELA_REGISTRO_RANKING,
     TELA_RESULTADOS
 } EstadoTela;
 
 /*
- * Paleta de cores inspirada na tematica de teatro musical.
- * Fundo escuro com tons de vinho, purpura e detalhes dourados.
+ * Menus que aparecem por cima de uma tela. Os numeros comecam em 100
+ * para nunca coincidir com os valores de EstadoTela. Servem apenas para
+ * perceber quando o menu visivel mudou e reiniciar o foco do teclado.
  */
-#define COR_FUNDO_ESCURO      (Color){ 18, 12, 26, 255 }
-#define COR_PALCO_LATERAL     (Color){ 32, 16, 40, 255 }
-#define COR_LUZ_HOLOFOTE      (Color){ 255, 220, 120, 18 }
-#define COR_DOURADO           (Color){ 245, 195, 65, 255 }
-#define COR_DOURADO_BRILHO    (Color){ 255, 230, 130, 255 }
-#define COR_SOMBRA_TEXTO      (Color){ 10, 5, 15, 200 }
-
-#define COR_BOTAO_FUNDO       (Color){ 45, 22, 58, 230 }
-#define COR_BOTAO_BORDA       (Color){ 190, 140, 60, 255 }
-#define COR_BOTAO_TEXTO       (Color){ 245, 240, 235, 255 }
-
-#define COR_BOTAO_FOCO_FUNDO  (Color){ 85, 30, 100, 240 }
-#define COR_BOTAO_FOCO_BORDA  (Color){ 255, 215, 80, 255 }
-#define COR_BOTAO_FOCO_TEXTO  (Color){ 255, 245, 180, 255 }
-
-#define COR_PAINEL_FUNDO      (Color){ 28, 14, 38, 235 }
-
-/* O indice de foco pertence ao menu atual e e mantido pelo main. */
-void navegar_menu(int *foco, int quantidade) {
-    if (foco == NULL || quantidade <= 0) return;
-    if (IsKeyPressed(KEY_UP) || IsKeyPressed(KEY_LEFT)) {
-        *foco = (*foco + quantidade - 1) % quantidade;
-    } else if (IsKeyPressed(KEY_DOWN) || IsKeyPressed(KEY_RIGHT)) {
-        *foco = (*foco + 1) % quantidade;
-    }
-}
-
-bool item_em_foco(Rectangle retangulo, Vector2 mouse, int *foco, int indice) {
-    Vector2 movimento = GetMouseDelta();
-    bool apontado = CheckCollisionPointRec(mouse, retangulo);
-    if (foco != NULL && apontado &&
-        (movimento.x != 0 || movimento.y != 0 || IsMouseButtonPressed(MOUSE_BUTTON_LEFT))) {
-        *foco = indice;
-    }
-    return foco != NULL && *foco == indice;
-}
+#define MENU_SEM_FOCO -1      /* partida em andamento, sem menu */
+#define MENU_CONFIRMACAO 100
+#define MENU_PAUSA 101
+#define MENU_GAME_OVER 102
 
 /*
- * Desenha o fundo visual do jogo com elementos de um palco de teatro:
- * cortinas sutis nas laterais e feixes de luz cruzando a tela.
+ * Todo o estado do programa fica nesta struct, criada no main.
+ * As funcoes recebem um ponteiro para ela, em vez de usar variaveis globais.
  */
-void desenhar_fundo_teatro(int largura, int altura) {
-    ClearBackground(COR_FUNDO_ESCURO);
+typedef struct {
+    EstadoTela tela;
 
-    /* Faixas laterais simulando cortinas de palco */
-    int largura_cortina = largura * 0.08f;
-    DrawRectangle(0, 0, largura_cortina, altura, COR_PALCO_LATERAL);
-    DrawRectangle(largura - largura_cortina, 0, largura_cortina, altura, COR_PALCO_LATERAL);
+    Musica catalogo[MAX_MUSICAS];
+    int total_musicas;
+    CriterioOrdenacao criterio;
+    int indice_musica;              /* musica selecionada no catalogo */
 
-    /* Linhas divisorias verticais douradas discretas */
-    DrawLine(largura_cortina, 0, largura_cortina, altura, (Color){ 120, 90, 40, 120 });
-    DrawLine(largura - largura_cortina, 0, largura - largura_cortina, altura, (Color){ 120, 90, 40, 120 });
+    Partida partida;                /* lista de notas, pontos, medidor... */
+    MidiaPartida midia;             /* audio e fundo da musica atual */
 
-    /* Feixes de luz suaves (holofotes) projetados do topo */
-    Vector2 topo_esquerda = { largura * 0.2f, 0.0f };
-    Vector2 base_esquerda_1 = { 0.0f, (float)altura };
-    Vector2 base_esquerda_2 = { largura * 0.55f, (float)altura };
-    DrawTriangle(topo_esquerda, base_esquerda_1, base_esquerda_2, COR_LUZ_HOLOFOTE);
+    Ranking ranking;                /* ranking da musica que acabou de ser jogada */
+    int posicao_ranking;            /* posicao da ultima pontuacao (-1 = fora) */
+    char nome_jogador[TAMANHO_NOME];
+    char aviso_ranking[64];
 
-    Vector2 topo_direita = { largura * 0.8f, 0.0f };
-    Vector2 base_direita_1 = { largura * 0.45f, (float)altura };
-    Vector2 base_direita_2 = { (float)largura, (float)altura };
-    DrawTriangle(topo_direita, base_direita_1, base_direita_2, COR_LUZ_HOLOFOTE);
+    bool confirmar_saida;
+    bool deve_sair;
+    int foco_menu;                  /* item destacado pelo teclado */
+    int menu_anterior;
+    char mensagem_erro[160];
+} Jogo;
+
+/* Tabela fixa (somente leitura) que liga cada pista a uma tecla. */
+static const int TECLAS_PISTAS[TOTAL_PISTAS] = { KEY_D, KEY_F, KEY_G, KEY_J, KEY_K };
+
+static void iniciar_jogo(Jogo *jogo) {
+    jogo->tela = TELA_MENU_PRINCIPAL;
+    inicializar_catalogo(jogo->catalogo, &jogo->total_musicas);
+    jogo->criterio = ORDEM_TITULO_AZ;
+    ordenar_catalogo(jogo->catalogo, jogo->total_musicas, jogo->criterio);
+    jogo->indice_musica = 0;
+
+    iniciar_estrutura_partida(&jogo->partida);
+    iniciar_midia_partida(&jogo->midia);
+
+    iniciar_ranking(&jogo->ranking);
+    jogo->posicao_ranking = -1;
+    jogo->nome_jogador[0] = '\0';
+    jogo->aviso_ranking[0] = '\0';
+
+    jogo->confirmar_saida = false;
+    jogo->deve_sair = false;
+    jogo->foco_menu = 0;
+    jogo->menu_anterior = -2;   /* valor que nenhum menu usa: forca o primeiro ajuste de foco */
+    jogo->mensagem_erro[0] = '\0';
 }
 
-/*
- * Midia da musica em execucao: audio (stream) e imagem de fundo.
- * Carregada ao iniciar a partida e liberada ao sair dela.
- */
-static Music musica_em_execucao;
-static bool musica_em_execucao_carregada = false;
-static Texture2D fundo_partida;
-static bool fundo_partida_carregado = false;
-
-void descarregar_midia_partida(void) {
-    if (musica_em_execucao_carregada) {
-        StopMusicStream(musica_em_execucao);
-        UnloadMusicStream(musica_em_execucao);
-        musica_em_execucao_carregada = false;
-    }
-    if (fundo_partida_carregado) {
-        UnloadTexture(fundo_partida);
-        fundo_partida_carregado = false;
-    }
+static void liberar_jogo(Jogo *jogo) {
+    encerrar_partida(&jogo->partida);
+    descarregar_midia_partida(&jogo->midia);
 }
 
-void carregar_midia_partida(const Musica *musica) {
-    descarregar_midia_partida();
-
-    if (!IsAudioDeviceReady()) {
-        TraceLog(LOG_WARNING, "Dispositivo de audio indisponivel; partida sem som.");
-    } else if (!FileExists(musica->caminho_audio)) {
-        TraceLog(LOG_WARNING, "Audio nao encontrado: %s", musica->caminho_audio);
-    } else {
-        /*
-         * Buffer maior (~186 ms a 44.1 kHz) evita que o audio esvazie entre um
-         * quadro e outro, o que causava chiado/estalos.
-         */
-        SetAudioStreamBufferSizeDefault(8192);
-        musica_em_execucao = LoadMusicStream(musica->caminho_audio);
-        if (IsMusicValid(musica_em_execucao)) {
-            musica_em_execucao.looping = false;
-            musica_em_execucao_carregada = true;
-            PlayMusicStream(musica_em_execucao);
-        }
-    }
-
-    if (!FileExists(musica->caminho_fundo)) {
-        TraceLog(LOG_WARNING, "Fundo nao encontrado: %s", musica->caminho_fundo);
-    } else {
-        fundo_partida = LoadTexture(musica->caminho_fundo);
-        if (IsTextureValid(fundo_partida)) {
-            SetTextureFilter(fundo_partida, TEXTURE_FILTER_BILINEAR);
-            fundo_partida_carregado = true;
-        }
-    }
+static Musica *musica_atual(Jogo *jogo) {
+    return &jogo->catalogo[jogo->indice_musica];
 }
 
-/* Recomeca o audio do inicio (usado ao reiniciar a partida). */
-void reiniciar_musica_partida(void) {
-    if (musica_em_execucao_carregada) {
-        StopMusicStream(musica_em_execucao);
-        PlayMusicStream(musica_em_execucao);
-    }
-}
+/* ================= Inicio, reinicio e saida da partida ================= */
 
-/* Deve ser chamada a cada quadro para alimentar o stream de audio. */
-void atualizar_musica_partida(bool pausada) {
-    if (!musica_em_execucao_carregada) {
+/* Carrega notas e midia. So muda para a partida se as notas forem validas. */
+static void iniciar_partida(Jogo *jogo) {
+    Musica *musica = musica_atual(jogo);
+    if (!preparar_partida(&jogo->partida, musica->caminho_notas,
+                          jogo->mensagem_erro, sizeof(jogo->mensagem_erro))) {
+        TraceLog(LOG_WARNING, "%s: %s", musica->caminho_notas, jogo->mensagem_erro);
         return;
     }
-    if (pausada) {
-        PauseMusicStream(musica_em_execucao);
-    } else {
-        ResumeMusicStream(musica_em_execucao);
-        UpdateMusicStream(musica_em_execucao);
-    }
+    jogo->mensagem_erro[0] = '\0';
+    carregar_midia_partida(&jogo->midia, musica);
+    jogo->tela = TELA_PARTIDA;
 }
 
 /*
- * Desenha a imagem de fundo da musica cobrindo a tela inteira (sem distorcer),
- * com uma camada escura por cima para manter as notas legiveis.
+ * Usado por REINICIAR (pausa e Game Over) e JOGAR NOVAMENTE (resultados).
+ * Recarrega as notas; se falhar, a tela atual e mantida com a mensagem.
  */
-void desenhar_fundo_musica(int largura, int altura) {
-    if (!fundo_partida_carregado) {
+static void reiniciar_partida(Jogo *jogo) {
+    Musica *musica = musica_atual(jogo);
+    if (!preparar_partida(&jogo->partida, musica->caminho_notas,
+                          jogo->mensagem_erro, sizeof(jogo->mensagem_erro))) {
+        TraceLog(LOG_WARNING, "%s: %s", musica->caminho_notas, jogo->mensagem_erro);
         return;
     }
-    float escala_x = (float)largura / fundo_partida.width;
-    float escala_y = (float)altura / fundo_partida.height;
-    float escala = escala_x > escala_y ? escala_x : escala_y;
-    float largura_desenho = fundo_partida.width * escala;
-    float altura_desenho = fundo_partida.height * escala;
-    Rectangle origem = { 0, 0, (float)fundo_partida.width, (float)fundo_partida.height };
-    Rectangle destino = { (largura - largura_desenho) / 2.0f, (altura - altura_desenho) / 2.0f,
-                          largura_desenho, altura_desenho };
-    DrawTexturePro(fundo_partida, origem, destino, (Vector2){ 0, 0 }, 0.0f, WHITE);
-    DrawRectangle(0, 0, largura, altura, Fade(BLACK, 0.55f));
+    jogo->mensagem_erro[0] = '\0';
+    reiniciar_audio_partida(&jogo->midia);   /* audio e notas voltam juntos ao zero */
+    jogo->tela = TELA_PARTIDA;
 }
 
-/*
- * Desenha um botao com texto centralizado e efeito visual ao passar o mouse.
- * Retorna true caso o botao tenha sido clicado.
- */
-bool desenhar_botao(Rectangle retangulo, const char *texto, Vector2 mouse, int tamanho_fonte) {
-    bool mouse_em_cima = CheckCollisionPointRec(mouse, retangulo);
-    bool clicado = mouse_em_cima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-
-    Color cor_fundo = mouse_em_cima ? COR_BOTAO_FOCO_FUNDO : COR_BOTAO_FUNDO;
-    Color cor_borda = mouse_em_cima ? COR_BOTAO_FOCO_BORDA : COR_BOTAO_BORDA;
-    Color cor_texto = mouse_em_cima ? COR_BOTAO_FOCO_TEXTO : COR_BOTAO_TEXTO;
-
-    DrawRectangleRec(retangulo, cor_fundo);
-
-    float espessura_borda = mouse_em_cima ? 3.0f : 2.0f;
-    DrawRectangleLinesEx(retangulo, espessura_borda, cor_borda);
-
-    int largura_texto = MeasureText(texto, tamanho_fonte);
-    int posicao_x_texto = retangulo.x + (retangulo.width - largura_texto) / 2;
-    int posicao_y_texto = retangulo.y + (retangulo.height - tamanho_fonte) / 2;
-
-    DrawText(texto, posicao_x_texto, posicao_y_texto, tamanho_fonte, cor_texto);
-
-    return clicado;
+/* Libera a lista de notas e a midia, e vai para a tela de destino. */
+static void sair_da_partida(Jogo *jogo, EstadoTela destino) {
+    encerrar_partida(&jogo->partida);
+    descarregar_midia_partida(&jogo->midia);
+    jogo->mensagem_erro[0] = '\0';
+    jogo->tela = destino;
 }
 
-bool desenhar_botao_navegavel(Rectangle retangulo, const char *texto, Vector2 mouse,
-                             int tamanho_fonte, int *foco, int indice) {
-    bool selecionado = item_em_foco(retangulo, mouse, foco, indice);
-    bool clicado = desenhar_botao(retangulo, texto, mouse, tamanho_fonte);
-    if (selecionado) DrawRectangleLinesEx(retangulo, 4.0f, COR_DOURADO_BRILHO);
-    return clicado || (selecionado && IsKeyPressed(KEY_ENTER));
+static bool tela_de_partida(EstadoTela tela) {
+    return tela == TELA_PARTIDA || tela == TELA_REGISTRO_RANKING || tela == TELA_RESULTADOS;
 }
 
-/*
- * Renderiza o menu inicial com titulo em destaque e botoes de navegacao.
- */
-void desenhar_menu_principal(int largura, int altura, Vector2 mouse, EstadoTela *estado, bool *confirmar_saida, int *foco) {
-    navegar_menu(foco, 3);
-    desenhar_fundo_teatro(largura, altura);
+/* ================= Catalogo ================= */
 
-    /* Titulo principal: FINAL ACT cinematografico */
-    const char *titulo = "FINAL ACT";
-    int tamanho_titulo = altura * 0.13f;
-    if (tamanho_titulo < 64) tamanho_titulo = 64;
-    if (tamanho_titulo > 110) tamanho_titulo = 110;
-    int largura_titulo = MeasureText(titulo, tamanho_titulo);
-    int posicao_x_titulo = (largura - largura_titulo) / 2;
-    int posicao_y_titulo = altura * 0.16f;
+/* Reordena o catalogo com Merge Sort mantendo a mesma musica selecionada. */
+static void aplicar_ordenacao(Jogo *jogo, CriterioOrdenacao criterio) {
+    char titulo_selecionado[64];
+    strncpy(titulo_selecionado, musica_atual(jogo)->titulo, sizeof(titulo_selecionado) - 1);
+    titulo_selecionado[sizeof(titulo_selecionado) - 1] = '\0';
 
-    DrawText(titulo, posicao_x_titulo + 4, posicao_y_titulo + 4, tamanho_titulo, COR_SOMBRA_TEXTO);
-    DrawText(titulo, posicao_x_titulo, posicao_y_titulo, tamanho_titulo, COR_DOURADO);
+    jogo->criterio = criterio;
+    ordenar_catalogo(jogo->catalogo, jogo->total_musicas, criterio);
 
-    /* Subtitulo */
-    const char *subtitulo = "UM JOGO DE RITMO EM CENA";
-    int tamanho_subtitulo = 22;
-    int largura_subtitulo = MeasureText(subtitulo, tamanho_subtitulo);
-    int posicao_x_subtitulo = (largura - largura_subtitulo) / 2;
-    int posicao_y_subtitulo = posicao_y_titulo + tamanho_titulo + 14;
-    DrawText(subtitulo, posicao_x_subtitulo, posicao_y_subtitulo, tamanho_subtitulo, COR_DOURADO_BRILHO);
-
-    /* Medidas proporcionais dos botoes */
-    float largura_botao = largura * 0.38f;
-    if (largura_botao < 280.0f) largura_botao = 280.0f;
-    if (largura_botao > 440.0f) largura_botao = 440.0f;
-    float altura_botao = 60.0f;
-    float posicao_x_botao = (largura - largura_botao) / 2;
-    float inicio_y_botoes = altura * 0.44f;
-    float espaco_entre_botoes = 22.0f;
-
-    /* Botao JOGAR */
-    Rectangle ret_jogar = { posicao_x_botao, inicio_y_botoes, largura_botao, altura_botao };
-    if (desenhar_botao_navegavel(ret_jogar, "JOGAR", mouse, 26, foco, 0)) {
-        *estado = TELA_SELECAO_MUSICAS;
+    int novo_indice = buscar_indice_por_titulo(jogo->catalogo, jogo->total_musicas, titulo_selecionado);
+    if (novo_indice != -1) {
+        jogo->indice_musica = novo_indice;
     }
+}
 
-    /* Botao COMO JOGAR */
-    Rectangle ret_como_jogar = { posicao_x_botao, inicio_y_botoes + (altura_botao + espaco_entre_botoes), largura_botao, altura_botao };
-    if (desenhar_botao_navegavel(ret_como_jogar, "COMO JOGAR", mouse, 26, foco, 1)) {
-        *estado = TELA_COMO_JOGAR;
+/* ================= Ranking ================= */
+
+static void abrir_registro_ranking(Jogo *jogo) {
+    jogo->nome_jogador[0] = '\0';
+    jogo->mensagem_erro[0] = '\0';
+    jogo->tela = TELA_REGISTRO_RANKING;
+}
+
+/* Le as letras digitadas neste quadro e o Backspace. */
+static void ler_nome_jogador(Jogo *jogo) {
+    size_t tamanho = strlen(jogo->nome_jogador);
+    int caractere = GetCharPressed();
+    while (caractere > 0) {
+        if (caractere_valido_nome(caractere) && tamanho < TAMANHO_NOME - 1) {
+            jogo->nome_jogador[tamanho] = (char)caractere;
+            tamanho++;
+            jogo->nome_jogador[tamanho] = '\0';
+        }
+        caractere = GetCharPressed();
     }
-
-    /* Botao SAIR */
-    Rectangle ret_sair = { posicao_x_botao, inicio_y_botoes + 2 * (altura_botao + espaco_entre_botoes), largura_botao, altura_botao };
-    if (desenhar_botao_navegavel(ret_sair, "SAIR", mouse, 26, foco, 2)) {
-        *confirmar_saida = true;
+    if ((IsKeyPressed(KEY_BACKSPACE) || IsKeyPressedRepeat(KEY_BACKSPACE)) && tamanho > 0) {
+        jogo->nome_jogador[tamanho - 1] = '\0';
     }
 }
 
 /*
- * Desenha um botao compacto para a selecao de filtros de ordenacao.
- * Retorna true caso o botao tenha sido clicado.
+ * Carrega o ranking da musica e, se "salvar" for true, insere a pontuacao
+ * (Merge Sort acontece dentro de inserir_no_ranking) e grava o arquivo.
+ * Depois vai para a tela de resultados.
  */
-bool desenhar_botao_filtro(Rectangle retangulo, const char *texto, bool ativo, Vector2 mouse, int *foco, int indice) {
-    bool selecionado = item_em_foco(retangulo, mouse, foco, indice);
-    bool mouse_em_cima = CheckCollisionPointRec(mouse, retangulo);
-    bool clicado = mouse_em_cima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+static void concluir_registro_ranking(Jogo *jogo, bool salvar) {
+    Musica *musica = musica_atual(jogo);
+    jogo->posicao_ranking = -1;
+    bool leu = carregar_ranking(&jogo->ranking, musica->caminho_ranking);
 
-    Color cor_fundo = ativo ? (Color){ 95, 35, 110, 240 } : (mouse_em_cima ? COR_BOTAO_FOCO_FUNDO : COR_BOTAO_FUNDO);
-    Color cor_borda = ativo ? COR_DOURADO : (mouse_em_cima ? COR_BOTAO_FOCO_BORDA : COR_BOTAO_BORDA);
-    Color cor_texto = ativo ? COR_DOURADO_BRILHO : (mouse_em_cima ? COR_BOTAO_FOCO_TEXTO : COR_BOTAO_TEXTO);
-
-    DrawRectangleRec(retangulo, cor_fundo);
-    DrawRectangleLinesEx(retangulo, ativo ? 2.5f : 1.5f, cor_borda);
-
-    int tamanho_fonte = 19;
-    int largura_texto = MeasureText(texto, tamanho_fonte);
-    int pos_x = retangulo.x + (retangulo.width - largura_texto) / 2;
-    int pos_y = retangulo.y + (retangulo.height - tamanho_fonte) / 2;
-
-    DrawText(texto, pos_x, pos_y, tamanho_fonte, cor_texto);
-
-    if (selecionado) DrawRectangleLinesEx(retangulo, 4.0f, COR_DOURADO_BRILHO);
-    return clicado || (selecionado && IsKeyPressed(KEY_ENTER));
-}
-
-/*
- * Desenha a tela de selecao de musicas do catalogo.
- * Exibe a lista de musicas, opcoes de ordenacao por Merge Sort,
- * detalhes da faixa selecionada e botao para iniciar a partida.
- */
-void desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse, EstadoTela *estado,
-                                   Musica catalogo[], int total_musicas,
-                                   int *indice_selecionado, bool *confirmado,
-                                   CriterioOrdenacao *criterio_atual,
-                                   Nota **cabeca_notas, float *tempo_partida,
-                                   int *pontuacao, int *combo, int *maior_combo,
-                                   int *notas_acertadas, int *notas_perdidas,
-                                   char *erro_carregamento, size_t tamanho_erro, int *foco) {
-    /* Ordem de foco: tres filtros, musicas, iniciar e voltar. */
-    int foco_anterior = *foco;
-    if (*foco < 3 && (IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_RIGHT))) {
-        *foco = (*foco + (IsKeyPressed(KEY_LEFT) ? 2 : 1)) % 3;
-    } else if (*foco >= 3 && *foco < total_musicas + 3 && IsKeyPressed(KEY_RIGHT)) {
-        *foco = total_musicas + 3;
-    } else if (*foco == total_musicas + 3 && IsKeyPressed(KEY_LEFT)) {
-        *foco = *indice_selecionado + 3;
+    if (!salvar) {
+        snprintf(jogo->aviso_ranking, sizeof(jogo->aviso_ranking), "Pontuacao nao registrada.");
+    } else if (!leu) {
+        /* Gravar agora apagaria o ranking antigo que nao foi lido. */
+        snprintf(jogo->aviso_ranking, sizeof(jogo->aviso_ranking), "Erro ao ler o ranking; nada foi salvo.");
     } else {
-        navegar_menu(foco, total_musicas + 5);
-    }
-    if (*foco != foco_anterior && *foco >= 3 && *foco < total_musicas + 3) {
-        *indice_selecionado = *foco - 3;
-        *confirmado = false;
-        erro_carregamento[0] = '\0';
-    }
-    desenhar_fundo_teatro(largura, altura);
-
-    /* Titulo da secao */
-    const char *titulo = "SELECAO DE MUSICAS";
-    int tamanho_titulo = 36;
-    int largura_titulo = MeasureText(titulo, tamanho_titulo);
-    DrawText(titulo, (largura - largura_titulo) / 2, altura * 0.04f, tamanho_titulo, COR_DOURADO);
-
-    /* Area principal dividida em duas colunas */
-    float margem_x = largura * 0.06f;
-    float topo_y = altura * 0.11f;
-    float largura_util = largura - (2 * margem_x);
-    float altura_paineis = altura * 0.76f;
-
-    float largura_coluna_esquerda = largura_util * 0.485f;
-    float largura_coluna_direita = largura_util * 0.485f;
-    float espaco_colunas = largura_util * 0.03f;
-
-    float x_coluna_esquerda = margem_x;
-    float x_coluna_direita = margem_x + largura_coluna_esquerda + espaco_colunas;
-
-    /* ---- COLUNA ESQUERDA: LISTA DE MUSICAS E FILTROS ---- */
-    Rectangle painel_lista = { x_coluna_esquerda, topo_y, largura_coluna_esquerda, altura_paineis };
-    DrawRectangleRec(painel_lista, COR_PAINEL_FUNDO);
-    DrawRectangleLinesEx(painel_lista, 2.0f, (Color){ 140, 100, 50, 200 });
-
-    DrawText("ORDENAR CATALOGO (MERGE SORT)", x_coluna_esquerda + 18, topo_y + 12, 20, COR_DOURADO_BRILHO);
-
-    /* Botoes de selecao do criterio de ordenacao */
-    float largura_botao_filtro = (largura_coluna_esquerda - 40.0f) / 3.0f;
-    float altura_botao_filtro = 46.0f;
-    float pos_y_filtros = topo_y + 40.0f;
-
-    Rectangle ret_filtro_az = { x_coluna_esquerda + 15, pos_y_filtros, largura_botao_filtro, altura_botao_filtro };
-    Rectangle ret_filtro_cresc = { x_coluna_esquerda + 15 + largura_botao_filtro + 5, pos_y_filtros, largura_botao_filtro, altura_botao_filtro };
-    Rectangle ret_filtro_decr = { x_coluna_esquerda + 15 + 2 * (largura_botao_filtro + 5), pos_y_filtros, largura_botao_filtro, altura_botao_filtro };
-
-    CriterioOrdenacao novo_criterio = *criterio_atual;
-    bool trocou_criterio = false;
-
-    if (desenhar_botao_filtro(ret_filtro_az, "Titulo A-Z", (*criterio_atual == ORDEM_TITULO_AZ), mouse, foco, 0)) {
-        if (*criterio_atual != ORDEM_TITULO_AZ) {
-            novo_criterio = ORDEM_TITULO_AZ;
-            trocou_criterio = true;
-        }
-    }
-
-    if (desenhar_botao_filtro(ret_filtro_cresc, "Dif. Cresc.", (*criterio_atual == ORDEM_DIFICULDADE_CRESCENTE), mouse, foco, 1)) {
-        if (*criterio_atual != ORDEM_DIFICULDADE_CRESCENTE) {
-            novo_criterio = ORDEM_DIFICULDADE_CRESCENTE;
-            trocou_criterio = true;
-        }
-    }
-
-    if (desenhar_botao_filtro(ret_filtro_decr, "Dif. Decr.", (*criterio_atual == ORDEM_DIFICULDADE_DECRESCENTE), mouse, foco, 2)) {
-        if (*criterio_atual != ORDEM_DIFICULDADE_DECRESCENTE) {
-            novo_criterio = ORDEM_DIFICULDADE_DECRESCENTE;
-            trocou_criterio = true;
-        }
-    }
-
-    /* Se o usuario clicou em um novo filtro, reordena preservando a musica selecionada */
-    if (trocou_criterio) {
-        char titulo_selecionado[64] = "";
-        if (*indice_selecionado >= 0 && *indice_selecionado < total_musicas) {
-            strncpy(titulo_selecionado, catalogo[*indice_selecionado].titulo, sizeof(titulo_selecionado) - 1);
-            titulo_selecionado[sizeof(titulo_selecionado) - 1] = '\0';
-        }
-
-        *criterio_atual = novo_criterio;
-        ordenar_catalogo(catalogo, total_musicas, *criterio_atual);
-
-        /* Localiza a nova posicao da musica no vetor ordenado */
-        if (titulo_selecionado[0] != '\0') {
-            int novo_indice = buscar_indice_por_titulo(catalogo, total_musicas, titulo_selecionado);
-            if (novo_indice != -1) {
-                *indice_selecionado = novo_indice;
-            }
-        }
-    }
-
-    DrawLine(x_coluna_esquerda + 15, pos_y_filtros + altura_botao_filtro + 10, x_coluna_esquerda + largura_coluna_esquerda - 15, pos_y_filtros + altura_botao_filtro + 10, (Color){ 120, 90, 40, 150 });
-
-    /* Distribuicao dinamica e equilibrada dos 5 cartoes de musica */
-    float inicio_y_itens = pos_y_filtros + altura_botao_filtro + 18.0f;
-    float espaco_disponivel_itens = altura_paineis - (inicio_y_itens - topo_y) - 15.0f;
-    
-    float altura_item = espaco_disponivel_itens * 0.165f;
-    if (altura_item < 64.0f) altura_item = 64.0f;
-    if (altura_item > 92.0f) altura_item = 92.0f;
-
-    float espaco_entre_itens = (espaco_disponivel_itens - (total_musicas * altura_item)) / (total_musicas - 1);
-    if (espaco_entre_itens < 6.0f) espaco_entre_itens = 6.0f;
-    if (espaco_entre_itens > 18.0f) espaco_entre_itens = 18.0f;
-
-    for (int i = 0; i < total_musicas; i++) {
-        Rectangle ret_item = {
-            x_coluna_esquerda + 15,
-            inicio_y_itens + (i * (altura_item + espaco_entre_itens)),
-            largura_coluna_esquerda - 30,
-            altura_item
-        };
-
-        bool mouse_em_cima = CheckCollisionPointRec(mouse, ret_item);
-        bool tem_foco = item_em_foco(ret_item, mouse, foco, i + 3);
-        bool esta_selecionada = (*indice_selecionado == i);
-
-        /* Se o usuario clicar na musica da lista, atualiza a selecao */
-        if ((mouse_em_cima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ||
-            (tem_foco && IsKeyPressed(KEY_ENTER))) {
-            *indice_selecionado = i;
-            *confirmado = false;
-            erro_carregamento[0] = '\0';
-        }
-
-        /* Cores do item de acordo com o estado */
-        Color cor_fundo_item = COR_BOTAO_FUNDO;
-        Color cor_borda_item = COR_BOTAO_BORDA;
-
-        if (esta_selecionada) {
-            cor_fundo_item = (Color){ 110, 40, 125, 250 };
-            cor_borda_item = COR_DOURADO;
-        } else if (mouse_em_cima) {
-            cor_fundo_item = COR_BOTAO_FOCO_FUNDO;
-            cor_borda_item = COR_BOTAO_FOCO_BORDA;
-        }
-
-        DrawRectangleRec(ret_item, cor_fundo_item);
-        DrawRectangleLinesEx(ret_item, esta_selecionada ? 3.5f : 1.5f, cor_borda_item);
-        if (tem_foco) DrawRectangleLinesEx(ret_item, 4.0f, COR_DOURADO_BRILHO);
-
-        /* Barra vertical dourada marcante na lateral esquerda do item selecionado */
-        float offset_texto_x = 14.0f;
-        if (esta_selecionada) {
-            DrawRectangle(ret_item.x, ret_item.y, 8, ret_item.height, COR_DOURADO);
-            offset_texto_x = 22.0f;
-        }
-
-        /* Titulo da musica com fonte expressiva (26px) */
-        float pos_y_titulo = ret_item.y + (altura_item * 0.16f);
-        DrawText(catalogo[i].titulo, ret_item.x + offset_texto_x, pos_y_titulo, 26, (esta_selecionada ? COR_DOURADO : WHITE));
-
-        /* Filme de origem e dificuldade (19px) */
-        char info_sub[96];
-        snprintf(info_sub, sizeof(info_sub), "%s   *   Dificuldade: Nivel %d", catalogo[i].filme, catalogo[i].dificuldade);
-        float pos_y_sub = ret_item.y + (altura_item * 0.54f);
-        DrawText(info_sub, ret_item.x + offset_texto_x, pos_y_sub, 19, (Color){ 215, 205, 225, 230 });
-    }
-
-    /* ---- COLUNA DIREITA: DETALHES DA MUSICA SELECIONADA ---- */
-    Rectangle painel_detalhes = { x_coluna_direita, topo_y, largura_coluna_direita, altura_paineis };
-    DrawRectangleRec(painel_detalhes, COR_PAINEL_FUNDO);
-    DrawRectangleLinesEx(painel_detalhes, 2.0f, (Color){ 140, 100, 50, 200 });
-
-    DrawText("DETALHES DA FAIXA", x_coluna_direita + 20, topo_y + 12, 22, COR_DOURADO_BRILHO);
-    DrawLine(x_coluna_direita + 20, topo_y + 42, x_coluna_direita + largura_coluna_direita - 20, topo_y + 42, (Color){ 120, 90, 40, 150 });
-
-    /* Validacao da selecao */
-    if (*indice_selecionado >= 0 && *indice_selecionado < total_musicas) {
-        Musica musica = catalogo[*indice_selecionado];
-
-        /* Título */
-        DrawText("Titulo:", x_coluna_direita + 25, topo_y + 54, 19, (Color){ 195, 185, 205, 255 });
-        DrawText(musica.titulo, x_coluna_direita + 25, topo_y + 78, 36, COR_DOURADO);
-
-        /* Filme */
-        DrawText("Filme Musical:", x_coluna_direita + 25, topo_y + 130, 19, (Color){ 195, 185, 205, 255 });
-        DrawText(musica.filme, x_coluna_direita + 25, topo_y + 154, 25, WHITE);
-
-        /* Nivel de Dificuldade */
-        DrawText("Dificuldade:", x_coluna_direita + 25, topo_y + 200, 19, (Color){ 195, 185, 205, 255 });
-
-        char texto_nivel[32];
-        snprintf(texto_nivel, sizeof(texto_nivel), "Nivel %d de 5", musica.dificuldade);
-        DrawText(texto_nivel, x_coluna_direita + 25, topo_y + 224, 22, COR_DOURADO_BRILHO);
-
-        /* Indicador visual com blocos para a dificuldade */
-        for (int d = 1; d <= 5; d++) {
-            Rectangle ret_dif = { x_coluna_direita + 25 + (d - 1) * 44, topo_y + 258, 36, 20 };
-            if (d <= musica.dificuldade) {
-                DrawRectangleRec(ret_dif, COR_DOURADO);
-            } else {
-                DrawRectangleRec(ret_dif, (Color){ 60, 40, 70, 200 });
-                DrawRectangleLinesEx(ret_dif, 1.0f, (Color){ 120, 90, 130, 200 });
-            }
-        }
-
-        /* Botao INICIAR PARTIDA */
-        float largura_botao_sel = largura_coluna_direita - 50;
-        Rectangle ret_selecionar = { x_coluna_direita + 25, topo_y + 300, largura_botao_sel, 56 };
-
-        bool iniciar_pela_lista = *foco >= 3 && *foco < total_musicas + 3 && IsKeyPressed(KEY_ENTER);
-        if (desenhar_botao_navegavel(ret_selecionar, "INICIAR PARTIDA", mouse, 24, foco, total_musicas + 3) || iniciar_pela_lista) {
-            if (carregar_notas_arquivo(cabeca_notas, musica.caminho_notas,
-                                      erro_carregamento, tamanho_erro)) {
-                *confirmado = true;
-
-                /* Zera cronometro e pontuacoes somente apos carregar tudo. */
-                *tempo_partida = 0.0f;
-                *pontuacao = 0;
-                *combo = 0;
-                *maior_combo = 0;
-                *notas_acertadas = 0;
-                *notas_perdidas = 0;
-
-                /* Transita para a tela de partida */
-                *estado = TELA_PARTIDA;
-            } else {
-                TraceLog(LOG_WARNING, "%s: %s", musica.caminho_notas, erro_carregamento);
-            }
-        }
-
-        /* Dica explicativa */
-        if (erro_carregamento[0] != '\0') {
-            DrawText(erro_carregamento, x_coluna_direita + 25, topo_y + 365, 14, RED);
+        int posicao = inserir_no_ranking(&jogo->ranking, jogo->nome_jogador, jogo->partida.pontuacao);
+        if (!salvar_ranking(&jogo->ranking, musica->caminho_ranking)) {
+            carregar_ranking(&jogo->ranking, musica->caminho_ranking);
+            snprintf(jogo->aviso_ranking, sizeof(jogo->aviso_ranking), "Nao foi possivel salvar o ranking.");
+            TraceLog(LOG_WARNING, "Falha ao gravar %s", musica->caminho_ranking);
+        } else if (posicao >= 0) {
+            jogo->posicao_ranking = posicao;
+            snprintf(jogo->aviso_ranking, sizeof(jogo->aviso_ranking), "Voce ficou em %do lugar!", posicao + 1);
         } else {
-            DrawText("Pressione INICIAR PARTIDA para jogar com a lista encadeada.", x_coluna_direita + 25, topo_y + 375, 16, (Color){ 200, 190, 210, 220 });
+            snprintf(jogo->aviso_ranking, sizeof(jogo->aviso_ranking), "Pontuacao fora do top %d.", MAX_RANKING);
         }
-    } else {
-        /* Mensagem orientando o jogador a selecionar */
-        const char *aviso = "Clique em uma musica da lista ao lado\npara visualizar seus detalhes.";
-        DrawText(aviso, x_coluna_direita + 25, topo_y + 130, 20, (Color){ 200, 190, 210, 200 });
     }
+    jogo->tela = TELA_RESULTADOS;
+}
 
-    /* ---- BOTAO VOLTAR AO MENU ---- */
-    float largura_voltar = 260.0f;
-    float altura_voltar = 50.0f;
-    Rectangle ret_voltar = { (largura - largura_voltar) / 2, altura * 0.89f, largura_voltar, altura_voltar };
+/* ================= Atualizacao (sem desenhar) ================= */
 
-    if (desenhar_botao_navegavel(ret_voltar, "VOLTAR AO MENU", mouse, 24, foco, total_musicas + 4)) {
-        *estado = TELA_MENU_PRINCIPAL;
+static void ler_teclas_pressionadas(bool pressionadas[TOTAL_PISTAS]) {
+    for (int pista = 0; pista < TOTAL_PISTAS; pista++) {
+        pressionadas[pista] = IsKeyPressed(TECLAS_PISTAS[pista]);
     }
 }
 
-/* O semicirculo cresce do vermelho (esquerda) ao verde (direita). */
-void desenhar_medidor(int largura, int altura, int valor) {
-    float raio = largura * 0.085f;
-    if (raio > 110.0f) raio = 110.0f;
-    Vector2 centro = { largura * 0.11f, altura * 0.48f };
-    const int segmentos = 100;
-    for (int i = 0; i < segmentos; i++) {
-        float angulo_inicio = PI + PI * i / segmentos;
-        float angulo_fim = PI + PI * (i + 1) / segmentos;
-        Vector2 inicio = { centro.x + cosf(angulo_inicio) * raio,
-                           centro.y + sinf(angulo_inicio) * raio };
-        Vector2 fim = { centro.x + cosf(angulo_fim) * raio,
-                        centro.y + sinf(angulo_fim) * raio };
-        Color cor = i < LIMITE_VERMELHO ? (Color){ 225, 65, 80, 255 } :
-                    (i < LIMITE_VERDE ? COR_DOURADO : (Color){ 45, 210, 125, 255 });
-        DrawLineEx(inicio, fim, raio * 0.15f, cor);
+static void ler_teclas_seguradas(bool seguradas[TOTAL_PISTAS]) {
+    for (int pista = 0; pista < TOTAL_PISTAS; pista++) {
+        seguradas[pista] = IsKeyDown(TECLAS_PISTAS[pista]);
     }
-    float angulo = PI + PI * valor / DESEMPENHO_MAXIMO;
-    Vector2 ponta = { centro.x + cosf(angulo) * raio * 0.8f,
-                      centro.y + sinf(angulo) * raio * 0.8f };
-    DrawLineEx(centro, ponta, 3.0f, WHITE);
-    DrawCircleV(centro, 5.0f, COR_DOURADO);
-    int fonte = raio < 75.0f ? 12 : 16;
-    const char *titulo = "DESEMPENHO";
-    DrawText(titulo, centro.x - MeasureText(titulo, fonte) / 2, centro.y - raio - 32,
-             fonte, COR_DOURADO);
-    char texto[32];
-    snprintf(texto, sizeof(texto), "%d / 100", valor);
-    DrawText(texto, centro.x - MeasureText(texto, fonte) / 2, centro.y + 15, fonte, WHITE);
 }
 
-/* Gerencia a partida usando a lista de notas e a posicao calculada pelo tempo. */
-void desenhar_tela_partida(int largura, int altura, bool pausada, Desempenho *desempenho,
-                           Musica musica_atual, Nota **cabeca_notas,
-                           float *tempo_partida, int *pontuacao, int *combo,
-                           int *maior_combo, int *notas_acertadas, int *notas_perdidas,
-                           float *tempo_feedback, int *pista_feedback) {
-    desenhar_fundo_teatro(largura, altura);
-    desenhar_fundo_musica(largura, altura);
-
-    /* Atualiza o tempo decorrido da partida em segundos */
-    bool bloqueada = pausada || desempenho->game_over;
-    float delta = bloqueada ? 0.0f : GetFrameTime();
-    *tempo_partida += delta;
-
-    /* Atualiza feedback de acerto */
-    if (*tempo_feedback > 0.0f) {
-        *tempo_feedback -= delta;
+/* O ESC e tratado uma unica vez por quadro, conforme a tela atual. */
+static void tratar_tecla_esc(Jogo *jogo) {
+    if (!IsKeyPressed(KEY_ESCAPE)) {
+        return;
     }
-
-    /* Leitura das teclas de acerto D, F, G, J, K */
-    int teclas[] = { KEY_D, KEY_F, KEY_G, KEY_J, KEY_K };
-
-    for (int p = 0; p < TOTAL_PISTAS; p++) {
-        if (!bloqueada && !desempenho->game_over && IsKeyPressed(teclas[p])) {
-            /* Verifica se ha acerto na lista encadeada */
-            if (verificar_acerto(*cabeca_notas, p, *tempo_partida, 0.20f)) {
-                *pontuacao += 100 + (*combo * 10);
-                (*combo)++;
-                if (*combo > *maior_combo) {
-                    *maior_combo = *combo;
-                }
-                (*notas_acertadas)++;
-                registrar_desempenho(desempenho, true);
-                *pista_feedback = p;
-                *tempo_feedback = 0.30f;
+    jogo->mensagem_erro[0] = '\0';
+    if (jogo->confirmar_saida) {
+        jogo->confirmar_saida = false;
+        return;
+    }
+    switch (jogo->tela) {
+        case TELA_RESULTADOS:
+            sair_da_partida(jogo, TELA_SELECAO_MUSICAS);
+            break;
+        case TELA_REGISTRO_RANKING:
+            concluir_registro_ranking(jogo, false);
+            break;
+        case TELA_PARTIDA:
+            if (jogo->partida.desempenho.game_over) {
+                sair_da_partida(jogo, TELA_SELECAO_MUSICAS);
             } else {
-                *combo = 0;
-                registrar_desempenho(desempenho, false);
+                jogo->partida.pausada = !jogo->partida.pausada;
             }
-        }
+            break;
+        case TELA_MENU_PRINCIPAL:
+            jogo->confirmar_saida = true;
+            break;
+        default:
+            jogo->tela = TELA_MENU_PRINCIPAL;
+            break;
     }
-
-    /* Atualiza notas que ultrapassaram a linha sem acerto */
-    if (!bloqueada && !desempenho->game_over) {
-        int perdas_anteriores = *notas_perdidas;
-        atualizar_notas(*cabeca_notas, *tempo_partida, 0.22f, combo, notas_perdidas);
-        /* Cada nota perdida e penalizada uma unica vez, inclusive em acordes. */
-        for (int i = perdas_anteriores; i < *notas_perdidas; i++) {
-            registrar_desempenho(desempenho, false);
-        }
-    }
-
-    /* Cores das 5 pistas (Guitar Hero) */
-    Color cores_pistas[] = {
-        (Color){ 225, 50, 110, 255 },  /* Pista 0: D (Rosa / Vinho) */
-        (Color){ 50, 140, 245, 255 },  /* Pista 1: F (Azul Vibrante) */
-        (Color){ 245, 195, 65, 255 },  /* Pista 2: G (Dourado Ouro) */
-        (Color){ 45, 210, 125, 255 },  /* Pista 3: J (Verde Esmeralda) */
-        (Color){ 180, 90, 245, 255 }   /* Pista 4: K (Roxo) */
-    };
-
-    /* 
-     * Geometria em Perspectiva 3D (Guitar Hero):
-     * A pista forma um trapezio que converge para o horizonte no topo da tela.
-     */
-    float centro_x = largura / 2.0f;
-    float y_topo = altura * 0.16f;        /* Linha do horizonte da pista */
-    float y_base = altura * 0.94f;        /* Fim da pista perto do jogador */
-    float y_alvo = altura * 0.82f;        /* Linha exata de acerto */
-
-    float largura_topo = largura * 0.20f; /* Pista estreita no horizonte */
-    float largura_base = largura * 0.56f; /* Pista larga perto do jogador */
-
-    /* Quatro vertices do trapezio da pista */
-    Vector2 p_topo_esq = { centro_x - (largura_topo / 2.0f), y_topo };
-    Vector2 p_topo_dir = { centro_x + (largura_topo / 2.0f), y_topo };
-    Vector2 p_base_dir = { centro_x + (largura_base / 2.0f), y_base };
-    Vector2 p_base_esq = { centro_x - (largura_base / 2.0f), y_base };
-
-    /* Desenha o corpo da pista com dois triangulos */
-    DrawTriangle(p_topo_esq, p_base_esq, p_base_dir, (Color){ 16, 9, 24, 235 });
-    DrawTriangle(p_topo_esq, p_base_dir, p_topo_dir, (Color){ 16, 9, 24, 235 });
-
-    /* Brilho suave no horizonte da pista */
-    Vector2 centro_horizonte = { centro_x, y_topo };
-    /* A raylib 5.5 recebe coordenadas inteiras; a 6 recebe Vector2. */
-#if RAYLIB_VERSION_MAJOR >= 6
-    DrawCircleGradient(centro_horizonte, largura_topo * 0.6f, (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
-#else
-    DrawCircleGradient((int)centro_horizonte.x, (int)centro_horizonte.y, largura_topo * 0.6f,
-                       (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
-#endif
-
-    /* Linhas divisórias das pistas convergindo para a perspectiva */
-    for (int p = 0; p <= TOTAL_PISTAS; p++) {
-        float fracao = p / (float)TOTAL_PISTAS;
-        Vector2 inicio_div = { (centro_x - largura_topo / 2.0f) + (fracao * largura_topo), y_topo };
-        Vector2 fim_div    = { (centro_x - largura_base / 2.0f) + (fracao * largura_base), y_base };
-
-        if (p == 0 || p == TOTAL_PISTAS) {
-            /* Bordas externas da pista em dourado iluminado */
-            DrawLineEx(inicio_div, fim_div, 3.0f, COR_DOURADO);
-        } else {
-            /* Linhas internas divisórias sutis */
-            DrawLineEx(inicio_div, fim_div, 1.5f, (Color){ 110, 70, 120, 160 });
-        }
-    }
-
-    /* Linha de acerto em perspectiva no plano y_alvo */
-    float fator_alvo = (y_alvo - y_topo) / (y_base - y_topo);
-    float largura_alvo = largura_topo + (largura_base - largura_topo) * fator_alvo;
-    float x_alvo_esq = centro_x - (largura_alvo / 2.0f);
-    float x_alvo_dir = centro_x + (largura_alvo / 2.0f);
-
-    /* Faixa de acerto dourada luminosa */
-    Vector2 linha_alvo_inicio = { x_alvo_esq, y_alvo };
-    Vector2 linha_alvo_fim = { x_alvo_dir, y_alvo };
-    DrawLineEx(linha_alvo_inicio, linha_alvo_fim, 6.0f, COR_DOURADO);
-    DrawLineEx(linha_alvo_inicio, linha_alvo_fim, 2.0f, WHITE);
-
-    /* Teclas receptoras na base da linha de acerto */
-    const char *nomes_teclas[] = { "D", "F", "G", "J", "K" };
-    float largura_coluna_alvo = largura_alvo / (float)TOTAL_PISTAS;
-
-    for (int p = 0; p < TOTAL_PISTAS; p++) {
-        float cx_rec = x_alvo_esq + (p + 0.5f) * largura_coluna_alvo;
-        float larg_rec = largura_coluna_alvo * 0.85f;
-        float alt_rec = 34.0f;
-
-        Rectangle ret_rec = { cx_rec - (larg_rec / 2.0f), y_alvo - (alt_rec / 2.0f), larg_rec, alt_rec };
-        bool ativa = IsKeyDown(teclas[p]);
-
-        Color cor_fundo_rec = ativa ? cores_pistas[p] : (Color){ 35, 18, 48, 230 };
-        Color cor_borda_rec = ativa ? WHITE : cores_pistas[p];
-
-        DrawRectangleRec(ret_rec, cor_fundo_rec);
-        DrawRectangleLinesEx(ret_rec, ativa ? 3.5f : 2.0f, cor_borda_rec);
-
-        /* Se ativa, desenha feixe de luz ascendente na pista */
-        if (ativa) {
-            float fracao_esq = (float)p / (float)TOTAL_PISTAS;
-            float fracao_dir = (float)(p + 1) / (float)TOTAL_PISTAS;
-            Vector2 t_esq = { (centro_x - largura_topo / 2.0f) + (fracao_esq * largura_topo), y_topo };
-            Vector2 t_dir = { (centro_x - largura_topo / 2.0f) + (fracao_dir * largura_topo), y_topo };
-            Vector2 b_esq = { (centro_x - largura_base / 2.0f) + (fracao_esq * largura_base), y_alvo };
-            Vector2 b_dir = { (centro_x - largura_base / 2.0f) + (fracao_dir * largura_base), y_alvo };
-
-            Color cor_feixe = cores_pistas[p];
-            cor_feixe.a = 40;
-            DrawTriangle(t_esq, b_esq, b_dir, cor_feixe);
-            DrawTriangle(t_esq, b_dir, t_dir, cor_feixe);
-        }
-
-        /* Letra indicativa da tecla */
-        int larg_letra = MeasureText(nomes_teclas[p], 24);
-        DrawText(nomes_teclas[p], cx_rec - (larg_letra / 2), y_alvo - 12, 24, WHITE);
-    }
-
-    /* 
-     * Desenho das notas da lista encadeada com perspectiva e aceleracao optica:
-     * O tempo de antecedencia define a visibilidade da nota a partir do horizonte.
-     */
-    float tempo_antecedencia = 1.9f;
-
-    Nota *atual = *cabeca_notas;
-    while (atual != NULL) {
-        if (atual->estado == NOTA_PENDENTE) {
-            float tempo_restante = atual->tempo_alvo - *tempo_partida;
-            float progresso_tempo = 1.0f - (tempo_restante / tempo_antecedencia);
-
-            /* A nota e visivel desde o horizonte (0.0) ate um pouco apos o acerto (1.15) */
-            if (progresso_tempo >= 0.0f && progresso_tempo <= 1.15f) {
-                /* Curva exponencial de perspectiva: acelera suavemente conforme se aproxima */
-                float fator_curva = (float)pow(progresso_tempo, 1.55);
-                float pos_y_nota = y_topo + (y_alvo - y_topo) * fator_curva;
-
-                /* Largura da pista e da nota na coordenada Y atual */
-                float fator_largura = (pos_y_nota - y_topo) / (y_base - y_topo);
-                if (fator_largura < 0.0f) fator_largura = 0.0f;
-                if (fator_largura > 1.0f) fator_largura = 1.0f;
-
-                float largura_pista_y = largura_topo + (largura_base - largura_topo) * fator_largura;
-                float x_esq_y = centro_x - (largura_pista_y / 2.0f);
-                float largura_coluna_y = largura_pista_y / (float)TOTAL_PISTAS;
-
-                float cx_nota = x_esq_y + (atual->pista + 0.5f) * largura_coluna_y;
-                float larg_nota = largura_coluna_y * 0.85f;
-                float alt_nota = 14.0f + (18.0f * fator_largura);
-
-                Rectangle ret_nota = {
-                    cx_nota - (larg_nota / 2.0f),
-                    pos_y_nota - (alt_nota / 2.0f),
-                    larg_nota,
-                    alt_nota
-                };
-
-                /* Desenho da nota com corpo colorido, borda branca e reflexo superior */
-                DrawRectangleRec(ret_nota, cores_pistas[atual->pista]);
-                DrawRectangleLinesEx(ret_nota, 2.0f, WHITE);
-                DrawRectangle(ret_nota.x + 3, ret_nota.y + 2, ret_nota.width - 6, alt_nota * 0.35f, (Color){ 255, 255, 255, 170 });
-            }
-        }
-        atual = atual->proximo;
-    }
-
-    /* Painel HUD Superior: Informacoes da musica e pontuacao */
-    desenhar_medidor(largura, altura, desempenho->valor);
-    DrawText(musica_atual.titulo, 35, 25, 26, COR_DOURADO);
-    DrawText(musica_atual.filme, 35, 58, 19, (Color){ 215, 205, 225, 230 });
-
-    /* Canto Superior Direito: Pontuacao e Combo */
-    char texto_pontos[64];
-    snprintf(texto_pontos, sizeof(texto_pontos), "PONTOS: %d", *pontuacao);
-    int larg_pontos = MeasureText(texto_pontos, 26);
-    DrawText(texto_pontos, largura - larg_pontos - 35, 25, 26, COR_DOURADO);
-
-    if (*combo > 0) {
-        char texto_combo[32];
-        snprintf(texto_combo, sizeof(texto_combo), "COMBO: %dx", *combo);
-        int larg_combo = MeasureText(texto_combo, 24);
-        DrawText(texto_combo, largura - larg_combo - 35, 58, 24, (Color){ 140, 255, 170, 255 });
-    }
-
-    /* Feedback visual de acerto com efeito de impacto */
-    if (*tempo_feedback > 0.0f) {
-        const char *txt_feedback = "PERFEITO!";
-        int larg_fb = MeasureText(txt_feedback, 30);
-        DrawText(txt_feedback, (largura - larg_fb) / 2, y_alvo - 75, 30, COR_DOURADO_BRILHO);
-    }
-
-    const char *aviso_esc = "Pressione [ESC] para pausar";
-    int larg_esc = MeasureText(aviso_esc, 18);
-    DrawText(aviso_esc, (largura - larg_esc) / 2, altura - 28, 18, (Color){ 190, 180, 200, 220 });
-
 }
 
 /*
- * Renderiza a tela explicativa de instrucoes do jogo.
+ * Um quadro da partida: o audio anda (ou pausa), o relogio e calculado
+ * a partir dele e as regras sao aplicadas. Nada e desenhado aqui.
  */
-void desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, EstadoTela *estado, int *foco) {
-    navegar_menu(foco, 1);
-    desenhar_fundo_teatro(largura, altura);
+static void atualizar_tela_partida(Jogo *jogo) {
+    Partida *partida = &jogo->partida;
+    bool bloqueada = partida_bloqueada(partida);
 
-    /* Painel centralizado amplo */
-    float largura_quadro = largura * 0.82f;
-    float altura_quadro = altura * 0.72f;
-    float quadro_x = (largura - largura_quadro) / 2;
-    float quadro_y = altura * 0.12f;
+    atualizar_audio_partida(&jogo->midia, bloqueada);
+    float novo_tempo = calcular_tempo_partida(partida->tempo, GetFrameTime(), bloqueada,
+                                              audio_esta_tocando(&jogo->midia),
+                                              tempo_audio_partida(&jogo->midia));
+    bool teclas[TOTAL_PISTAS];
+    ler_teclas_pressionadas(teclas);
+    atualizar_partida(partida, novo_tempo, teclas);
 
-    Rectangle quadro = { quadro_x, quadro_y, largura_quadro, altura_quadro };
-    DrawRectangleRec(quadro, (Color){ 28, 14, 38, 235 });
-    DrawRectangleLinesEx(quadro, 2.0f, COR_DOURADO);
-
-    /* Titulo */
-    const char *titulo = "COMO JOGAR";
-    int tamanho_titulo = 36;
-    int largura_titulo = MeasureText(titulo, tamanho_titulo);
-    DrawText(titulo, quadro_x + (largura_quadro - largura_titulo) / 2, quadro_y + 24, tamanho_titulo, COR_DOURADO);
-
-    DrawLine(quadro_x + 40, quadro_y + 68, quadro_x + largura_quadro - 40, quadro_y + 68, (Color){ 180, 140, 60, 160 });
-
-    /* Instrucoes */
-    const char *instrucao1 = "As notas musicais descerao pelas pistas da tela.";
-    const char *instrucao2 = "Pressione a tecla correspondente quando a nota cruzar a zona de acerto:";
-    int tamanho_texto = 23;
-
-    DrawText(instrucao1, quadro_x + (largura_quadro - MeasureText(instrucao1, 24)) / 2, quadro_y + 88, 24, (Color){ 230, 220, 220, 255 });
-    DrawText(instrucao2, quadro_x + (largura_quadro - MeasureText(instrucao2, tamanho_texto)) / 2, quadro_y + 122, tamanho_texto, (Color){ 230, 220, 220, 255 });
-
-    /* Indicadores visuais das teclas D, F, G, J, K */
-    const char *teclas[] = { "D", "F", "G", "J", "K" };
-    Color cores_teclas[] = {
-        (Color){ 190, 60, 100, 255 },  /* Pista 1: Tom rosa/vinho */
-        (Color){ 70, 120, 210, 255 },  /* Pista 2: Azul */
-        (Color){ 220, 160, 40, 255 },  /* Pista 3: Dourado */
-        (Color){ 60, 170, 120, 255 },  /* Pista 4: Verde */
-        (Color){ 180, 90, 245, 255 }   /* Pista 5: Roxo */
-    };
-
-    float tamanho_tecla = 74.0f;
-    float espaco_teclas = 24.0f;
-    float largura_total_teclas = (TOTAL_PISTAS * tamanho_tecla) + ((TOTAL_PISTAS - 1) * espaco_teclas);
-    float inicio_x_teclas = quadro_x + (largura_quadro - largura_total_teclas) / 2;
-    float posicao_y_teclas = quadro_y + 168;
-
-    for (int i = 0; i < TOTAL_PISTAS; i++) {
-        Rectangle ret_tecla = { inicio_x_teclas + i * (tamanho_tecla + espaco_teclas), posicao_y_teclas, tamanho_tecla, tamanho_tecla };
-        DrawRectangleRec(ret_tecla, cores_teclas[i]);
-        DrawRectangleLinesEx(ret_tecla, 2.5f, (Color){ 255, 255, 255, 220 });
-
-        int largura_letra = MeasureText(teclas[i], 36);
-        int letra_x = ret_tecla.x + (tamanho_tecla - largura_letra) / 2;
-        int letra_y = ret_tecla.y + (tamanho_tecla - 36) / 2;
-        DrawText(teclas[i], letra_x, letra_y, 36, WHITE);
-    }
-
-    /* Informacoes adicionais sobre pontuacao e combo */
-    const char *dica1 = "Acertos aumentam sua pontuacao e constroem sequencias de combo.";
-    const char *dica2 = "Erros ou notas perdidas interrompem a contagem do combo!";
-    int tamanho_dica = 20;
-    DrawText(dica1, quadro_x + (largura_quadro - MeasureText(dica1, tamanho_dica)) / 2, quadro_y + 265, tamanho_dica, (Color){ 210, 200, 215, 255 });
-    DrawText(dica2, quadro_x + (largura_quadro - MeasureText(dica2, tamanho_dica)) / 2, quadro_y + 295, tamanho_dica, (Color){ 210, 200, 215, 255 });
-
-    /* Botao para voltar ao menu */
-    float largura_botao = 260.0f;
-    float altura_botao = 50.0f;
-    Rectangle ret_voltar = { quadro_x + (largura_quadro - largura_botao) / 2, quadro_y + altura_quadro - 68, largura_botao, altura_botao };
-
-    if (desenhar_botao_navegavel(ret_voltar, "VOLTAR AO MENU", mouse, 24, foco, 0)) {
-        *estado = TELA_MENU_PRINCIPAL;
+    /* A vitoria e decidida depois das perdas do quadro: o Game Over tem prioridade. */
+    if (partida_concluida(partida)) {
+        abrir_registro_ranking(jogo);
     }
 }
 
-/* Retorna a opcao escolhida: continuar, reiniciar, selecao ou menu. */
-int desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over, int *foco) {
-    navegar_menu(foco, game_over ? 3 : 4);
-    DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
-    Rectangle painel = { (largura - 360) / 2.0f, (altura - 350) / 2.0f, 360, 350 };
-    DrawRectangleRec(painel, COR_PAINEL_FUNDO);
-    DrawRectangleLinesEx(painel, 2.0f, COR_DOURADO);
-    const char *titulo = game_over ? "GAME OVER" : "PAUSADO";
-    DrawText(titulo, (largura - MeasureText(titulo, 30)) / 2,
-             painel.y + 20, 30, COR_DOURADO);
-    if (game_over) {
-        const char *motivo = "Voce perdeu por excesso de erros.";
-        DrawText(motivo, (largura - MeasureText(motivo, 17)) / 2,
-                 painel.y + 72, 17, WHITE);
+static void atualizar_jogo(Jogo *jogo) {
+    switch (jogo->tela) {
+        case TELA_PARTIDA:
+            atualizar_tela_partida(jogo);
+            break;
+        case TELA_REGISTRO_RANKING:
+            atualizar_audio_partida(&jogo->midia, false);   /* a musica continua ao fundo */
+            ler_nome_jogador(jogo);
+            if (IsKeyPressed(KEY_ENTER)) {
+                concluir_registro_ranking(jogo, true);
+            }
+            break;
+        case TELA_RESULTADOS:
+            atualizar_audio_partida(&jogo->midia, false);
+            break;
+        default:
+            break;
+    }
+}
+
+static int identificar_menu(const Jogo *jogo) {
+    if (jogo->confirmar_saida) return MENU_CONFIRMACAO;
+    if (jogo->tela == TELA_PARTIDA) {
+        if (jogo->partida.desempenho.game_over) return MENU_GAME_OVER;
+        if (jogo->partida.pausada) return MENU_PAUSA;
+        return MENU_SEM_FOCO;
+    }
+    return (int)jogo->tela;
+}
+
+/* Quando o menu visivel muda, o foco volta para o item inicial dele. */
+static void atualizar_foco_menu(Jogo *jogo) {
+    int menu = identificar_menu(jogo);
+    if (menu == jogo->menu_anterior) {
+        return;
+    }
+    if (menu == MENU_CONFIRMACAO) {
+        jogo->foco_menu = 1;   /* a confirmacao comeca em NAO */
+    } else if (jogo->tela == TELA_SELECAO_MUSICAS) {
+        jogo->foco_menu = jogo->indice_musica + 3;
+    } else {
+        jogo->foco_menu = 0;
+    }
+    jogo->menu_anterior = menu;
+}
+
+/* ================= Renderizacao ================= */
+
+/*
+ * Desenha a tela atual e devolve a acao escolhida nos menus.
+ * "entrada_liberada" e false no quadro em que a tela acabou de mudar,
+ * para que o mesmo Enter ou clique nao acione a tela nova.
+ */
+static AcaoMenu desenhar_jogo(Jogo *jogo, int largura, int altura, Vector2 mouse,
+                              bool entrada_liberada, const bool teclas_seguradas[TOTAL_PISTAS]) {
+    Vector2 sem_mouse = { -1, -1 };
+    /* Com a confirmacao aberta, a tela de tras nao recebe cliques nem teclas. */
+    bool tela_recebe_entrada = entrada_liberada && !jogo->confirmar_saida;
+    Vector2 mouse_tela = tela_recebe_entrada ? mouse : sem_mouse;
+    int *foco_tela = tela_recebe_entrada ? &jogo->foco_menu : NULL;
+    Musica *musica = musica_atual(jogo);
+    AcaoMenu acao = ACAO_NENHUMA;
+
+    switch (jogo->tela) {
+        case TELA_MENU_PRINCIPAL:
+            acao = desenhar_menu_principal(largura, altura, mouse_tela, foco_tela);
+            break;
+        case TELA_COMO_JOGAR:
+            acao = desenhar_tela_como_jogar(largura, altura, mouse_tela, foco_tela);
+            break;
+        case TELA_SELECAO_MUSICAS: {
+            int indice_antes = jogo->indice_musica;
+            acao = desenhar_tela_selecao_musicas(largura, altura, mouse_tela, jogo->catalogo,
+                                                 jogo->total_musicas, &jogo->indice_musica,
+                                                 jogo->criterio, jogo->mensagem_erro, foco_tela);
+            if (jogo->indice_musica != indice_antes) {
+                jogo->mensagem_erro[0] = '\0';
+            }
+            break;
+        }
+        case TELA_PARTIDA:
+            desenhar_tela_partida(largura, altura, &jogo->partida, musica, &jogo->midia, teclas_seguradas);
+            if (partida_bloqueada(&jogo->partida)) {
+                acao = desenhar_menu_pausa(largura, altura, mouse_tela,
+                                           jogo->partida.desempenho.game_over, foco_tela);
+            }
+            desenhar_mensagem_erro(largura, altura, jogo->mensagem_erro);
+            break;
+        case TELA_REGISTRO_RANKING:
+            desenhar_tela_registro_ranking(largura, altura, musica, jogo->partida.pontuacao,
+                                           jogo->nome_jogador);
+            break;
+        case TELA_RESULTADOS:
+            acao = desenhar_tela_resultados(largura, altura, mouse_tela, musica, &jogo->partida,
+                                            &jogo->ranking, jogo->posicao_ranking,
+                                            jogo->aviso_ranking, foco_tela);
+            desenhar_mensagem_erro(largura, altura, jogo->mensagem_erro);
+            break;
     }
 
-    const char *opcoes[] = { "CONTINUAR", "REINICIAR", "VOLTAR A SELECAO", "MENU INICIAL" };
-    for (int i = game_over ? 1 : 0; i < 4; i++) {
-        Rectangle botao = { painel.x + 20, painel.y + 75 + i * 62, 320, 50 };
-        if (desenhar_botao_navegavel(botao, opcoes[i], mouse, 22, foco, game_over ? i - 1 : i)) {
-            return i + 1;
+    if (jogo->confirmar_saida) {
+        AcaoMenu resposta = desenhar_confirmacao_saida(largura, altura,
+                                                       entrada_liberada ? mouse : sem_mouse,
+                                                       entrada_liberada ? &jogo->foco_menu : NULL);
+        if (resposta != ACAO_NENHUMA) {
+            acao = resposta;
         }
     }
-    return 0;
+    return acao;
 }
 
-/* Retorna os mesmos codigos do menu de pausa: 2 = reiniciar, 3 = catalogo. */
-int desenhar_tela_resultados(int largura, int altura, Vector2 mouse, Musica musica,
-                            int pontuacao, int acertos, int perdas, int maior_combo, int *foco) {
-    navegar_menu(foco, 2);
-    desenhar_fundo_teatro(largura, altura);
-    float largura_painel = largura * 0.82f;
-    if (largura_painel > 640.0f) largura_painel = 640.0f;
-    float altura_painel = altura * 0.86f;
-    if (altura_painel > 520.0f) altura_painel = 520.0f;
-    Rectangle painel = { (largura - largura_painel) / 2.0f,
-                         (altura - altura_painel) / 2.0f, largura_painel, altura_painel };
-    DrawRectangleRec(painel, COR_PAINEL_FUNDO);
-    DrawRectangleLinesEx(painel, 2.0f, COR_DOURADO);
-    DrawText("VITORIA", (largura - MeasureText("VITORIA", 38)) / 2,
-             painel.y + 22, 38, COR_DOURADO_BRILHO);
-    DrawText("PARTIDA CONCLUIDA", (largura - MeasureText("PARTIDA CONCLUIDA", 20)) / 2,
-             painel.y + 68, 20, WHITE);
-    DrawText(musica.titulo, (largura - MeasureText(musica.titulo, 24)) / 2,
-             painel.y + 102, 24, COR_DOURADO);
+/* ================= Acoes dos menus ================= */
 
-    const char *rotulos[] = { "PONTUACAO", "ACERTOS", "NOTAS PERDIDAS", "MAIOR COMBO" };
-    int valores[] = { pontuacao, acertos, perdas, maior_combo };
-    for (int i = 0; i < 4; i++) {
-        char texto[64];
-        snprintf(texto, sizeof(texto), "%s: %d", rotulos[i], valores[i]);
-        DrawText(texto, (largura - MeasureText(texto, 22)) / 2,
-                 painel.y + 155 + i * 36, 22, WHITE);
-    }
-
-    Rectangle jogar_novamente = { painel.x + 30, painel.y + painel.height - 136,
-                                  painel.width - 60, 48 };
-    Rectangle voltar_catalogo = { painel.x + 30, painel.y + painel.height - 78,
-                                  painel.width - 60, 48 };
-    if (desenhar_botao_navegavel(jogar_novamente, "JOGAR NOVAMENTE", mouse, 22, foco, 0)) return 2;
-    if (desenhar_botao_navegavel(voltar_catalogo, "VOLTAR AO CATALOGO", mouse, 22, foco, 1)) return 3;
-    const char *aviso = "[ESC] Voltar ao catalogo";
-    DrawText(aviso, (largura - MeasureText(aviso, 18)) / 2, altura - 24, 18,
-             (Color){ 190, 180, 200, 220 });
-    return 0;
-}
-
-void desenhar_confirmacao_saida(int largura, int altura, Vector2 mouse,
-                                bool *confirmar_saida, bool *deve_sair, int *foco) {
-    navegar_menu(foco, 2);
-    DrawRectangle(0, 0, largura, altura, (Color){ 0, 0, 0, 180 });
-    Rectangle painel = { (largura - 380) / 2.0f, (altura - 210) / 2.0f, 380, 210 };
-    DrawRectangleRec(painel, COR_PAINEL_FUNDO);
-    DrawRectangleLinesEx(painel, 2.0f, COR_DOURADO);
-    const char *pergunta = "Deseja sair do jogo?";
-    DrawText(pergunta, (largura - MeasureText(pergunta, 26)) / 2,
-             painel.y + 35, 26, COR_DOURADO);
-
-    Rectangle botao_sim = { painel.x + 25, painel.y + 110, 150, 55 };
-    Rectangle botao_nao = { painel.x + 205, painel.y + 110, 150, 55 };
-    if (desenhar_botao_navegavel(botao_sim, "SIM", mouse, 24, foco, 0)) {
-        *deve_sair = true;
-    }
-    if (desenhar_botao_navegavel(botao_nao, "NAO", mouse, 24, foco, 1)) {
-        *confirmar_saida = false;
+/* Unico lugar onde as escolhas dos menus mudam o estado do jogo. */
+static void aplicar_acao(Jogo *jogo, AcaoMenu acao) {
+    switch (acao) {
+        case ACAO_JOGAR:
+            jogo->tela = TELA_SELECAO_MUSICAS;
+            break;
+        case ACAO_COMO_JOGAR:
+            jogo->tela = TELA_COMO_JOGAR;
+            break;
+        case ACAO_PEDIR_SAIDA:
+            jogo->confirmar_saida = true;
+            break;
+        case ACAO_CONFIRMAR_SAIDA:
+            jogo->deve_sair = true;
+            break;
+        case ACAO_CANCELAR_SAIDA:
+            jogo->confirmar_saida = false;
+            break;
+        case ACAO_VOLTAR_MENU:
+            if (tela_de_partida(jogo->tela)) {
+                sair_da_partida(jogo, TELA_MENU_PRINCIPAL);
+            } else {
+                jogo->tela = TELA_MENU_PRINCIPAL;
+            }
+            break;
+        case ACAO_ORDENAR_TITULO:
+            aplicar_ordenacao(jogo, ORDEM_TITULO_AZ);
+            break;
+        case ACAO_ORDENAR_DIFICULDADE_CRESCENTE:
+            aplicar_ordenacao(jogo, ORDEM_DIFICULDADE_CRESCENTE);
+            break;
+        case ACAO_ORDENAR_DIFICULDADE_DECRESCENTE:
+            aplicar_ordenacao(jogo, ORDEM_DIFICULDADE_DECRESCENTE);
+            break;
+        case ACAO_INICIAR_PARTIDA:
+            iniciar_partida(jogo);
+            break;
+        case ACAO_CONTINUAR:
+            jogo->partida.pausada = false;
+            jogo->mensagem_erro[0] = '\0';
+            break;
+        case ACAO_REINICIAR:
+            reiniciar_partida(jogo);
+            break;
+        case ACAO_VOLTAR_SELECAO:
+            sair_da_partida(jogo, TELA_SELECAO_MUSICAS);
+            break;
+        case ACAO_NENHUMA:
+            break;
     }
 }
+
+/*
+ * Um quadro completo do jogo, sempre na mesma ordem:
+ * 1) atualizar (entrada, tempo e regras), 2) desenhar, 3) aplicar a acao do menu.
+ */
+static void executar_quadro(Jogo *jogo) {
+    if (IsKeyPressed(KEY_F11)) {
+        ToggleFullscreen();
+    }
+    int largura = GetScreenWidth();
+    int altura = GetScreenHeight();
+    Vector2 mouse = GetMousePosition();
+    EstadoTela tela_no_inicio = jogo->tela;
+
+    /* 1) Atualizacao: entrada, tempo e regras, sem desenhar nada. */
+    tratar_tecla_esc(jogo);
+    atualizar_jogo(jogo);
+    atualizar_foco_menu(jogo);
+
+    /* 2) Renderizacao: desenha o estado atual e recolhe a escolha do menu. */
+    bool teclas_seguradas[TOTAL_PISTAS];
+    ler_teclas_seguradas(teclas_seguradas);
+    BeginDrawing();
+    AcaoMenu acao = desenhar_jogo(jogo, largura, altura, mouse,
+                                  jogo->tela == tela_no_inicio, teclas_seguradas);
+    EndDrawing();
+
+    /* 3) A escolha do menu so muda o estado depois do quadro desenhado. */
+    aplicar_acao(jogo, acao);
+}
+
+/* ================= Programa ================= */
 
 int main(void) {
-    const int largura_inicial = 900;
-    const int altura_inicial = 600;
-
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(largura_inicial, altura_inicial, "FINAL ACT - Jogo de Ritmo");
+    InitWindow(LARGURA_INICIAL, ALTURA_INICIAL, "FINAL ACT - Jogo de Ritmo");
+    SetWindowMinSize(LARGURA_MINIMA_JANELA, ALTURA_MINIMA_JANELA);
     SetExitKey(KEY_NULL);
     SetTargetFPS(60);
     InitAudioDevice();
 
-    /* Inicia o jogo diretamente em tela cheia */
+    /* Inicia o jogo em tela cheia; F11 alterna para janela. */
     ToggleFullscreen();
 
-    /* Inicializacao do catalogo de musicas (vetor de structs) */
-    Musica catalogo[MAX_MUSICAS];
-    int total_musicas = 0;
-    inicializar_catalogo(catalogo, &total_musicas);
+    Jogo jogo;
+    iniciar_jogo(&jogo);
 
-    /* Ordena inicialmente o catalogo por Titulo A-Z */
-    CriterioOrdenacao criterio_atual = ORDEM_TITULO_AZ;
-    ordenar_catalogo(catalogo, total_musicas, criterio_atual);
-
-    EstadoTela estado_atual = TELA_MENU_PRINCIPAL;
-    int indice_musica_selecionada = 0;   /* Comeca com a primeira musica selecionada */
-    bool musica_confirmada = false;
-    bool deve_sair = false;
-    bool confirmar_saida = false;
-    bool partida_pausada = false;
-    int foco_menu = 0;
-    int menu_anterior = -1;
-    char erro_carregamento[160] = "";
-    Desempenho desempenho;
-    iniciar_desempenho(&desempenho);
-
-    /* Variaveis da partida e lista encadeada */
-    Nota *cabeca_notas = NULL;
-    float tempo_partida = 0.0f;
-    int pontuacao = 0;
-    int combo = 0;
-    int maior_combo = 0;
-    int notas_acertadas = 0;
-    int notas_perdidas = 0;
-    float tempo_feedback = 0.0f;
-    int pista_feedback = -1;
-
-    /* Loop principal do jogo */
-    while (!WindowShouldClose() && !deve_sair) {
-        /* Alterna entre tela cheia e modo janela ao pressionar F11 */
-        if (IsKeyPressed(KEY_F11)) {
-            ToggleFullscreen();
-        }
-
-        int largura_atual = GetScreenWidth();
-        int altura_atual = GetScreenHeight();
-        Vector2 posicao_mouse = GetMousePosition();
-
-        /* O ESC e tratado uma unica vez por quadro, conforme a tela atual. */
-        if (IsKeyPressed(KEY_ESCAPE)) {
-            erro_carregamento[0] = '\0';
-            if (confirmar_saida) {
-                confirmar_saida = false;
-            } else if (estado_atual == TELA_RESULTADOS) {
-                liberar_lista_notas(&cabeca_notas);
-                partida_pausada = false;
-                tempo_feedback = 0.0f;
-                pista_feedback = -1;
-                estado_atual = TELA_SELECAO_MUSICAS;
-            } else if (estado_atual == TELA_PARTIDA) {
-                if (desempenho.game_over) {
-                    liberar_lista_notas(&cabeca_notas);
-                    partida_pausada = false;
-                    estado_atual = TELA_SELECAO_MUSICAS;
-                } else {
-                    partida_pausada = !partida_pausada;
-                }
-            } else if (estado_atual == TELA_MENU_PRINCIPAL) {
-                confirmar_saida = true;
-            } else {
-                estado_atual = TELA_MENU_PRINCIPAL;
-            }
-        }
-
-        /* O audio acompanha a partida: pausa junto com o jogo e segue na tela de resultados. */
-        if (estado_atual == TELA_PARTIDA || estado_atual == TELA_RESULTADOS) {
-            atualizar_musica_partida(estado_atual == TELA_PARTIDA &&
-                                     (partida_pausada || desempenho.game_over));
-        }
-
-        bool confirmacao_no_inicio = confirmar_saida;
-        int menu_atual = confirmar_saida ? 10 :
-                         (estado_atual == TELA_PARTIDA ?
-                          (desempenho.game_over ? 12 : (partida_pausada ? 11 : -1)) : (int)estado_atual);
-        if (menu_atual != menu_anterior) {
-            foco_menu = confirmar_saida ? 1 :
-                        (estado_atual == TELA_SELECAO_MUSICAS ? indice_musica_selecionada + 3 : 0);
-            menu_anterior = menu_atual;
-        }
-
-        BeginDrawing();
-
-        /* Controle de telas atraves do estado atual */
-        switch (estado_atual) {
-            case TELA_MENU_PRINCIPAL:
-                /* Impede cliques no menu atras da confirmacao de saida. */
-                desenhar_menu_principal(largura_atual, altura_atual,
-                                        confirmar_saida ? (Vector2){ -1, -1 } : posicao_mouse,
-                                        &estado_atual, &confirmar_saida,
-                                        confirmar_saida ? NULL : &foco_menu);
-                break;
-
-            case TELA_SELECAO_MUSICAS:
-                desenhar_tela_selecao_musicas(largura_atual, altura_atual, posicao_mouse, &estado_atual,
-                                              catalogo, total_musicas,
-                                              &indice_musica_selecionada, &musica_confirmada,
-                                              &criterio_atual,
-                                              &cabeca_notas, &tempo_partida,
-                                              &pontuacao, &combo, &maior_combo,
-                                              &notas_acertadas, &notas_perdidas,
-                                              erro_carregamento, sizeof(erro_carregamento), &foco_menu);
-                if (estado_atual == TELA_PARTIDA) {
-                    carregar_midia_partida(&catalogo[indice_musica_selecionada]);
-                    iniciar_desempenho(&desempenho);
-                    partida_pausada = false;
-                    tempo_feedback = 0.0f;
-                    pista_feedback = -1;
-                }
-                break;
-
-            case TELA_COMO_JOGAR:
-                desenhar_tela_como_jogar(largura_atual, altura_atual, posicao_mouse, &estado_atual, &foco_menu);
-                break;
-
-            case TELA_PARTIDA:
-            case TELA_RESULTADOS:
-                if (estado_atual == TELA_PARTIDA) {
-                    desenhar_tela_partida(largura_atual, altura_atual, partida_pausada, &desempenho,
-                                          catalogo[indice_musica_selecionada], &cabeca_notas,
-                                          &tempo_partida, &pontuacao, &combo,
-                                          &maior_combo, &notas_acertadas, &notas_perdidas,
-                                          &tempo_feedback, &pista_feedback);
-                    /* As penalizacoes do quadro sao aplicadas antes de decidir a vitoria. */
-                    if (!partida_pausada && !desempenho.game_over && todas_notas_resolvidas(cabeca_notas)) {
-                        estado_atual = TELA_RESULTADOS;
-                        erro_carregamento[0] = '\0';
-                        /* Exibe os botoes no proximo quadro, sem aproveitar um clique da partida. */
-                        break;
-                    }
-                }
-                if (estado_atual == TELA_RESULTADOS || partida_pausada || desempenho.game_over) {
-                    int menu_partida = estado_atual == TELA_RESULTADOS ? (int)TELA_RESULTADOS :
-                                       (desempenho.game_over ? 12 : 11);
-                    if (menu_anterior != menu_partida) {
-                        foco_menu = 0;
-                        menu_anterior = menu_partida;
-                    }
-                    int opcao;
-                    if (estado_atual == TELA_RESULTADOS) {
-                        opcao = desenhar_tela_resultados(largura_atual, altura_atual, posicao_mouse,
-                                                        catalogo[indice_musica_selecionada], pontuacao,
-                                                        notas_acertadas, notas_perdidas, maior_combo, &foco_menu);
-                    } else {
-                        opcao = desenhar_menu_pausa(largura_atual, altura_atual, posicao_mouse,
-                                                    desempenho.game_over, &foco_menu);
-                    }
-                    if (opcao == 1) {
-                        partida_pausada = false;
-                        erro_carregamento[0] = '\0';
-                    } else if (opcao == 2) {
-                        if (carregar_notas_arquivo(&cabeca_notas,
-                                                  catalogo[indice_musica_selecionada].caminho_notas,
-                                                  erro_carregamento, sizeof(erro_carregamento))) {
-                            iniciar_desempenho(&desempenho);
-                            tempo_partida = 0.0f;
-                            pontuacao = 0;
-                            combo = 0;
-                            maior_combo = 0;
-                            notas_acertadas = 0;
-                            notas_perdidas = 0;
-                            tempo_feedback = 0.0f;
-                            pista_feedback = -1;
-                            partida_pausada = false;
-                            estado_atual = TELA_PARTIDA;
-                            reiniciar_musica_partida();
-                        } else {
-                            TraceLog(LOG_WARNING, "%s: %s",
-                                     catalogo[indice_musica_selecionada].caminho_notas, erro_carregamento);
-                        }
-                    } else if (opcao == 3 || opcao == 4) {
-                        liberar_lista_notas(&cabeca_notas);
-                        partida_pausada = false;
-                        tempo_feedback = 0.0f;
-                        pista_feedback = -1;
-                        estado_atual = opcao == 3 ? TELA_SELECAO_MUSICAS : TELA_MENU_PRINCIPAL;
-                        erro_carregamento[0] = '\0';
-                    }
-                    if (erro_carregamento[0] != '\0') {
-                        DrawText(erro_carregamento, 20, altura_atual - 55, 16, RED);
-                    }
-                }
-                break;
-        }
-
-        if (confirmar_saida && confirmacao_no_inicio) {
-            desenhar_confirmacao_saida(largura_atual, altura_atual, posicao_mouse,
-                                       &confirmar_saida, &deve_sair, &foco_menu);
-        }
-
-        EndDrawing();
-
-        /* Qualquer saida da partida (menu, selecao) libera audio e fundo. */
-        if (estado_atual != TELA_PARTIDA && estado_atual != TELA_RESULTADOS) {
-            descarregar_midia_partida();
-        }
+    while (!WindowShouldClose() && !jogo.deve_sair) {
+        executar_quadro(&jogo);
     }
 
-    /* Libera a memoria alocada para a lista encadeada antes de sair */
-    liberar_lista_notas(&cabeca_notas);
-    descarregar_midia_partida();
-
+    liberar_jogo(&jogo);
     CloseAudioDevice();
     CloseWindow();
     return 0;
