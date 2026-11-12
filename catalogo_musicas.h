@@ -26,6 +26,7 @@ typedef struct {
     char caminho_audio[128];
     char caminho_notas[128];
     char caminho_fundo[128];
+    char caminho_ranking[128];   /* arquivo com o top 10 desta musica */
 } Musica;
 
 /*

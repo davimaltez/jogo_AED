@@ -20,6 +20,8 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[0].caminho_notas[sizeof(catalogo[0].caminho_notas) - 1] = '\0';
     strncpy(catalogo[0].caminho_fundo, "assets/musicas/popular/fundo.png", sizeof(catalogo[0].caminho_fundo) - 1);
     catalogo[0].caminho_fundo[sizeof(catalogo[0].caminho_fundo) - 1] = '\0';
+    strncpy(catalogo[0].caminho_ranking, "assets/musicas/popular/ranking.txt", sizeof(catalogo[0].caminho_ranking) - 1);
+    catalogo[0].caminho_ranking[sizeof(catalogo[0].caminho_ranking) - 1] = '\0';
 
     /* Musica 2 - Mamma Mia! */
     strncpy(catalogo[1].titulo, "Dancing Queen", sizeof(catalogo[1].titulo) - 1);
@@ -33,6 +35,8 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[1].caminho_notas[sizeof(catalogo[1].caminho_notas) - 1] = '\0';
     strncpy(catalogo[1].caminho_fundo, "assets/musicas/dancing_queen/fundo.png", sizeof(catalogo[1].caminho_fundo) - 1);
     catalogo[1].caminho_fundo[sizeof(catalogo[1].caminho_fundo) - 1] = '\0';
+    strncpy(catalogo[1].caminho_ranking, "assets/musicas/dancing_queen/ranking.txt", sizeof(catalogo[1].caminho_ranking) - 1);
+    catalogo[1].caminho_ranking[sizeof(catalogo[1].caminho_ranking) - 1] = '\0';
 
     /* Musica 3 - La La Land */
     strncpy(catalogo[2].titulo, "City of Stars", sizeof(catalogo[2].titulo) - 1);
@@ -46,6 +50,8 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[2].caminho_notas[sizeof(catalogo[2].caminho_notas) - 1] = '\0';
     strncpy(catalogo[2].caminho_fundo, "assets/musicas/city_of_stars/fundo.png", sizeof(catalogo[2].caminho_fundo) - 1);
     catalogo[2].caminho_fundo[sizeof(catalogo[2].caminho_fundo) - 1] = '\0';
+    strncpy(catalogo[2].caminho_ranking, "assets/musicas/city_of_stars/ranking.txt", sizeof(catalogo[2].caminho_ranking) - 1);
+    catalogo[2].caminho_ranking[sizeof(catalogo[2].caminho_ranking) - 1] = '\0';
 
     /* Musica 4 - The Greatest Showman */
     strncpy(catalogo[3].titulo, "This Is Me", sizeof(catalogo[3].titulo) - 1);
@@ -59,6 +65,8 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[3].caminho_notas[sizeof(catalogo[3].caminho_notas) - 1] = '\0';
     strncpy(catalogo[3].caminho_fundo, "assets/musicas/this_is_me/fundo.png", sizeof(catalogo[3].caminho_fundo) - 1);
     catalogo[3].caminho_fundo[sizeof(catalogo[3].caminho_fundo) - 1] = '\0';
+    strncpy(catalogo[3].caminho_ranking, "assets/musicas/this_is_me/ranking.txt", sizeof(catalogo[3].caminho_ranking) - 1);
+    catalogo[3].caminho_ranking[sizeof(catalogo[3].caminho_ranking) - 1] = '\0';
 
     /* Musica 5 - High School Musical */
     strncpy(catalogo[4].titulo, "Breaking Free", sizeof(catalogo[4].titulo) - 1);
@@ -72,6 +80,8 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[4].caminho_notas[sizeof(catalogo[4].caminho_notas) - 1] = '\0';
     strncpy(catalogo[4].caminho_fundo, "assets/musicas/breaking_free/fundo.png", sizeof(catalogo[4].caminho_fundo) - 1);
     catalogo[4].caminho_fundo[sizeof(catalogo[4].caminho_fundo) - 1] = '\0';
+    strncpy(catalogo[4].caminho_ranking, "assets/musicas/breaking_free/ranking.txt", sizeof(catalogo[4].caminho_ranking) - 1);
+    catalogo[4].caminho_ranking[sizeof(catalogo[4].caminho_ranking) - 1] = '\0';
 }
 
 /*
