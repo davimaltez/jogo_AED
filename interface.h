@@ -58,10 +58,52 @@ AcaoMenu desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse,
                                        int *indice_selecionado, CriterioOrdenacao criterio,
                                        const char *mensagem_erro, int *foco);
 
-/* So desenha: as regras da partida ja foram aplicadas em atualizar_partida. */
+/*
+ * Estado das animacoes da partida (faiscas, brilhos, agulha do medidor).
+ * E so visual: nada aqui interfere nas regras nem no tempo da musica.
+ * Tudo tem tamanho fixo, entao nenhuma memoria e alocada durante o jogo.
+ */
+#define MAX_FAISCAS 96
+
+typedef struct {
+    Vector2 posicao;
+    Vector2 velocidade;
+    float vida;             /* segundos restantes; <= 0 significa livre */
+    float vida_total;
+    int pista;              /* define a cor da faisca */
+} Faisca;
+
+typedef struct {
+    bool sincronizado;                  /* false ate ver a partida pela primeira vez */
+    float relogio;                      /* tempo das animacoes (congela na pausa) */
+    float tempo_partida;                /* tempo da partida no quadro anterior */
+    int acertos_pista[TOTAL_PISTAS];    /* notas acertadas ja vistas em cada pista */
+    int perdas_pista[TOTAL_PISTAS];     /* notas perdidas ja vistas em cada pista */
+    float impacto[TOTAL_PISTAS];        /* 1 no acerto, cai ate 0 */
+    float erro[TOTAL_PISTAS];           /* 1 na nota perdida, cai ate 0 */
+    float brilho_tecla[TOTAL_PISTAS];   /* 1 com a tecla segurada, apaga ao soltar */
+    float agulha;                       /* posicao suavizada do medidor */
+    float velocidade_agulha;
+    float pulso_medidor;                /* +1 quando sobe, -1 quando desce, volta a 0 */
+    int desempenho_anterior;
+    int pontuacao_anterior;
+    int combo_anterior;
+    float pulso_pontos;
+    float pulso_combo;
+    Faisca faiscas[MAX_FAISCAS];
+    int proxima_faisca;                 /* as faiscas sao reaproveitadas em circulo */
+    unsigned int semente;
+} EfeitosPartida;
+
+void iniciar_efeitos_partida(EfeitosPartida *efeitos);
+
+/*
+ * As regras da partida ja foram aplicadas em atualizar_partida; aqui a
+ * partida e apenas lida. So "efeitos" e alterado, para animar o desenho.
+ */
 void desenhar_tela_partida(int largura, int altura, const Partida *partida,
                            const Musica *musica, const MidiaPartida *midia,
-                           const bool teclas_seguradas[TOTAL_PISTAS]);
+                           const bool teclas_seguradas[TOTAL_PISTAS], EfeitosPartida *efeitos);
 
 AcaoMenu desenhar_menu_pausa(int largura, int altura, Vector2 mouse, bool game_over, int *foco);
 

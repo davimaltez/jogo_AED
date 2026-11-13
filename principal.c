@@ -49,6 +49,7 @@ typedef struct {
 
     Partida partida;                /* lista de notas, pontos, medidor... */
     MidiaPartida midia;             /* audio e fundo da musica atual */
+    EfeitosPartida efeitos;         /* animacoes da tela de partida (so visual) */
 
     Ranking ranking;                /* ranking da musica que acabou de ser jogada */
     int posicao_ranking;            /* posicao da ultima pontuacao (-1 = fora) */
@@ -74,6 +75,7 @@ static void iniciar_jogo(Jogo *jogo) {
 
     iniciar_estrutura_partida(&jogo->partida);
     iniciar_midia_partida(&jogo->midia);
+    iniciar_efeitos_partida(&jogo->efeitos);
 
     iniciar_ranking(&jogo->ranking);
     jogo->posicao_ranking = -1;
@@ -377,7 +379,8 @@ static AcaoMenu desenhar_jogo(Jogo *jogo, int largura, int altura, Vector2 mouse
             break;
         }
         case TELA_PARTIDA:
-            desenhar_tela_partida(largura, altura, &jogo->partida, musica, &jogo->midia, teclas_seguradas);
+            desenhar_tela_partida(largura, altura, &jogo->partida, musica, &jogo->midia, teclas_seguradas,
+                                  &jogo->efeitos);
             if (partida_bloqueada(&jogo->partida)) {
                 acao = desenhar_menu_pausa(largura, altura, mouse_tela,
                                            jogo->partida.desempenho.game_over, foco_tela);

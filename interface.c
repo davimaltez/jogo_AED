@@ -70,9 +70,137 @@ static void desenhar_texto_centralizado(const char *texto, float centro_x, float
     DrawText(texto, (int)(centro_x - largura_texto / 2.0f), (int)y, tamanho, cor);
 }
 
+/* ================= Apoio aos efeitos visuais ================= */
+
+static float limitar(float valor, float minimo, float maximo) {
+    if (valor < minimo) return minimo;
+    if (valor > maximo) return maximo;
+    return valor;
+}
+
+/* Mesma cor com a opacidade multiplicada por "fator" (0 a 1). */
+static Color cor_alfa(Color cor, float fator) {
+    cor.a = (unsigned char)(cor.a * limitar(fator, 0.0f, 1.0f));
+    return cor;
+}
+
+/* Mistura duas cores: fator 0 devolve "de", fator 1 devolve "para". */
+static Color misturar(Color de, Color para, float fator) {
+    fator = limitar(fator, 0.0f, 1.0f);
+    return (Color){
+        (unsigned char)(de.r + (para.r - de.r) * fator),
+        (unsigned char)(de.g + (para.g - de.g) * fator),
+        (unsigned char)(de.b + (para.b - de.b) * fator),
+        (unsigned char)(de.a + (para.a - de.a) * fator)
+    };
+}
+
+/* A raylib exige os vertices em sentido anti-horario; aqui a ordem e corrigida sozinha. */
+static void triangulo(Vector2 a, Vector2 b, Vector2 c, Color cor) {
+    float sentido = (b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y);
+    if (sentido > 0.0f) {
+        DrawTriangle(a, c, b, cor);
+    } else {
+        DrawTriangle(a, b, c, cor);
+    }
+}
+
+/* Circulo de luz que se apaga ate a borda. */
+static void brilho_radial(Vector2 centro, float raio, Color cor) {
+    /* A raylib 5.5 recebe coordenadas inteiras; a 6 recebe Vector2. */
+#if RAYLIB_VERSION_MAJOR >= 6
+    DrawCircleGradient(centro, raio, cor, (Color){ 0, 0, 0, 0 });
+#else
+    DrawCircleGradient((int)centro.x, (int)centro.y, raio, cor, (Color){ 0, 0, 0, 0 });
+#endif
+}
+
+/* Numero "aleatorio" fixo (0 a 1) para cada indice: nao guarda estado nenhum. */
+static float ruido(unsigned int n) {
+    n = (n ^ 61u) ^ (n >> 16);
+    n *= 9u;
+    n ^= n >> 4;
+    n *= 0x27d4eb2du;
+    n ^= n >> 15;
+    return (n & 0xFFFFu) / 65535.0f;
+}
+
+/*
+ * Poeira luminosa subindo devagar. A posicao de cada ponto e calculada so
+ * a partir do indice e do tempo, entao nao ha vetor de particulas nem alocacao.
+ */
+static void desenhar_particulas_ambiente(int largura, int altura, float escala, float tempo, int quantidade) {
+    static const Color cores[3] = { { 255, 200, 110, 255 }, { 140, 255, 190, 255 }, { 200, 160, 255, 255 } };
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int i = 0; i < quantidade; i++) {
+        unsigned int base = (unsigned int)i * 7u;
+        float fase = ruido(base + 1u);
+        float velocidade = 0.015f + 0.035f * ruido(base + 2u);
+        float percurso = fase + tempo * velocidade;
+        percurso -= floorf(percurso);
+        Vector2 posicao = {
+            (ruido(base + 3u) + 0.012f * sinf(tempo * 0.6f + fase * 6.283f)) * largura,
+            (1.0f - percurso) * altura
+        };
+        float cintilar = 0.55f + 0.45f * sinf(tempo * (1.2f + 2.0f * fase) + (float)i);
+        float opacidade = sinf(PI * percurso) * cintilar;   /* nasce e some suavemente */
+        float raio = (1.2f + 1.8f * ruido(base + 4u)) * escala;
+        Color cor = cores[i % 5 < 3 ? 0 : i % 5 - 2];        /* maioria dourada */
+        DrawPoly(posicao, 8, raio * 3.2f, 0.0f, cor_alfa(cor, 0.10f * opacidade));
+        DrawPoly(posicao, 6, raio, 0.0f, cor_alfa(cor, 0.60f * opacidade));
+    }
+    EndBlendMode();
+}
+
+/* Escurece as bordas da tela para concentrar o olhar no centro. */
+static void desenhar_vinheta(int largura, int altura, unsigned char intensidade) {
+    Color escuro = { 0, 0, 0, intensidade };
+    Color transparente = { 0, 0, 0, 0 };
+    int faixa_vertical = (int)(altura * 0.22f);
+    int faixa_horizontal = (int)(largura * 0.16f);
+    DrawRectangleGradientV(0, 0, largura, faixa_vertical, escuro, transparente);
+    DrawRectangleGradientV(0, altura - faixa_vertical, largura, faixa_vertical, transparente, escuro);
+    DrawRectangleGradientH(0, 0, faixa_horizontal, altura, escuro, transparente);
+    DrawRectangleGradientH(largura - faixa_horizontal, 0, faixa_horizontal, altura, transparente, escuro);
+}
+
+/* Painel com sombra, degrade, borda dupla e cantoneiras douradas. */
 static void desenhar_painel(Rectangle painel, Color borda) {
-    DrawRectangleRec(painel, COR_PAINEL_FUNDO);
+    int x = (int)painel.x, y = (int)painel.y;
+    int largura = (int)painel.width, altura = (int)painel.height;
+    DrawRectangle(x + 6, y + 8, largura, altura, (Color){ 0, 0, 0, 90 });
+    DrawRectangleGradientV(x, y, largura, altura, (Color){ 42, 21, 56, 240 }, (Color){ 20, 10, 28, 240 });
+    int altura_reflexo = altura / 4 < 60 ? altura / 4 : 60;
+    DrawRectangleGradientV(x + 2, y + 2, largura - 4, altura_reflexo,
+                           (Color){ 255, 255, 255, 16 }, (Color){ 255, 255, 255, 0 });
     DrawRectangleLinesEx(painel, 2.0f, borda);
+    if (largura > 40 && altura > 40) {
+        Rectangle interna = { painel.x + 5.0f, painel.y + 5.0f, painel.width - 10.0f, painel.height - 10.0f };
+        DrawRectangleLinesEx(interna, 1.0f, cor_alfa(borda, 0.30f));
+        const Vector2 cantos[4] = {
+            { painel.x, painel.y }, { painel.x + painel.width, painel.y },
+            { painel.x, painel.y + painel.height }, { painel.x + painel.width, painel.y + painel.height }
+        };
+        for (int i = 0; i < 4; i++) {
+            DrawPoly(cantos[i], 4, 6.0f, 0.0f, COR_DOURADO_BRILHO);
+        }
+    }
+}
+
+/* Fundo de botao: degrade de cima para baixo e um fio de luz no topo. */
+static void desenhar_fundo_botao(Rectangle retangulo, Color cor_fundo) {
+    DrawRectangleGradientV((int)retangulo.x, (int)retangulo.y, (int)retangulo.width, (int)retangulo.height,
+                           misturar(cor_fundo, WHITE, 0.10f), misturar(cor_fundo, BLACK, 0.28f));
+    DrawRectangle((int)retangulo.x + 2, (int)retangulo.y + 2, (int)retangulo.width - 4, 1,
+                  (Color){ 255, 255, 255, 40 });
+}
+
+/* Contorno do item em foco, com um halo dourado que pulsa devagar. */
+static void desenhar_foco(Rectangle retangulo) {
+    float pulso = 0.5f + 0.5f * sinf((float)GetTime() * 4.0f);
+    Rectangle halo = { retangulo.x - 3.0f, retangulo.y - 3.0f, retangulo.width + 6.0f, retangulo.height + 6.0f };
+    DrawRectangleLinesEx(halo, 3.0f, cor_alfa(COR_DOURADO_BRILHO, 0.15f + 0.25f * pulso));
+    DrawRectangleLinesEx(retangulo, 4.0f, COR_DOURADO_BRILHO);
 }
 
 /* ================= Navegacao e botoes ================= */
@@ -106,7 +234,7 @@ static bool desenhar_botao(Rectangle retangulo, const char *texto, Vector2 mouse
     Color cor_borda = mouse_em_cima ? COR_BOTAO_FOCO_BORDA : COR_BOTAO_BORDA;
     Color cor_texto = mouse_em_cima ? COR_BOTAO_FOCO_TEXTO : COR_BOTAO_TEXTO;
 
-    DrawRectangleRec(retangulo, cor_fundo);
+    desenhar_fundo_botao(retangulo, cor_fundo);
     DrawRectangleLinesEx(retangulo, mouse_em_cima ? 3.0f : 2.0f, cor_borda);
 
     int tamanho = fonte_que_cabe(texto, tamanho_fonte, retangulo.width - 8.0f);
@@ -121,7 +249,7 @@ static bool desenhar_botao_navegavel(Rectangle retangulo, const char *texto, Vec
                                      int tamanho_fonte, int *foco, int indice) {
     bool selecionado = item_em_foco(retangulo, mouse, foco, indice);
     bool clicado = desenhar_botao(retangulo, texto, mouse, tamanho_fonte);
-    if (selecionado) DrawRectangleLinesEx(retangulo, 4.0f, COR_DOURADO_BRILHO);
+    if (selecionado) desenhar_foco(retangulo);
     return clicado || (selecionado && IsKeyPressed(KEY_ENTER));
 }
 
@@ -136,7 +264,7 @@ static bool desenhar_botao_filtro(Rectangle retangulo, const char *texto, bool a
     Color cor_borda = ativo ? COR_DOURADO : (mouse_em_cima ? COR_BOTAO_FOCO_BORDA : COR_BOTAO_BORDA);
     Color cor_texto = ativo ? COR_DOURADO_BRILHO : (mouse_em_cima ? COR_BOTAO_FOCO_TEXTO : COR_BOTAO_TEXTO);
 
-    DrawRectangleRec(retangulo, cor_fundo);
+    desenhar_fundo_botao(retangulo, cor_fundo);
     DrawRectangleLinesEx(retangulo, ativo ? 2.5f : 1.5f, cor_borda);
 
     int tamanho = fonte_que_cabe(texto, tamanho_fonte, retangulo.width - 6.0f);
@@ -144,7 +272,7 @@ static bool desenhar_botao_filtro(Rectangle retangulo, const char *texto, bool a
     DrawText(texto, (int)(retangulo.x + (retangulo.width - largura_texto) / 2),
              (int)(retangulo.y + (retangulo.height - tamanho) / 2), tamanho, cor_texto);
 
-    if (selecionado) DrawRectangleLinesEx(retangulo, 4.0f, COR_DOURADO_BRILHO);
+    if (selecionado) desenhar_foco(retangulo);
     return clicado || (selecionado && IsKeyPressed(KEY_ENTER));
 }
 
@@ -157,18 +285,34 @@ void desenhar_fundo_teatro(int largura, int altura) {
     int largura_cortina = (int)(largura * 0.08f);
     DrawRectangle(0, 0, largura_cortina, altura, COR_PALCO_LATERAL);
     DrawRectangle(largura - largura_cortina, 0, largura_cortina, altura, COR_PALCO_LATERAL);
+    /* Dobras do tecido: faixas que vao do escuro ao claro. */
+    const int dobras = 4;
+    int largura_dobra = largura_cortina / dobras;
+    for (int i = 0; i < dobras && largura_dobra > 1; i++) {
+        Color sombra = { 0, 0, 0, 70 };
+        Color luz = { 120, 60, 130, 45 };
+        DrawRectangleGradientH(i * largura_dobra, 0, largura_dobra, altura, sombra, luz);
+        DrawRectangleGradientH(largura - (i + 1) * largura_dobra, 0, largura_dobra, altura, luz, sombra);
+    }
     DrawLine(largura_cortina, 0, largura_cortina, altura, (Color){ 120, 90, 40, 120 });
     DrawLine(largura - largura_cortina, 0, largura - largura_cortina, altura, (Color){ 120, 90, 40, 120 });
 
     Vector2 topo_esquerda = { largura * 0.2f, 0.0f };
     Vector2 base_esquerda_1 = { 0.0f, (float)altura };
     Vector2 base_esquerda_2 = { largura * 0.55f, (float)altura };
-    DrawTriangle(topo_esquerda, base_esquerda_1, base_esquerda_2, COR_LUZ_HOLOFOTE);
+    /* Os holofotes oscilam de leve, cada um no seu ritmo. */
+    float tempo = (float)GetTime();
+    DrawTriangle(topo_esquerda, base_esquerda_1, base_esquerda_2,
+                 cor_alfa(COR_LUZ_HOLOFOTE, 0.80f + 0.20f * sinf(tempo * 0.9f)));
 
     Vector2 topo_direita = { largura * 0.8f, 0.0f };
     Vector2 base_direita_1 = { largura * 0.45f, (float)altura };
     Vector2 base_direita_2 = { (float)largura, (float)altura };
-    DrawTriangle(topo_direita, base_direita_1, base_direita_2, COR_LUZ_HOLOFOTE);
+    DrawTriangle(topo_direita, base_direita_1, base_direita_2,
+                 cor_alfa(COR_LUZ_HOLOFOTE, 0.80f + 0.20f * sinf(tempo * 0.7f + 2.0f)));
+
+    desenhar_particulas_ambiente(largura, altura, calcular_escala(largura, altura), tempo, 28);
+    desenhar_vinheta(largura, altura, 110);
 }
 
 /* ================= Menu principal ================= */
@@ -182,6 +326,11 @@ AcaoMenu desenhar_menu_principal(int largura, int altura, Vector2 mouse, int *fo
     int tamanho_titulo = fonte(100, escala);
     float y_titulo = altura * 0.14f;
     int sombra = escalar(4, escala);
+    /* Clarao dourado atras do titulo. */
+    BeginBlendMode(BLEND_ADDITIVE);
+    brilho_radial((Vector2){ largura / 2.0f, y_titulo + tamanho_titulo * 0.5f }, tamanho_titulo * 3.2f,
+                  (Color){ 255, 200, 90, (unsigned char)(26 + 8 * sinf((float)GetTime() * 1.5f)) });
+    EndBlendMode();
     desenhar_texto_centralizado(titulo, largura / 2.0f + sombra, y_titulo + sombra, tamanho_titulo, COR_SOMBRA_TEXTO);
     desenhar_texto_centralizado(titulo, largura / 2.0f, y_titulo, tamanho_titulo, COR_DOURADO);
     desenhar_texto_centralizado("UM JOGO DE RITMO EM CENA", largura / 2.0f,
@@ -356,9 +505,9 @@ static bool desenhar_lista_musicas(Rectangle painel, float y_inicio, float escal
         Color cor_fundo = selecionada ? (Color){ 110, 40, 125, 250 } :
                           (mouse_em_cima ? COR_BOTAO_FOCO_FUNDO : COR_BOTAO_FUNDO);
         Color cor_borda = selecionada ? COR_DOURADO : (mouse_em_cima ? COR_BOTAO_FOCO_BORDA : COR_BOTAO_BORDA);
-        DrawRectangleRec(item, cor_fundo);
+        desenhar_fundo_botao(item, cor_fundo);
         DrawRectangleLinesEx(item, selecionada ? 3.5f : 1.5f, cor_borda);
-        if (tem_foco) DrawRectangleLinesEx(item, 4.0f, COR_DOURADO_BRILHO);
+        if (tem_foco) desenhar_foco(item);
 
         float recuo_texto = (float)escalar(14, escala);
         if (selecionada) {
@@ -513,32 +662,24 @@ AcaoMenu desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse,
 
 /* ================= Partida ================= */
 
-/* O semicirculo vai do vermelho (esquerda) ao verde (direita). */
-static void desenhar_medidor(int largura, int altura, float escala, int valor) {
-    float raio = largura * 0.085f;
-    float raio_maximo = 110.0f * escala;
-    if (raio > raio_maximo) raio = raio_maximo;
-    Vector2 centro = { largura * 0.11f, altura * 0.48f };
-    const int segmentos = 100;
-    for (int i = 0; i < segmentos; i++) {
-        float angulo_inicio = PI + PI * i / segmentos;
-        float angulo_fim = PI + PI * (i + 1) / segmentos;
-        Vector2 inicio = { centro.x + cosf(angulo_inicio) * raio, centro.y + sinf(angulo_inicio) * raio };
-        Vector2 fim = { centro.x + cosf(angulo_fim) * raio, centro.y + sinf(angulo_fim) * raio };
-        Color cor = i < LIMITE_VERMELHO ? (Color){ 225, 65, 80, 255 } :
-                    (i < LIMITE_VERDE ? COR_DOURADO : (Color){ 45, 210, 125, 255 });
-        DrawLineEx(inicio, fim, raio * 0.15f, cor);
-    }
-    float angulo = PI + PI * valor / DESEMPENHO_MAXIMO;
-    Vector2 ponta = { centro.x + cosf(angulo) * raio * 0.8f, centro.y + sinf(angulo) * raio * 0.8f };
-    DrawLineEx(centro, ponta, 3.0f, WHITE);
-    DrawCircleV(centro, 5.0f * escala, COR_DOURADO);
+/*
+ * Efeitos visuais da partida (faiscas, brilhos, agulha suavizada).
+ * Sao apenas enfeite: leem a Partida, mas nunca a modificam, entao as
+ * regras e a sincronizacao com o audio continuam exatamente iguais.
+ */
+#define FAISCAS_POR_ACERTO 10
+#define TEMPO_ANTECEDENCIA 1.9f   /* segundos que a nota leva do horizonte ate a linha */
+#define CURVA_PERSPECTIVA 1.55f   /* a nota acelera ao se aproximar */
 
-    int tamanho = fonte(16, escala);
-    desenhar_texto_centralizado("DESEMPENHO", centro.x, centro.y - raio - tamanho * 2, tamanho, COR_DOURADO);
-    char texto[32];
-    snprintf(texto, sizeof(texto), "%d / 100", valor);
-    desenhar_texto_centralizado(texto, centro.x, centro.y + tamanho, tamanho, WHITE);
+void iniciar_efeitos_partida(EfeitosPartida *efeitos) {
+    memset(efeitos, 0, sizeof(*efeitos));
+    efeitos->semente = 2463534242u;
+}
+
+/* Gerador simples (0 a 1), guardado na struct para nao usar estado global. */
+static float sortear(EfeitosPartida *efeitos) {
+    efeitos->semente = efeitos->semente * 1664525u + 1013904223u;
+    return ((efeitos->semente >> 8) & 0xFFFFu) / 65535.0f;
 }
 
 /*
@@ -573,6 +714,23 @@ static float largura_pista_em(const GeometriaPista *pista, float y) {
     return pista->largura_topo + (pista->largura_base - pista->largura_topo) * fator;
 }
 
+/* Posicao x de uma fracao (0 = borda esquerda, 1 = direita) da pista na altura y. */
+static float x_pista_em(const GeometriaPista *pista, float y, float fracao) {
+    float largura = largura_pista_em(pista, y);
+    return pista->centro_x - largura / 2.0f + fracao * largura;
+}
+
+/* Pedaco da pista entre duas fracoes e duas alturas, ja em perspectiva. */
+static void faixa_pista(const GeometriaPista *pista, float fracao_esquerda, float fracao_direita,
+                        float y_cima, float y_baixo, Color cor) {
+    Vector2 topo_esquerda = { x_pista_em(pista, y_cima, fracao_esquerda), y_cima };
+    Vector2 topo_direita = { x_pista_em(pista, y_cima, fracao_direita), y_cima };
+    Vector2 base_direita = { x_pista_em(pista, y_baixo, fracao_direita), y_baixo };
+    Vector2 base_esquerda = { x_pista_em(pista, y_baixo, fracao_esquerda), y_baixo };
+    DrawTriangle(topo_esquerda, base_esquerda, base_direita, cor);
+    DrawTriangle(topo_esquerda, base_direita, topo_direita, cor);
+}
+
 static const Color CORES_PISTAS[TOTAL_PISTAS] = {
     { 225, 50, 110, 255 },   /* D: rosa/vinho */
     { 50, 140, 245, 255 },   /* F: azul */
@@ -581,134 +739,516 @@ static const Color CORES_PISTAS[TOTAL_PISTAS] = {
     { 180, 90, 245, 255 }    /* K: roxo */
 };
 
-static void desenhar_corpo_pista(const GeometriaPista *pista) {
-    Vector2 topo_esquerda = { pista->centro_x - pista->largura_topo / 2.0f, pista->y_topo };
-    Vector2 topo_direita = { pista->centro_x + pista->largura_topo / 2.0f, pista->y_topo };
-    Vector2 base_direita = { pista->centro_x + pista->largura_base / 2.0f, pista->y_base };
-    Vector2 base_esquerda = { pista->centro_x - pista->largura_base / 2.0f, pista->y_base };
-    DrawTriangle(topo_esquerda, base_esquerda, base_direita, (Color){ 16, 9, 24, 235 });
-    DrawTriangle(topo_esquerda, base_direita, topo_direita, (Color){ 16, 9, 24, 235 });
+static void emitir_faiscas(EfeitosPartida *efeitos, const GeometriaPista *pista, float escala, int indice_pista) {
+    float largura_coluna = largura_pista_em(pista, pista->y_alvo) / TOTAL_PISTAS;
+    float centro_coluna = x_pista_em(pista, pista->y_alvo, (indice_pista + 0.5f) / TOTAL_PISTAS);
+    for (int i = 0; i < FAISCAS_POR_ACERTO; i++) {
+        Faisca *faisca = &efeitos->faiscas[efeitos->proxima_faisca];
+        efeitos->proxima_faisca = (efeitos->proxima_faisca + 1) % MAX_FAISCAS;
+        /* Leque aberto para cima, saindo do receptor. */
+        float angulo = -PI * (0.12f + 0.76f * sortear(efeitos));
+        float rapidez = (160.0f + 300.0f * sortear(efeitos)) * escala;
+        faisca->posicao.x = centro_coluna + (sortear(efeitos) - 0.5f) * largura_coluna * 0.5f;
+        faisca->posicao.y = pista->y_alvo;
+        faisca->velocidade.x = cosf(angulo) * rapidez;
+        faisca->velocidade.y = sinf(angulo) * rapidez;
+        faisca->vida_total = 0.28f + 0.27f * sortear(efeitos);
+        faisca->vida = faisca->vida_total;
+        faisca->pista = indice_pista;
+    }
+}
 
-    /* A raylib 5.5 recebe coordenadas inteiras; a 6 recebe Vector2. */
-#if RAYLIB_VERSION_MAJOR >= 6
-    DrawCircleGradient((Vector2){ pista->centro_x, pista->y_topo }, pista->largura_topo * 0.6f,
-                       (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
-#else
-    DrawCircleGradient((int)pista->centro_x, (int)pista->y_topo, pista->largura_topo * 0.6f,
-                       (Color){ 255, 220, 130, 45 }, (Color){ 0, 0, 0, 0 });
-#endif
+static float decair(float valor, float tempo_quadro, float duracao) {
+    valor -= tempo_quadro / duracao;
+    return valor < 0.0f ? 0.0f : valor;
+}
+
+/*
+ * Compara o estado da partida com o do quadro anterior para descobrir o que
+ * aconteceu (acerto, perda, mudanca no medidor) e avanca as animacoes.
+ * Contar as notas resolvidas por pista mostra exatamente onde foi cada acerto,
+ * mesmo em acordes, sem precisar mexer nas regras do jogo.
+ */
+static void atualizar_efeitos(EfeitosPartida *efeitos, const Partida *partida,
+                              const GeometriaPista *pista, float escala,
+                              const bool teclas_seguradas[TOTAL_PISTAS]) {
+    int acertos[TOTAL_PISTAS] = { 0 };
+    int perdas[TOTAL_PISTAS] = { 0 };
+    for (const Nota *atual = partida->notas; atual != NULL; atual = atual->proximo) {
+        if (atual->pista < 0 || atual->pista >= TOTAL_PISTAS) continue;
+        if (atual->estado == NOTA_ACERTADA) acertos[atual->pista]++;
+        else if (atual->estado == NOTA_PERDIDA) perdas[atual->pista]++;
+    }
+
+    /* Partida nova ou reiniciada: recomeca as animacoes sem disparar efeitos. */
+    bool recomecou = !efeitos->sincronizado || partida->tempo < efeitos->tempo_partida;
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        if (acertos[p] < efeitos->acertos_pista[p] || perdas[p] < efeitos->perdas_pista[p]) recomecou = true;
+    }
+    if (recomecou) {
+        iniciar_efeitos_partida(efeitos);
+        efeitos->sincronizado = true;
+        efeitos->agulha = (float)partida->desempenho.valor;
+        efeitos->desempenho_anterior = partida->desempenho.valor;
+        efeitos->pontuacao_anterior = partida->pontuacao;
+        efeitos->combo_anterior = partida->combo;
+        for (int p = 0; p < TOTAL_PISTAS; p++) {
+            efeitos->acertos_pista[p] = acertos[p];
+            efeitos->perdas_pista[p] = perdas[p];
+        }
+    }
+    efeitos->tempo_partida = partida->tempo;
+
+    /* Na pausa e no Game Over as animacoes congelam junto com a partida. */
+    float tempo_quadro = partida_bloqueada(partida) ? 0.0f : GetFrameTime();
+    tempo_quadro = limitar(tempo_quadro, 0.0f, 0.05f);
+    efeitos->relogio += tempo_quadro;
+
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        efeitos->impacto[p] = decair(efeitos->impacto[p], tempo_quadro, 0.38f);
+        efeitos->erro[p] = decair(efeitos->erro[p], tempo_quadro, 0.30f);
+        efeitos->brilho_tecla[p] = teclas_seguradas[p] ? 1.0f
+                                 : decair(efeitos->brilho_tecla[p], tempo_quadro, 0.14f);
+        if (acertos[p] > efeitos->acertos_pista[p]) {
+            efeitos->impacto[p] = 1.0f;
+            emitir_faiscas(efeitos, pista, escala, p);
+        }
+        if (perdas[p] > efeitos->perdas_pista[p]) {
+            efeitos->erro[p] = 1.0f;
+        }
+        efeitos->acertos_pista[p] = acertos[p];
+        efeitos->perdas_pista[p] = perdas[p];
+    }
+
+    /* Medidor: a agulha persegue o valor real como uma mola, com leve balanco. */
+    int valor = partida->desempenho.valor;
+    if (valor != efeitos->desempenho_anterior) {
+        efeitos->pulso_medidor = valor > efeitos->desempenho_anterior ? 1.0f : -1.0f;
+        efeitos->desempenho_anterior = valor;
+    }
+    float aceleracao = (valor - efeitos->agulha) * 180.0f - efeitos->velocidade_agulha * 18.0f;
+    efeitos->velocidade_agulha += aceleracao * tempo_quadro;
+    efeitos->agulha += efeitos->velocidade_agulha * tempo_quadro;
+    if (efeitos->pulso_medidor > 0.0f) {
+        efeitos->pulso_medidor = decair(efeitos->pulso_medidor, tempo_quadro, 0.45f);
+    } else {
+        efeitos->pulso_medidor = -decair(-efeitos->pulso_medidor, tempo_quadro, 0.45f);
+    }
+
+    if (partida->pontuacao != efeitos->pontuacao_anterior) {
+        efeitos->pulso_pontos = 1.0f;
+        efeitos->pontuacao_anterior = partida->pontuacao;
+    }
+    if (partida->combo > efeitos->combo_anterior) {
+        efeitos->pulso_combo = 1.0f;
+    }
+    efeitos->combo_anterior = partida->combo;
+    efeitos->pulso_pontos = decair(efeitos->pulso_pontos, tempo_quadro, 0.22f);
+    efeitos->pulso_combo = decair(efeitos->pulso_combo, tempo_quadro, 0.22f);
+
+    float gravidade = 750.0f * escala;
+    for (int i = 0; i < MAX_FAISCAS; i++) {
+        Faisca *faisca = &efeitos->faiscas[i];
+        if (faisca->vida <= 0.0f) continue;
+        faisca->vida -= tempo_quadro;
+        faisca->velocidade.y += gravidade * tempo_quadro;
+        faisca->posicao.x += faisca->velocidade.x * tempo_quadro;
+        faisca->posicao.y += faisca->velocidade.y * tempo_quadro;
+    }
+}
+
+/* O semicirculo vai do vermelho (esquerda) ao verde (direita). */
+static void desenhar_medidor(int largura, int altura, float escala, int valor,
+                             const EfeitosPartida *efeitos) {
+    float raio = largura * 0.085f;
+    float raio_maximo = 110.0f * escala;
+    if (raio > raio_maximo) raio = raio_maximo;
+    Vector2 centro_fixo = { largura * 0.11f, altura * 0.48f };
+
+    const Color cor_vermelha = { 225, 65, 80, 255 };
+    const Color cor_verde = { 45, 210, 125, 255 };
+    float graus_vermelho = 180.0f + 180.0f * LIMITE_VERMELHO / DESEMPENHO_MAXIMO;
+    float graus_verde = 180.0f + 180.0f * LIMITE_VERDE / DESEMPENHO_MAXIMO;
+
+    float ganho = efeitos->pulso_medidor > 0.0f ? efeitos->pulso_medidor : 0.0f;
+    float perda = efeitos->pulso_medidor < 0.0f ? -efeitos->pulso_medidor : 0.0f;
+    bool perigo = valor < LIMITE_VERMELHO;
+    float alerta = perigo ? 0.5f + 0.5f * sinf(efeitos->relogio * 9.0f) : 0.0f;
+    Color cor_zona = perigo ? cor_vermelha : (valor < LIMITE_VERDE ? COR_DOURADO : cor_verde);
+    float zona_inicio = perigo ? 180.0f : (valor < LIMITE_VERDE ? graus_vermelho : graus_verde);
+    float zona_fim = perigo ? graus_vermelho : (valor < LIMITE_VERDE ? graus_verde : 360.0f);
+
+    /* Um erro faz o mostrador tremer por um instante. */
+    Vector2 centro = centro_fixo;
+    centro.x += sinf(efeitos->relogio * 85.0f) * 3.0f * escala * perda;
+
+    float espessura = raio * 0.15f;
+    float interno = raio - espessura / 2.0f;
+    float externo = raio + espessura / 2.0f;
+    float raio_placa = raio * 1.13f;
+    float traco = 1.5f * escala < 1.0f ? 1.0f : 1.5f * escala;
+
+    /* Placa escura atras do mostrador. */
+    DrawCircleSector(centro, raio_placa, 180.0f, 360.0f, 48, (Color){ 14, 8, 22, 185 });
+    DrawRing(centro, raio_placa - traco, raio_placa, 180.0f, 360.0f, 48, cor_alfa(COR_DOURADO, 0.55f));
+    DrawLineEx((Vector2){ centro.x - raio_placa, centro.y }, (Vector2){ centro.x + raio_placa, centro.y },
+               traco, cor_alfa(COR_DOURADO, 0.55f));
+
+    /* Brilho: a zona atual fica acesa; ganhos e perdas dao um clarao. */
+    BeginBlendMode(BLEND_ADDITIVE);
+    DrawRing(centro, interno - espessura * 0.5f, externo + espessura * 0.5f, zona_inicio, zona_fim, 32,
+             cor_alfa(cor_zona, 0.12f + 0.20f * ganho + 0.16f * alerta));
+    if (perda > 0.0f) {
+        DrawRing(centro, interno - espessura * 0.5f, externo + espessura * 0.5f, 180.0f, 360.0f, 48,
+                 cor_alfa(cor_vermelha, 0.28f * perda));
+    }
+    EndBlendMode();
+
+    /* Arco com as tres zonas e um leve relevo (sombra por dentro, luz por fora). */
+    DrawRing(centro, interno, externo, 180.0f, graus_vermelho, 20, cor_vermelha);
+    DrawRing(centro, interno, externo, graus_vermelho, graus_verde, 20, COR_DOURADO);
+    DrawRing(centro, interno, externo, graus_verde, 360.0f, 28, cor_verde);
+    DrawRing(centro, interno, interno + espessura * 0.3f, 180.0f, 360.0f, 48, (Color){ 0, 0, 0, 70 });
+    DrawRing(centro, externo - espessura * 0.18f, externo, 180.0f, 360.0f, 48, (Color){ 255, 255, 255, 45 });
+
+    /* Marcacoes a cada 10 pontos. */
+    for (int i = 0; i <= 10; i++) {
+        float angulo = PI + PI * i / 10.0f;
+        bool principal = i % 5 == 0;
+        float raio_fora = interno - raio * 0.03f;
+        float raio_dentro = raio_fora - raio * (principal ? 0.12f : 0.07f);
+        Vector2 fora = { centro.x + cosf(angulo) * raio_fora, centro.y + sinf(angulo) * raio_fora };
+        Vector2 dentro = { centro.x + cosf(angulo) * raio_dentro, centro.y + sinf(angulo) * raio_dentro };
+        DrawLineEx(dentro, fora, principal ? 2.0f : 1.0f, (Color){ 255, 255, 255, principal ? 190 : 110 });
+    }
+
+    /* Agulha afilada, com sombra, na posicao suavizada. */
+    float posicao = limitar(efeitos->agulha, -2.0f, DESEMPENHO_MAXIMO + 2.0f);
+    float angulo = PI + PI * posicao / DESEMPENHO_MAXIMO;
+    Vector2 direcao = { cosf(angulo), sinf(angulo) };
+    float meia_base = 4.0f * escala < 2.0f ? 2.0f : 4.0f * escala;
+    Vector2 ponta = { centro.x + direcao.x * raio * 0.8f, centro.y + direcao.y * raio * 0.8f };
+    Vector2 base_1 = { centro.x - direcao.y * meia_base - direcao.x * raio * 0.08f,
+                       centro.y + direcao.x * meia_base - direcao.y * raio * 0.08f };
+    Vector2 base_2 = { centro.x + direcao.y * meia_base - direcao.x * raio * 0.08f,
+                       centro.y - direcao.x * meia_base - direcao.y * raio * 0.08f };
+    float sombra = 2.0f * escala;
+    triangulo((Vector2){ ponta.x + sombra, ponta.y + sombra }, (Vector2){ base_1.x + sombra, base_1.y + sombra },
+              (Vector2){ base_2.x + sombra, base_2.y + sombra }, (Color){ 0, 0, 0, 110 });
+    triangulo(ponta, base_1, base_2, misturar(WHITE, cor_zona, 0.25f));
+    DrawCircleV(centro, 7.0f * escala, (Color){ 90, 65, 25, 255 });
+    DrawCircleV(centro, 5.0f * escala, COR_DOURADO);
+    DrawCircleV(centro, 2.0f * escala, COR_DOURADO_BRILHO);
+
+    /* Textos nas mesmas posicoes de antes (sem tremer). */
+    int tamanho = fonte(16, escala);
+    desenhar_texto_centralizado("DESEMPENHO", centro_fixo.x, centro_fixo.y - raio - tamanho * 2, tamanho, COR_DOURADO);
+    Rectangle placa_valor = { centro_fixo.x - raio * 0.62f, centro_fixo.y + tamanho * 0.55f,
+                              raio * 1.24f, tamanho * 1.9f };
+    DrawRectangleRounded(placa_valor, 0.5f, 6, (Color){ 14, 8, 22, 185 });
+    DrawRectangleRoundedLinesEx(placa_valor, 0.5f, 6, traco,
+                                cor_alfa(misturar(COR_DOURADO, cor_zona, ganho + perda), 0.55f + 0.45f * (ganho + perda)));
+    char texto[32];
+    snprintf(texto, sizeof(texto), "%d / 100", valor);
+    Color cor_texto = misturar(WHITE, perda > 0.0f ? cor_vermelha : cor_zona,
+                               limitar(ganho + perda + 0.6f * alerta, 0.0f, 1.0f));
+    desenhar_texto_centralizado(texto, centro_fixo.x, centro_fixo.y + tamanho, tamanho, cor_texto);
+}
+
+static void desenhar_corpo_pista(const GeometriaPista *pista, float escala, float tempo,
+                                 const EfeitosPartida *efeitos) {
+    float altura_pista = pista->y_base - pista->y_topo;
+
+    /* Piso em degrade: escuro no horizonte, com a cor de cada pista surgindo perto do jogador. */
+    const int degraus = 12;
+    for (int d = 0; d < degraus; d++) {
+        float fator_cima = d / (float)degraus;
+        float fator_baixo = (d + 1) / (float)degraus;
+        Color cor_piso = misturar((Color){ 9, 5, 16, 235 }, (Color){ 30, 16, 44, 240 }, fator_baixo);
+        for (int p = 0; p < TOTAL_PISTAS; p++) {
+            Color cor = misturar(cor_piso, CORES_PISTAS[p], 0.14f * fator_baixo * fator_baixo);
+            cor.a = cor_piso.a;
+            faixa_pista(pista, p / (float)TOTAL_PISTAS, (p + 1) / (float)TOTAL_PISTAS,
+                        pista->y_topo + fator_cima * altura_pista, pista->y_topo + fator_baixo * altura_pista, cor);
+        }
+    }
+
+    BeginBlendMode(BLEND_ADDITIVE);
+    /* Luz no horizonte, respirando devagar. */
+    float raio_luz = pista->largura_topo * (0.75f + 0.05f * sinf(efeitos->relogio * 1.3f));
+    brilho_radial((Vector2){ pista->centro_x, pista->y_topo }, raio_luz, (Color){ 255, 220, 130, 60 });
+
+    /* Luz subindo pela pista: tecla segurada (fraca) e acerto (forte). */
+    const int degraus_luz = 12;
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        float esquerda = p / (float)TOTAL_PISTAS;
+        float direita = (p + 1) / (float)TOTAL_PISTAS;
+        float luz = efeitos->brilho_tecla[p] * 0.16f + efeitos->impacto[p] * 0.40f;
+        if (luz > 0.004f) {
+            float trecho = (pista->y_alvo - pista->y_topo) / degraus_luz;
+            for (int d = 0; d < degraus_luz; d++) {
+                float fator = (d + 1) / (float)degraus_luz;
+                faixa_pista(pista, esquerda, direita, pista->y_topo + d * trecho,
+                            pista->y_topo + (d + 1) * trecho, cor_alfa(CORES_PISTAS[p], luz * fator * fator));
+            }
+        }
+        if (efeitos->erro[p] > 0.0f) {
+            faixa_pista(pista, esquerda, direita, pista->y_alvo - altura_pista * 0.22f, pista->y_alvo,
+                        cor_alfa((Color){ 235, 50, 60, 255 }, 0.30f * efeitos->erro[p]));
+        }
+    }
+    EndBlendMode();
+
+    /*
+     * Linhas de compasso que descem com a mesma curva das notas. Como usam
+     * o tempo da partida, param na pausa e dao a sensacao de movimento.
+     */
+    const float intervalo = TEMPO_ANTECEDENCIA / 4.0f;
+    int primeira = (int)floorf(tempo / intervalo) - 1;
+    for (int k = primeira; k < primeira + 7; k++) {
+        float progresso = 1.0f - (k * intervalo - tempo) / TEMPO_ANTECEDENCIA;
+        if (progresso <= 0.02f) continue;
+        float y = pista->y_topo + (pista->y_alvo - pista->y_topo) * powf(progresso, CURVA_PERSPECTIVA);
+        if (y >= pista->y_base) continue;
+        float visibilidade = limitar(progresso * 2.5f, 0.0f, 1.0f);
+        DrawLineEx((Vector2){ x_pista_em(pista, y, 0.0f), y }, (Vector2){ x_pista_em(pista, y, 1.0f), y },
+                   1.0f + 1.5f * progresso, cor_alfa((Color){ 200, 160, 225, 255 }, 0.20f * visibilidade));
+    }
 
     for (int p = 0; p <= TOTAL_PISTAS; p++) {
         float fracao = p / (float)TOTAL_PISTAS;
-        Vector2 inicio = { pista->centro_x - pista->largura_topo / 2.0f + fracao * pista->largura_topo, pista->y_topo };
-        Vector2 fim = { pista->centro_x - pista->largura_base / 2.0f + fracao * pista->largura_base, pista->y_base };
+        Vector2 inicio = { x_pista_em(pista, pista->y_topo, fracao), pista->y_topo };
+        Vector2 fim = { x_pista_em(pista, pista->y_base, fracao), pista->y_base };
         if (p == 0 || p == TOTAL_PISTAS) {
+            /* Trilho dourado com halo e um fio de luz por cima. */
+            DrawLineEx(inicio, fim, 9.0f, cor_alfa(COR_DOURADO, 0.18f));
             DrawLineEx(inicio, fim, 3.0f, COR_DOURADO);
+            DrawLineEx(inicio, fim, 1.0f, cor_alfa(COR_DOURADO_BRILHO, 0.8f));
         } else {
             DrawLineEx(inicio, fim, 1.5f, (Color){ 110, 70, 120, 160 });
         }
     }
+
+    /* Frente da pista: uma borda grossa que da volume ao tablado. */
+    float borda = 9.0f * escala;
+    Vector2 frente_esquerda = { x_pista_em(pista, pista->y_base, 0.0f), pista->y_base };
+    Vector2 frente_direita = { x_pista_em(pista, pista->y_base, 1.0f), pista->y_base };
+    Vector2 fundo_direita = { frente_direita.x - borda * 0.5f, pista->y_base + borda };
+    Vector2 fundo_esquerda = { frente_esquerda.x + borda * 0.5f, pista->y_base + borda };
+    DrawTriangle(frente_esquerda, fundo_esquerda, fundo_direita, (Color){ 62, 42, 20, 255 });
+    DrawTriangle(frente_esquerda, fundo_direita, frente_direita, (Color){ 62, 42, 20, 255 });
+    DrawLineEx(frente_esquerda, frente_direita, 2.0f, COR_DOURADO);
 }
 
-static void desenhar_receptores(const GeometriaPista *pista, float escala,
-                                const bool teclas_seguradas[TOTAL_PISTAS]) {
+static Rectangle expandir(Rectangle retangulo, float margem) {
+    return (Rectangle){ retangulo.x - margem, retangulo.y - margem,
+                        retangulo.width + 2.0f * margem, retangulo.height + 2.0f * margem };
+}
+
+static void desenhar_receptores(const GeometriaPista *pista, float escala, const EfeitosPartida *efeitos) {
     float largura_alvo = largura_pista_em(pista, pista->y_alvo);
     float x_alvo_esquerda = pista->centro_x - largura_alvo / 2.0f;
     Vector2 linha_inicio = { x_alvo_esquerda, pista->y_alvo };
     Vector2 linha_fim = { x_alvo_esquerda + largura_alvo, pista->y_alvo };
-    DrawLineEx(linha_inicio, linha_fim, 6.0f, COR_DOURADO);
-    DrawLineEx(linha_inicio, linha_fim, 2.0f, WHITE);
 
     const char *nomes_teclas[] = { "D", "F", "G", "J", "K" };
     float largura_coluna = largura_alvo / TOTAL_PISTAS;
     float altura_receptor = (float)escalar(34, escala);
     int fonte_letra = fonte(24, escala);
-
+    Rectangle receptores[TOTAL_PISTAS];
     for (int p = 0; p < TOTAL_PISTAS; p++) {
         float centro_coluna = x_alvo_esquerda + (p + 0.5f) * largura_coluna;
         float largura_receptor = largura_coluna * 0.85f;
-        Rectangle receptor = { centro_coluna - largura_receptor / 2.0f, pista->y_alvo - altura_receptor / 2.0f,
-                               largura_receptor, altura_receptor };
-        bool ativa = teclas_seguradas[p];
-        DrawRectangleRec(receptor, ativa ? CORES_PISTAS[p] : (Color){ 35, 18, 48, 230 });
-        DrawRectangleLinesEx(receptor, ativa ? 3.5f : 2.0f, ativa ? WHITE : CORES_PISTAS[p]);
+        receptores[p] = (Rectangle){ centro_coluna - largura_receptor / 2.0f, pista->y_alvo - altura_receptor / 2.0f,
+                                     largura_receptor, altura_receptor };
+    }
 
-        if (ativa) {
-            /* Feixe de luz subindo pela pista da tecla segurada. */
-            float fracao_esquerda = (float)p / TOTAL_PISTAS;
-            float fracao_direita = (float)(p + 1) / TOTAL_PISTAS;
-            float x_topo = pista->centro_x - pista->largura_topo / 2.0f;
-            float x_base = pista->centro_x - pista->largura_base / 2.0f;
-            Vector2 topo_esquerda = { x_topo + fracao_esquerda * pista->largura_topo, pista->y_topo };
-            Vector2 topo_direita = { x_topo + fracao_direita * pista->largura_topo, pista->y_topo };
-            Vector2 base_esquerda = { x_base + fracao_esquerda * pista->largura_base, pista->y_alvo };
-            Vector2 base_direita = { x_base + fracao_direita * pista->largura_base, pista->y_alvo };
-            Color cor_feixe = CORES_PISTAS[p];
-            cor_feixe.a = 40;
-            DrawTriangle(topo_esquerda, base_esquerda, base_direita, cor_feixe);
-            DrawTriangle(topo_esquerda, base_direita, topo_direita, cor_feixe);
+    /* Halos (uma unica troca de modo de mistura para todos). */
+    BeginBlendMode(BLEND_ADDITIVE);
+    float pulso = 0.5f + 0.5f * sinf(efeitos->relogio * 3.0f);
+    DrawLineEx(linha_inicio, linha_fim, 16.0f * escala, cor_alfa(COR_DOURADO, 0.10f + 0.06f * pulso));
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        float brilho = efeitos->brilho_tecla[p] > efeitos->impacto[p] ? efeitos->brilho_tecla[p] : efeitos->impacto[p];
+        if (brilho > 0.01f) {
+            DrawRectangleRounded(expandir(receptores[p], 7.0f * escala), 0.45f, 6,
+                                 cor_alfa(CORES_PISTAS[p], 0.38f * brilho));
         }
+    }
+    EndBlendMode();
+
+    DrawLineEx(linha_inicio, linha_fim, 6.0f, COR_DOURADO);
+    DrawLineEx(linha_inicio, linha_fim, 2.0f, WHITE);
+
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        Rectangle receptor = receptores[p];
+        float segurada = efeitos->brilho_tecla[p];
+        float impacto = efeitos->impacto[p];
+        float canto = 0.35f * receptor.height / 2.0f;
+
+        Color cor_fundo = misturar((Color){ 35, 18, 48, 235 }, CORES_PISTAS[p], segurada);
+        cor_fundo = misturar(cor_fundo, WHITE, impacto * 0.65f);
+        DrawRectangleRounded(receptor, 0.35f, 6, cor_fundo);
+        DrawRectangleRec((Rectangle){ receptor.x + canto, receptor.y + 2.0f, receptor.width - 2.0f * canto,
+                                      receptor.height * 0.38f }, (Color){ 255, 255, 255, 24 });
+        DrawRectangleRoundedLinesEx(receptor, 0.35f, 6, 2.0f + 1.5f * segurada,
+                                    misturar(CORES_PISTAS[p], WHITE, segurada));
+
+        /* Acerto: anel que se abre e some. Perda: clarao vermelho. */
+        if (impacto > 0.0f) {
+            DrawRectangleRoundedLinesEx(expandir(receptor, (1.0f - impacto) * 20.0f * escala), 0.45f, 6,
+                                        1.0f + 3.0f * impacto,
+                                        cor_alfa(misturar(CORES_PISTAS[p], WHITE, impacto), impacto));
+        }
+        if (efeitos->erro[p] > 0.0f) {
+            DrawRectangleRounded(receptor, 0.35f, 6, cor_alfa((Color){ 235, 50, 60, 255 }, 0.6f * efeitos->erro[p]));
+        }
+
+        float centro_coluna = receptor.x + receptor.width / 2.0f;
+        desenhar_texto_centralizado(nomes_teclas[p], centro_coluna + 1.0f, pista->y_alvo - fonte_letra / 2.0f + 2.0f,
+                                    fonte_letra, COR_SOMBRA_TEXTO);
         desenhar_texto_centralizado(nomes_teclas[p], centro_coluna, pista->y_alvo - fonte_letra / 2.0f,
                                     fonte_letra, WHITE);
     }
 }
 
+/* Onde e como uma nota aparece neste quadro. */
+typedef struct {
+    Rectangle retangulo;
+    float y;
+    float fator_largura;   /* 0 no horizonte, 1 perto do jogador */
+    float opacidade;       /* surge aos poucos no horizonte e some depois da linha */
+    float proximidade;     /* 1 quando esta exatamente na linha de acerto */
+} NotaVisivel;
+
 /*
- * Percorre a lista encadeada e desenha cada nota pendente.
  * A posicao vem do tempo que falta para a nota (tempo_alvo - tempo atual),
  * e nao da quantidade de quadros: por isso a nota acompanha o audio.
  */
+static bool calcular_nota_visivel(const GeometriaPista *pista, float escala, const Partida *partida,
+                                  const Nota *nota, NotaVisivel *visivel) {
+    if (nota->estado != NOTA_PENDENTE) {
+        return false;
+    }
+    float tempo_restante = nota->tempo_alvo - partida->tempo;
+    float progresso = 1.0f - (tempo_restante / TEMPO_ANTECEDENCIA);
+    /* Visivel do horizonte (0.0) ate um pouco depois da linha (1.15). */
+    if (progresso < 0.0f || progresso > 1.15f) {
+        return false;
+    }
+    float fator_curva = powf(progresso, CURVA_PERSPECTIVA);
+    float y_nota = pista->y_topo + (pista->y_alvo - pista->y_topo) * fator_curva;
+
+    float fator_largura = (y_nota - pista->y_topo) / (pista->y_base - pista->y_topo);
+    if (fator_largura > 1.0f) fator_largura = 1.0f;
+    float largura_pista = largura_pista_em(pista, y_nota);
+    float largura_coluna = largura_pista / TOTAL_PISTAS;
+    float centro_nota = pista->centro_x - largura_pista / 2.0f + (nota->pista + 0.5f) * largura_coluna;
+    float largura_nota = largura_coluna * 0.85f;
+    float altura_nota = (14.0f + 18.0f * fator_largura) * escala;
+
+    visivel->retangulo = (Rectangle){ centro_nota - largura_nota / 2.0f, y_nota - altura_nota / 2.0f,
+                                      largura_nota, altura_nota };
+    visivel->y = y_nota;
+    visivel->fator_largura = fator_largura;
+    visivel->opacidade = limitar(progresso / 0.10f, 0.0f, 1.0f);
+    if (progresso > 1.0f) {
+        visivel->opacidade *= 1.0f - 0.6f * (progresso - 1.0f) / 0.15f;
+    }
+    float distancia = tempo_restante < 0.0f ? -tempo_restante : tempo_restante;
+    visivel->proximidade = 1.0f - limitar(distancia / JANELA_ACERTO, 0.0f, 1.0f);
+    return true;
+}
+
+/*
+ * Percorre a lista encadeada duas vezes: primeiro os brilhos (todos juntos,
+ * para trocar o modo de mistura uma unica vez) e depois o corpo das notas.
+ */
 static void desenhar_notas(const GeometriaPista *pista, float escala, const Partida *partida) {
-    const float tempo_antecedencia = 1.9f;   /* segundos que a nota leva do horizonte ate a linha */
+    NotaVisivel visivel;
+
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (const Nota *atual = partida->notas; atual != NULL; atual = atual->proximo) {
+        if (!calcular_nota_visivel(pista, escala, partida, atual, &visivel)) continue;
+        Color cor = CORES_PISTAS[atual->pista];
+        /* Rastro curto atras da nota e halo que cresce perto da linha. */
+        float y_rastro = visivel.y - visivel.retangulo.height * (1.0f + 2.2f * visivel.fator_largura);
+        if (y_rastro < pista->y_topo) y_rastro = pista->y_topo;
+        faixa_pista(pista, (atual->pista + 0.16f) / TOTAL_PISTAS, (atual->pista + 0.84f) / TOTAL_PISTAS,
+                    y_rastro, visivel.y, cor_alfa(cor, 0.12f * visivel.opacidade));
+        DrawRectangleRounded(expandir(visivel.retangulo, (3.0f + 5.0f * visivel.fator_largura) * escala), 0.5f, 5,
+                             cor_alfa(cor, (0.20f + 0.35f * visivel.proximidade) * visivel.opacidade));
+    }
+    EndBlendMode();
 
     for (const Nota *atual = partida->notas; atual != NULL; atual = atual->proximo) {
-        if (atual->estado != NOTA_PENDENTE) {
-            continue;
-        }
-        float tempo_restante = atual->tempo_alvo - partida->tempo;
-        float progresso = 1.0f - (tempo_restante / tempo_antecedencia);
-        /* Visivel do horizonte (0.0) ate um pouco depois da linha (1.15). */
-        if (progresso < 0.0f || progresso > 1.15f) {
-            continue;
-        }
-        /* Curva de perspectiva: a nota acelera ao se aproximar. */
-        float fator_curva = powf(progresso, 1.55f);
-        float y_nota = pista->y_topo + (pista->y_alvo - pista->y_topo) * fator_curva;
+        if (!calcular_nota_visivel(pista, escala, partida, atual, &visivel)) continue;
+        Rectangle nota = visivel.retangulo;
+        Color cor = CORES_PISTAS[atual->pista];
+        float canto = 0.45f * nota.height / 2.0f;
+        float miolo = nota.width - 2.0f * canto;
 
-        float fator_largura = (y_nota - pista->y_topo) / (pista->y_base - pista->y_topo);
-        if (fator_largura > 1.0f) fator_largura = 1.0f;
-        float largura_pista = largura_pista_em(pista, y_nota);
-        float largura_coluna = largura_pista / TOTAL_PISTAS;
-        float centro_nota = pista->centro_x - largura_pista / 2.0f + (atual->pista + 0.5f) * largura_coluna;
-        float largura_nota = largura_coluna * 0.85f;
-        float altura_nota = (14.0f + 18.0f * fator_largura) * escala;
-
-        Rectangle nota = { centro_nota - largura_nota / 2.0f, y_nota - altura_nota / 2.0f, largura_nota, altura_nota };
-        DrawRectangleRec(nota, CORES_PISTAS[atual->pista]);
-        DrawRectangleLinesEx(nota, 2.0f, WHITE);
-        DrawRectangle((int)nota.x + 3, (int)nota.y + 2, (int)nota.width - 6, (int)(altura_nota * 0.35f),
-                      (Color){ 255, 255, 255, 170 });
+        Rectangle sombra = nota;
+        sombra.y += (2.0f + 3.0f * visivel.fator_largura) * escala;
+        DrawRectangleRounded(sombra, 0.45f, 5, cor_alfa((Color){ 0, 0, 0, 130 }, visivel.opacidade));
+        DrawRectangleRounded(nota, 0.45f, 5, cor_alfa(cor, visivel.opacidade));
+        /* Volume: metade de baixo mais escura e reflexo em cima. */
+        DrawRectangleRec((Rectangle){ nota.x + canto, nota.y + nota.height * 0.58f, miolo, nota.height * 0.32f },
+                         cor_alfa((Color){ 0, 0, 0, 55 }, visivel.opacidade));
+        DrawRectangleRec((Rectangle){ nota.x + canto, nota.y + nota.height * 0.12f, miolo, nota.height * 0.28f },
+                         cor_alfa((Color){ 255, 255, 255, 165 }, visivel.opacidade));
+        DrawRectangleRoundedLinesEx(nota, 0.45f, 5, 1.5f + 1.0f * visivel.proximidade,
+                                    cor_alfa(WHITE, visivel.opacidade));
     }
 }
 
-static void desenhar_painel_informacoes(int largura, int altura, float escala,
-                                        const Partida *partida, const Musica *musica) {
-    float margem = (float)escalar(35, escala);
-    DrawText(musica->titulo, (int)margem, escalar(25, escala), fonte(26, escala), COR_DOURADO);
-    DrawText(musica->filme, (int)margem, escalar(58, escala), fonte(19, escala), COR_TEXTO_SUAVE);
+/* Faiscas dos acertos: riscos curtos na cor da pista, clareando no inicio. */
+static void desenhar_faiscas(const EfeitosPartida *efeitos, float escala) {
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int i = 0; i < MAX_FAISCAS; i++) {
+        const Faisca *faisca = &efeitos->faiscas[i];
+        if (faisca->vida <= 0.0f) continue;
+        float vida = faisca->vida / faisca->vida_total;
+        Vector2 cauda = { faisca->posicao.x - faisca->velocidade.x * 0.035f,
+                          faisca->posicao.y - faisca->velocidade.y * 0.035f };
+        Color cor = misturar(CORES_PISTAS[faisca->pista], WHITE, vida * 0.7f);
+        DrawLineEx(cauda, faisca->posicao, (1.0f + 2.0f * vida) * escala + 0.5f, cor_alfa(cor, vida));
+    }
+    EndBlendMode();
+}
 
+static void texto_com_sombra(const char *texto, int x, int y, int tamanho, Color cor) {
+    int deslocamento = tamanho / 14 < 1 ? 1 : tamanho / 14;
+    DrawText(texto, x + deslocamento, y + deslocamento, tamanho, COR_SOMBRA_TEXTO);
+    DrawText(texto, x, y, tamanho, cor);
+}
+
+static void desenhar_painel_informacoes(int largura, int altura, float escala,
+                                        const Partida *partida, const Musica *musica,
+                                        const EfeitosPartida *efeitos) {
+    float margem = (float)escalar(35, escala);
+    texto_com_sombra(musica->titulo, (int)margem, escalar(25, escala), fonte(26, escala), COR_DOURADO);
+    texto_com_sombra(musica->filme, (int)margem, escalar(58, escala), fonte(19, escala), COR_TEXTO_SUAVE);
+    /* Filete dourado que se desfaz, sublinhando o titulo. */
+    DrawRectangleGradientH((int)margem, escalar(84, escala), escalar(240, escala), escalar(2, escala),
+                           cor_alfa(COR_DOURADO, 0.85f), cor_alfa(COR_DOURADO, 0.0f));
+
+    /* Pontos e combo "saltam" por um instante quando aumentam. */
     char texto_pontos[64];
     snprintf(texto_pontos, sizeof(texto_pontos), "PONTOS: %d", partida->pontuacao);
-    int fonte_pontos = fonte(26, escala);
-    DrawText(texto_pontos, (int)(largura - MeasureText(texto_pontos, fonte_pontos) - margem),
-             escalar(25, escala), fonte_pontos, COR_DOURADO);
+    int fonte_pontos = (int)(fonte(26, escala) * (1.0f + 0.16f * efeitos->pulso_pontos));
+    texto_com_sombra(texto_pontos, (int)(largura - MeasureText(texto_pontos, fonte_pontos) - margem),
+                     escalar(25, escala), fonte_pontos,
+                     misturar(COR_DOURADO, COR_DOURADO_BRILHO, efeitos->pulso_pontos));
 
     if (partida->combo > 0) {
         char texto_combo[32];
         snprintf(texto_combo, sizeof(texto_combo), "COMBO: %dx", partida->combo);
-        int fonte_combo = fonte(24, escala);
-        DrawText(texto_combo, (int)(largura - MeasureText(texto_combo, fonte_combo) - margem),
-                 escalar(58, escala), fonte_combo, (Color){ 140, 255, 170, 255 });
+        int fonte_combo = (int)(fonte(24, escala) * (1.0f + 0.20f * efeitos->pulso_combo));
+        /* A cor esquenta conforme o combo cresce. */
+        Color cor_combo = partida->combo >= 30 ? (Color){ 255, 150, 225, 255 } :
+                          (partida->combo >= 10 ? COR_DOURADO_BRILHO : (Color){ 140, 255, 170, 255 });
+        texto_com_sombra(texto_combo, (int)(largura - MeasureText(texto_combo, fonte_combo) - margem),
+                         escalar(58, escala), fonte_combo, misturar(cor_combo, WHITE, efeitos->pulso_combo * 0.6f));
     }
 
     desenhar_texto_centralizado("Pressione [ESC] para pausar", largura / 2.0f, altura - escalar(28, escala),
@@ -717,21 +1257,36 @@ static void desenhar_painel_informacoes(int largura, int altura, float escala,
 
 void desenhar_tela_partida(int largura, int altura, const Partida *partida,
                            const Musica *musica, const MidiaPartida *midia,
-                           const bool teclas_seguradas[TOTAL_PISTAS]) {
+                           const bool teclas_seguradas[TOTAL_PISTAS], EfeitosPartida *efeitos) {
     float escala = calcular_escala(largura, altura);
     GeometriaPista pista = calcular_geometria_pista(largura, altura);
+    atualizar_efeitos(efeitos, partida, &pista, escala, teclas_seguradas);
 
-    desenhar_fundo_teatro(largura, altura);
-    desenhar_fundo_musica(midia, largura, altura);
-    desenhar_corpo_pista(&pista);
-    desenhar_receptores(&pista, escala, teclas_seguradas);
+    if (midia->fundo_carregado) {
+        /* A imagem cobre a tela inteira: nao e preciso desenhar o palco por baixo. */
+        desenhar_fundo_musica(midia, largura, altura);
+        desenhar_particulas_ambiente(largura, altura, escala, efeitos->relogio, 44);
+        desenhar_vinheta(largura, altura, 150);
+    } else {
+        desenhar_fundo_teatro(largura, altura);
+    }
+    desenhar_corpo_pista(&pista, escala, partida->tempo, efeitos);
+    desenhar_receptores(&pista, escala, efeitos);
     desenhar_notas(&pista, escala, partida);
-    desenhar_medidor(largura, altura, escala, partida->desempenho.valor);
-    desenhar_painel_informacoes(largura, altura, escala, partida, musica);
+    desenhar_faiscas(efeitos, escala);
+    desenhar_medidor(largura, altura, escala, partida->desempenho.valor, efeitos);
+    desenhar_painel_informacoes(largura, altura, escala, partida, musica, efeitos);
 
     if (partida->tempo_feedback > 0.0f) {
-        desenhar_texto_centralizado("PERFEITO!", largura / 2.0f, pista.y_alvo - escalar(75, escala),
-                                    fonte(30, escala), COR_DOURADO_BRILHO);
+        /* O aviso nasce maior, sobe um pouco e some no fim do tempo. */
+        float vida = limitar(partida->tempo_feedback / DURACAO_FEEDBACK, 0.0f, 1.0f);
+        int tamanho = (int)(fonte(30, escala) * (1.0f + 0.22f * vida * vida));
+        float y = pista.y_alvo - escalar(75, escala) - (1.0f - vida) * 16.0f * escala;
+        float opacidade = limitar(vida * 3.0f, 0.0f, 1.0f);
+        desenhar_texto_centralizado("PERFEITO!", largura / 2.0f + 2.0f, y + 2.0f, tamanho,
+                                    cor_alfa(COR_SOMBRA_TEXTO, opacidade));
+        desenhar_texto_centralizado("PERFEITO!", largura / 2.0f, y, tamanho,
+                                    cor_alfa(misturar(COR_DOURADO_BRILHO, WHITE, vida * 0.5f), opacidade));
     }
 }
 
