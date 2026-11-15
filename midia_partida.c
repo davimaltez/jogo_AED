@@ -1,8 +1,12 @@
 #include "midia_partida.h"
+#include <math.h>
 
 void iniciar_midia_partida(MidiaPartida *midia) {
     midia->musica_carregada = false;
     midia->fundo_carregado = false;
+    midia->estado_audio = AUDIO_AUSENTE;
+    midia->duracao_audio = 0.0f;
+    midia->ultimo_tempo_audio = 0.0f;
 }
 
 void descarregar_midia_partida(MidiaPartida *midia) {
@@ -15,6 +19,9 @@ void descarregar_midia_partida(MidiaPartida *midia) {
         UnloadTexture(midia->fundo);
         midia->fundo_carregado = false;
     }
+    midia->estado_audio = AUDIO_AUSENTE;
+    midia->duracao_audio = 0.0f;
+    midia->ultimo_tempo_audio = 0.0f;
 }
 
 static void carregar_audio(MidiaPartida *midia, const char *caminho_audio) {
@@ -27,19 +34,19 @@ static void carregar_audio(MidiaPartida *midia, const char *caminho_audio) {
         return;
     }
 
-    /*
-     * Buffer maior (~186 ms a 44.1 kHz) evita que o audio esvazie entre um
-     * quadro e outro, o que causava chiado/estalos.
-     */
+    /* Mantem o tamanho de buffer ja usado pelo projeto. */
     SetAudioStreamBufferSizeDefault(8192);
     midia->musica = LoadMusicStream(caminho_audio);
     if (!IsMusicValid(midia->musica)) {
         TraceLog(LOG_WARNING, "Nao foi possivel abrir o audio: %s", caminho_audio);
+        midia->estado_audio = AUDIO_FALHOU;
         return;
     }
     midia->musica.looping = false;
     midia->musica_carregada = true;
-    PlayMusicStream(midia->musica);
+    midia->duracao_audio = GetMusicTimeLength(midia->musica);
+    midia->estado_audio = isfinite(midia->duracao_audio) && midia->duracao_audio > 0.0f
+                         ? AUDIO_PRONTO : AUDIO_FALHOU;
 }
 
 static void carregar_fundo(MidiaPartida *midia, const char *caminho_fundo) {
@@ -58,38 +65,65 @@ void carregar_midia_partida(MidiaPartida *midia, const Musica *musica) {
     /* Garante que a midia da partida anterior foi liberada antes. */
     descarregar_midia_partida(midia);
     carregar_fundo(midia, musica->caminho_fundo);
-    /* O audio vem por ultimo para comecar a tocar o mais perto possivel do quadro 0. */
+    /* A reproducao so comeca depois da validacao e da contagem inicial. */
     carregar_audio(midia, musica->caminho_audio);
 }
 
 void reiniciar_audio_partida(MidiaPartida *midia) {
     if (midia->musica_carregada) {
         StopMusicStream(midia->musica);
-        PlayMusicStream(midia->musica);
+        midia->ultimo_tempo_audio = 0.0f;
+        midia->estado_audio = AUDIO_PRONTO;
     }
 }
 
 void atualizar_audio_partida(MidiaPartida *midia, bool pausada) {
-    if (!midia->musica_carregada) {
+    if (!midia->musica_carregada || midia->estado_audio == AUDIO_FINALIZADO ||
+        midia->estado_audio == AUDIO_FALHOU) {
         return;
     }
     if (pausada) {
-        PauseMusicStream(midia->musica);
-    } else {
+        if (midia->estado_audio == AUDIO_TOCANDO) {
+            PauseMusicStream(midia->musica);
+            midia->estado_audio = AUDIO_PAUSADO;
+        }
+        return;
+    }
+    if (midia->estado_audio == AUDIO_PRONTO) {
+        PlayMusicStream(midia->musica);
+        midia->estado_audio = AUDIO_TOCANDO;
+    } else if (midia->estado_audio == AUDIO_PAUSADO) {
         ResumeMusicStream(midia->musica);
-        UpdateMusicStream(midia->musica);
+        midia->estado_audio = AUDIO_TOCANDO;
+    }
+    /* Parada fora de UpdateMusicStream nao e tratada como fim natural. */
+    if (!IsMusicStreamPlaying(midia->musica)) {
+        midia->estado_audio = AUDIO_FALHOU;
+        return;
+    }
+    UpdateMusicStream(midia->musica);
+    if (!IsMusicStreamPlaying(midia->musica)) {
+        /* O stream sem looping foi drenado; StopMusicStream pode zerar o cursor. */
+        midia->estado_audio = AUDIO_FINALIZADO;
+        midia->ultimo_tempo_audio = midia->duracao_audio;
+        return;
+    }
+    float tempo = GetMusicTimePlayed(midia->musica);
+    if (isfinite(tempo) && tempo > midia->ultimo_tempo_audio) {
+        midia->ultimo_tempo_audio = fminf(tempo, midia->duracao_audio);
     }
 }
 
 bool audio_esta_tocando(const MidiaPartida *midia) {
-    return midia->musica_carregada && IsMusicStreamPlaying(midia->musica);
+    return midia->musica_carregada && midia->estado_audio == AUDIO_TOCANDO &&
+           IsMusicStreamPlaying(midia->musica);
 }
 
 float tempo_audio_partida(const MidiaPartida *midia) {
     if (!midia->musica_carregada) {
         return 0.0f;
     }
-    return GetMusicTimePlayed(midia->musica);
+    return midia->ultimo_tempo_audio;
 }
 
 void desenhar_fundo_musica(const MidiaPartida *midia, int largura, int altura) {

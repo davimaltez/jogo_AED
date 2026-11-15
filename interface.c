@@ -405,7 +405,7 @@ AcaoMenu desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, int *f
     }
 
     const char *dicas[] = {
-        "Acertos aumentam a pontuacao e constroem combos.",
+        "Notas longas: segure a tecla ate a cauda chegar a linha.",
         "Erros e notas perdidas zeram o combo e baixam o medidor.",
         "Termine a musica para gravar seu nome no ranking. ESC pausa."
     };
@@ -668,7 +668,6 @@ AcaoMenu desenhar_tela_selecao_musicas(int largura, int altura, Vector2 mouse,
  * regras e a sincronizacao com o audio continuam exatamente iguais.
  */
 #define FAISCAS_POR_ACERTO 10
-#define TEMPO_ANTECEDENCIA 1.9f   /* segundos que a nota leva do horizonte ate a linha */
 #define CURVA_PERSPECTIVA 1.55f   /* a nota acelera ao se aproximar */
 
 void iniciar_efeitos_partida(EfeitosPartida *efeitos) {
@@ -776,8 +775,9 @@ static void atualizar_efeitos(EfeitosPartida *efeitos, const Partida *partida,
     int perdas[TOTAL_PISTAS] = { 0 };
     for (const Nota *atual = partida->notas; atual != NULL; atual = atual->proximo) {
         if (atual->pista < 0 || atual->pista >= TOTAL_PISTAS) continue;
-        if (atual->estado == NOTA_ACERTADA) acertos[atual->pista]++;
-        else if (atual->estado == NOTA_PERDIDA) perdas[atual->pista]++;
+        if (atual->estado == NOTA_ACERTADA || atual->estado == NOTA_SUSTENTANDO ||
+            atual->estado == NOTA_INTERROMPIDA) acertos[atual->pista]++;
+        if (atual->estado == NOTA_PERDIDA || atual->estado == NOTA_INTERROMPIDA) perdas[atual->pista]++;
     }
 
     /* Partida nova ou reiniciada: recomeca as animacoes sem disparar efeitos. */
@@ -1126,10 +1126,11 @@ typedef struct {
  */
 static bool calcular_nota_visivel(const GeometriaPista *pista, float escala, const Partida *partida,
                                   const Nota *nota, NotaVisivel *visivel) {
-    if (nota->estado != NOTA_PENDENTE) {
+    if (nota->estado != NOTA_PENDENTE && nota->estado != NOTA_SUSTENTANDO) {
         return false;
     }
     float tempo_restante = nota->tempo_alvo - partida->tempo;
+    if (nota->estado == NOTA_SUSTENTANDO) tempo_restante = 0.0f;
     float progresso = 1.0f - (tempo_restante / TEMPO_ANTECEDENCIA);
     /* Visivel do horizonte (0.0) ate um pouco depois da linha (1.15). */
     if (progresso < 0.0f || progresso > 1.15f) {
@@ -1165,6 +1166,25 @@ static bool calcular_nota_visivel(const GeometriaPista *pista, float escala, con
  */
 static void desenhar_notas(const GeometriaPista *pista, float escala, const Partida *partida) {
     NotaVisivel visivel;
+
+    /* A cauda usa o mesmo relogio e a mesma perspectiva da cabeca. */
+    for (const Nota *nota = partida->notas; nota != NULL; nota = nota->proximo) {
+        if (nota->duracao <= 0.0f ||
+            (nota->estado != NOTA_PENDENTE && nota->estado != NOTA_SUSTENTANDO)) continue;
+        float inicio = 1.0f - (nota->tempo_alvo - partida->tempo) / TEMPO_ANTECEDENCIA;
+        float fim = 1.0f - (nota->tempo_alvo + nota->duracao - partida->tempo) / TEMPO_ANTECEDENCIA;
+        if (inicio < 0.0f || fim > 1.15f) continue;
+        if (nota->estado == NOTA_SUSTENTANDO) inicio = 1.0f;
+        inicio = limitar(inicio, 0.0f, 1.15f);
+        fim = limitar(fim, 0.0f, inicio);
+        float y_inicio = pista->y_topo + (pista->y_alvo - pista->y_topo) * powf(inicio, CURVA_PERSPECTIVA);
+        float y_fim = pista->y_topo + (pista->y_alvo - pista->y_topo) * powf(fim, CURVA_PERSPECTIVA);
+        Color cor = CORES_PISTAS[nota->pista];
+        faixa_pista(pista, (nota->pista + 0.32f) / TOTAL_PISTAS, (nota->pista + 0.68f) / TOTAL_PISTAS,
+                    y_fim, y_inicio, cor_alfa(cor, nota->estado == NOTA_SUSTENTANDO ? 0.9f : 0.55f));
+        faixa_pista(pista, (nota->pista + 0.47f) / TOTAL_PISTAS, (nota->pista + 0.53f) / TOTAL_PISTAS,
+                    y_fim, y_inicio, cor_alfa(WHITE, 0.55f));
+    }
 
     BeginBlendMode(BLEND_ADDITIVE);
     for (const Nota *atual = partida->notas; atual != NULL; atual = atual->proximo) {
@@ -1276,6 +1296,21 @@ void desenhar_tela_partida(int largura, int altura, const Partida *partida,
     desenhar_faiscas(efeitos, escala);
     desenhar_medidor(largura, altura, escala, partida->desempenho.valor, efeitos);
     desenhar_painel_informacoes(largura, altura, escala, partida, musica, efeitos);
+
+    if (!partida->usa_audio) {
+        desenhar_texto_centralizado("DEMONSTRACAO SEM AUDIO", largura / 2.0f, escalar(105, escala),
+                                   fonte(18, escala), COR_DOURADO);
+    }
+    if (partida->preparacao_restante > 0.0f && !partida->pausada) {
+        char aviso[80];
+        snprintf(aviso, sizeof(aviso), "%s: %d", partida->preparando_inicio ? "PREPARE-SE" : "RETOMANDO",
+                 (int)ceilf(partida->preparacao_restante));
+        desenhar_texto_centralizado(aviso, largura / 2.0f, altura * 0.38f, fonte(32, escala), WHITE);
+        if (!partida->preparando_inicio) {
+            desenhar_texto_centralizado("Segure as teclas das notas longas", largura / 2.0f,
+                                       altura * 0.46f, fonte(20, escala), COR_DOURADO);
+        }
+    }
 
     if (partida->tempo_feedback > 0.0f) {
         /* O aviso nasce maior, sobe um pouco e some no fim do tempo. */
@@ -1437,9 +1472,11 @@ AcaoMenu desenhar_tela_resultados(int largura, int altura, Vector2 mouse,
     float y_colunas = painel.y + escalar(136, escala);
 
     DrawText("SEU DESEMPENHO", (int)x_esquerda, (int)y_colunas, fonte(20, escala), COR_DOURADO_BRILHO);
-    const char *rotulos[] = { "PONTUACAO", "ACERTOS", "NOTAS PERDIDAS", "MAIOR COMBO" };
-    int valores[] = { partida->pontuacao, partida->notas_acertadas, partida->notas_perdidas, partida->maior_combo };
-    for (int i = 0; i < 4; i++) {
+    const char *rotulos[] = { "PONTUACAO", "ACERTOS", "NOTAS PERDIDAS", "MAIOR COMBO",
+                             "SUSTENTACOES COMPLETAS", "SUSTENTACOES INTERROMPIDAS" };
+    int valores[] = { partida->pontuacao, partida->notas_acertadas, partida->notas_perdidas, partida->maior_combo,
+                     partida->sustentacoes_concluidas, partida->sustentacoes_interrompidas };
+    for (int i = 0; i < 6; i++) {
         char texto[64];
         snprintf(texto, sizeof(texto), "%s: %d", rotulos[i], valores[i]);
         int tamanho = fonte_que_cabe(texto, fonte(20, escala), largura_coluna);
@@ -1447,7 +1484,7 @@ AcaoMenu desenhar_tela_resultados(int largura, int altura, Vector2 mouse,
     }
     if (aviso_ranking != NULL && aviso_ranking[0] != '\0') {
         int tamanho = fonte_que_cabe(aviso_ranking, fonte(19, escala), largura_coluna);
-        DrawText(aviso_ranking, (int)x_esquerda, (int)(y_colunas + escalar(184, escala)), tamanho, COR_DOURADO);
+        DrawText(aviso_ranking, (int)x_esquerda, (int)(y_colunas + escalar(248, escala)), tamanho, COR_DOURADO);
     }
 
     Rectangle area_ranking = { x_direita, y_colunas, largura_coluna, (float)escalar(280, escala) };

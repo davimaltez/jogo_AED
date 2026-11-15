@@ -1,0 +1,86 @@
+[
+  {
+    "file": "abba_dancing_queen_3370.mid",
+    "sha256": "2c6470c5eb7599056409a0273014e804c3d001775641f5a2b7bc83b584fe7228",
+    "bytes": 69743,
+    "format": 0,
+    "tracks": 1,
+    "ticks_per_quarter": 96,
+    "duration_seconds": 236.647,
+    "bpm_values": [
+      100.4
+    ],
+    "track_details": [
+      {
+        "track": 0,
+        "names": [],
+        "note_on": 8311,
+        "gm_programs_1_based": [
+          2,
+          34,
+          49,
+          53,
+          91,
+          95,
+          106
+        ],
+        "channels": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "lyric_events": 0
+      }
+    ]
+  },
+  {
+    "file": "abba_dancing_queen_3381.mid",
+    "sha256": "dbb2a6064fcdc852cfccafb7a3defeaea59415b26810d3d5d0970e8cb0a85bda",
+    "bytes": 79190,
+    "format": 0,
+    "tracks": 1,
+    "ticks_per_quarter": 96,
+    "duration_seconds": 239.04,
+    "bpm_values": [
+      100.402
+    ],
+    "track_details": [
+      {
+        "track": 0,
+        "names": [
+          "DancingQueen"
+        ],
+        "note_on": 8311,
+        "gm_programs_1_based": [
+          2,
+          34,
+          49,
+          53,
+          91,
+          95,
+          106
+        ],
+        "channels": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11
+        ],
+        "lyric_events": 0
+      }
+    ]
+  }
+]

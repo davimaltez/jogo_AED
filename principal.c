@@ -103,13 +103,39 @@ static Musica *musica_atual(Jogo *jogo) {
 /* Carrega notas e midia. So muda para a partida se as notas forem validas. */
 static void iniciar_partida(Jogo *jogo) {
     Musica *musica = musica_atual(jogo);
-    if (!preparar_partida(&jogo->partida, musica->caminho_notas,
+    Partida nova_partida;
+    iniciar_estrutura_partida(&nova_partida);
+    if (!preparar_partida(&nova_partida, musica->caminho_notas,
                           jogo->mensagem_erro, sizeof(jogo->mensagem_erro))) {
         TraceLog(LOG_WARNING, "%s: %s", musica->caminho_notas, jogo->mensagem_erro);
         return;
     }
+    MidiaPartida nova_midia;
+    iniciar_midia_partida(&nova_midia);
+    carregar_midia_partida(&nova_midia, musica);
+    if (nova_midia.estado_audio == AUDIO_FALHOU) {
+        snprintf(jogo->mensagem_erro, sizeof(jogo->mensagem_erro), "Audio invalido ou duracao indisponivel.");
+        encerrar_partida(&nova_partida);
+        descarregar_midia_partida(&nova_midia);
+        return;
+    }
+    if (nova_midia.musica_carregada &&
+        !validar_duracao_notas(nova_partida.notas, nova_midia.duracao_audio,
+                              jogo->mensagem_erro, sizeof(jogo->mensagem_erro))) {
+        encerrar_partida(&nova_partida);
+        descarregar_midia_partida(&nova_midia);
+        return;
+    }
+    /* So entrega os novos recursos ao jogo depois de todas as validacoes. */
+    encerrar_partida(&jogo->partida);
+    descarregar_midia_partida(&jogo->midia);
+    jogo->partida = nova_partida;
+    jogo->midia = nova_midia;
+    jogo->partida.usa_audio = nova_midia.musica_carregada;
+    jogo->partida.duracao_audio = nova_midia.duracao_audio;
+    preparar_inicio_partida(&jogo->partida);
+    iniciar_efeitos_partida(&jogo->efeitos);
     jogo->mensagem_erro[0] = '\0';
-    carregar_midia_partida(&jogo->midia, musica);
     jogo->tela = TELA_PARTIDA;
 }
 
@@ -119,11 +145,25 @@ static void iniciar_partida(Jogo *jogo) {
  */
 static void reiniciar_partida(Jogo *jogo) {
     Musica *musica = musica_atual(jogo);
-    if (!preparar_partida(&jogo->partida, musica->caminho_notas,
+    Partida nova_partida;
+    iniciar_estrutura_partida(&nova_partida);
+    if (!preparar_partida(&nova_partida, musica->caminho_notas,
                           jogo->mensagem_erro, sizeof(jogo->mensagem_erro))) {
         TraceLog(LOG_WARNING, "%s: %s", musica->caminho_notas, jogo->mensagem_erro);
         return;
     }
+    if (jogo->midia.musica_carregada &&
+        !validar_duracao_notas(nova_partida.notas, jogo->midia.duracao_audio,
+                              jogo->mensagem_erro, sizeof(jogo->mensagem_erro))) {
+        encerrar_partida(&nova_partida);
+        return;
+    }
+    encerrar_partida(&jogo->partida);
+    jogo->partida = nova_partida;
+    jogo->partida.usa_audio = jogo->midia.musica_carregada;
+    jogo->partida.duracao_audio = jogo->midia.duracao_audio;
+    preparar_inicio_partida(&jogo->partida);
+    iniciar_efeitos_partida(&jogo->efeitos);
     jogo->mensagem_erro[0] = '\0';
     reiniciar_audio_partida(&jogo->midia);   /* audio e notas voltam juntos ao zero */
     jogo->tela = TELA_PARTIDA;
@@ -261,7 +301,8 @@ static void tratar_tecla_esc(Jogo *jogo) {
             if (jogo->partida.desempenho.game_over) {
                 sair_da_partida(jogo, TELA_SELECAO_MUSICAS);
             } else {
-                jogo->partida.pausada = !jogo->partida.pausada;
+                if (jogo->partida.pausada) continuar_partida(&jogo->partida);
+                else jogo->partida.pausada = true;
             }
             break;
         case TELA_MENU_PRINCIPAL:
@@ -282,15 +323,29 @@ static void tratar_tecla_esc(Jogo *jogo) {
  */
 static void atualizar_tela_partida(Jogo *jogo) {
     Partida *partida = &jogo->partida;
+    if (atualizar_preparacao(partida, GetFrameTime())) {
+        atualizar_audio_partida(&jogo->midia, true);
+        return;
+    }
     bool bloqueada = partida_bloqueada(partida);
 
     atualizar_audio_partida(&jogo->midia, bloqueada);
+    if (jogo->midia.estado_audio == AUDIO_FALHOU) {
+        partida->pausada = true;
+        snprintf(jogo->mensagem_erro, sizeof(jogo->mensagem_erro),
+                 "Audio interrompido. Reinicie a partida ou volte ao catalogo.");
+        return;
+    }
+    partida->audio_finalizado = jogo->midia.estado_audio == AUDIO_FINALIZADO;
     float novo_tempo = calcular_tempo_partida(partida->tempo, GetFrameTime(), bloqueada,
-                                              audio_esta_tocando(&jogo->midia),
-                                              tempo_audio_partida(&jogo->midia));
-    bool teclas[TOTAL_PISTAS];
+                                              partida->usa_audio, tempo_audio_partida(&jogo->midia),
+                                              partida->audio_finalizado, partida->duracao_audio);
+    bool teclas[TOTAL_PISTAS], seguradas[TOTAL_PISTAS];
     ler_teclas_pressionadas(teclas);
-    atualizar_partida(partida, novo_tempo, teclas);
+    ler_teclas_seguradas(seguradas);
+    atualizar_partida(partida, novo_tempo, teclas, seguradas);
+    /* A derrota pausa o audio no mesmo quadro em que foi decidida. */
+    if (partida->desempenho.game_over) atualizar_audio_partida(&jogo->midia, true);
 
     /* A vitoria e decidida depois das perdas do quadro: o Game Over tem prioridade. */
     if (partida_concluida(partida)) {
@@ -304,7 +359,7 @@ static void atualizar_jogo(Jogo *jogo) {
             atualizar_tela_partida(jogo);
             break;
         case TELA_REGISTRO_RANKING:
-            atualizar_audio_partida(&jogo->midia, false);   /* a musica continua ao fundo */
+            atualizar_audio_partida(&jogo->midia, false);   /* audio finalizado permanece parado */
             ler_nome_jogador(jogo);
             if (IsKeyPressed(KEY_ENTER)) {
                 concluir_registro_ranking(jogo, true);
@@ -381,7 +436,7 @@ static AcaoMenu desenhar_jogo(Jogo *jogo, int largura, int altura, Vector2 mouse
         case TELA_PARTIDA:
             desenhar_tela_partida(largura, altura, &jogo->partida, musica, &jogo->midia, teclas_seguradas,
                                   &jogo->efeitos);
-            if (partida_bloqueada(&jogo->partida)) {
+            if (jogo->partida.pausada || jogo->partida.desempenho.game_over) {
                 acao = desenhar_menu_pausa(largura, altura, mouse_tela,
                                            jogo->partida.desempenho.game_over, foco_tela);
             }
@@ -457,7 +512,7 @@ static void aplicar_acao(Jogo *jogo, AcaoMenu acao) {
             abrir_ranking_musica(jogo);
             break;
         case ACAO_CONTINUAR:
-            jogo->partida.pausada = false;
+            continuar_partida(&jogo->partida);
             jogo->mensagem_erro[0] = '\0';
             break;
         case ACAO_REINICIAR:
@@ -514,9 +569,6 @@ int main(void) {
     SetExitKey(KEY_NULL);
     SetTargetFPS(60);
     InitAudioDevice();
-
-    /* Inicia o jogo em tela cheia; F11 alterna para janela. */
-    ToggleFullscreen();
 
     Jogo jogo;
     iniciar_jogo(&jogo);

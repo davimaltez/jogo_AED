@@ -5,6 +5,15 @@
 #include "raylib.h"
 #include "catalogo_musicas.h"
 
+typedef enum {
+    AUDIO_AUSENTE,
+    AUDIO_PRONTO,
+    AUDIO_TOCANDO,
+    AUDIO_PAUSADO,
+    AUDIO_FINALIZADO,
+    AUDIO_FALHOU
+} EstadoAudio;
+
 /*
  * Audio (stream) e imagem de fundo da musica em execucao.
  * Antes eram variaveis globais no principal.c; agora ficam numa struct
@@ -14,6 +23,9 @@
 typedef struct {
     Music musica;
     bool musica_carregada;
+    EstadoAudio estado_audio;
+    float duracao_audio;
+    float ultimo_tempo_audio;
     Texture2D fundo;
     bool fundo_carregado;
 } MidiaPartida;
@@ -22,7 +34,7 @@ typedef struct {
 void iniciar_midia_partida(MidiaPartida *midia);
 
 /*
- * Carrega o audio e o fundo indicados na Musica e comeca a tocar.
+ * Carrega o audio e o fundo indicados na Musica; aguarda a preparacao inicial.
  * Se um arquivo nao existir, o jogo segue sem ele e avisa no terminal.
  */
 void carregar_midia_partida(MidiaPartida *midia, const Musica *musica);
@@ -42,7 +54,7 @@ void atualizar_audio_partida(MidiaPartida *midia, bool pausada);
 /* true enquanto a musica esta tocando (nem pausada, nem terminada). */
 bool audio_esta_tocando(const MidiaPartida *midia);
 
-/* Segundos ja tocados da musica. */
+/* Ultima amostra do relogio, colhida por atualizar_audio_partida. */
 float tempo_audio_partida(const MidiaPartida *midia);
 
 /* Desenha o fundo cobrindo a tela, com uma camada escura por cima. */

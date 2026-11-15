@@ -28,7 +28,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[1].titulo[sizeof(catalogo[1].titulo) - 1] = '\0';
     strncpy(catalogo[1].filme, "Mamma Mia!", sizeof(catalogo[1].filme) - 1);
     catalogo[1].filme[sizeof(catalogo[1].filme) - 1] = '\0';
-    catalogo[1].dificuldade = 2;
+    catalogo[1].dificuldade = 5;
     strncpy(catalogo[1].caminho_audio, "assets/musicas/dancing_queen/audio.mp3", sizeof(catalogo[1].caminho_audio) - 1);
     catalogo[1].caminho_audio[sizeof(catalogo[1].caminho_audio) - 1] = '\0';
     strncpy(catalogo[1].caminho_notas, "assets/musicas/dancing_queen/notas.txt", sizeof(catalogo[1].caminho_notas) - 1);

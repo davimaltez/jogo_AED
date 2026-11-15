@@ -14,6 +14,7 @@ static int total_teclas_do_quadro = 0;
 static const char *letras_do_quadro = "";
 static float tempo_do_quadro = 0.0f;
 static bool usar_tempo_real = false;
+static unsigned int pistas_seguradas = 0;
 
 /* ---------- Textos desenhados no ultimo quadro ---------- */
 static char textos_desenhados[8192];
@@ -33,6 +34,12 @@ bool __wrap_IsKeyPressed(int tecla) {
 }
 
 bool __wrap_IsKeyPressedRepeat(int tecla) { (void)tecla; return false; }
+bool __wrap_IsKeyDown(int tecla) {
+    for (int pista = 0; pista < TOTAL_PISTAS; pista++) {
+        if (tecla == TECLAS_PISTAS[pista]) return (pistas_seguradas & (1u << pista)) != 0;
+    }
+    return false;
+}
 bool __wrap_IsMouseButtonPressed(int botao) { (void)botao; return false; }
 Vector2 __wrap_GetMousePosition(void) { return (Vector2){ -1, -1 }; }
 void __wrap_ToggleFullscreen(void) { /* mantem a janela de teste oculta */ }
@@ -80,6 +87,12 @@ static void quadro_com(Jogo *jogo, float tempo, int tecla1, int tecla2) {
 
 static void quadro(Jogo *jogo, int tecla) { quadro_com(jogo, 0.0f, tecla, KEY_NULL); }
 
+static void terminar_preparacao(Jogo *jogo) {
+    assert(jogo->partida.preparacao_restante > 0);
+    quadro_com(jogo, jogo->partida.preparacao_restante, KEY_NULL, KEY_NULL);
+    assert(jogo->partida.preparacao_restante == 0);
+}
+
 /* ---------- Arquivos temporarios ---------- */
 static char caminho_notas[] = "/tmp/final_act_notas_XXXXXX";
 static char caminho_ranking[] = "/tmp/final_act_ranking_XXXXXX";
@@ -111,6 +124,7 @@ static void ler_arquivo(const char *caminho, char *destino, size_t tamanho) {
 
 /* Vence a partida atual (notas 1.0/D e 2.0/D+K) e chega ao registro do nome. */
 static void vencer_partida(Jogo *jogo) {
+    terminar_preparacao(jogo);
     quadro_com(jogo, 1.0f, KEY_D, KEY_NULL);
     quadro_com(jogo, 1.0f, KEY_D, KEY_K);
     assert(jogo->tela == TELA_REGISTRO_RANKING);
@@ -141,8 +155,9 @@ static void testar_fluxo_completo(void) {
     /* Arquivo valido: entra na partida. */
     snprintf(jogo.catalogo[1].caminho_notas, sizeof(jogo.catalogo[1].caminho_notas), "%s", caminho_notas);
     quadro(&jogo, KEY_ENTER);
-    assert(jogo.tela == TELA_PARTIDA && jogo.partida.notas != NULL && jogo.partida.tempo == 0.0f);
+    assert(jogo.tela == TELA_PARTIDA && jogo.partida.notas != NULL && jogo.partida.tempo == -TEMPO_ANTECEDENCIA);
     assert(jogo.mensagem_erro[0] == '\0');
+    terminar_preparacao(&jogo);
 
     quadro_com(&jogo, 1.0f, KEY_D, KEY_NULL);
     assert(jogo.partida.pontuacao == 100 && apareceu("PONTOS: 100"));
@@ -154,6 +169,7 @@ static void testar_fluxo_completo(void) {
     assert(jogo.partida.tempo == 1.0f);
     quadro(&jogo, KEY_ENTER);
     assert(!jogo.partida.pausada);
+    terminar_preparacao(&jogo);
 
     /* Acorde final: vitoria vai para o registro do nome. */
     quadro_com(&jogo, 1.0f, KEY_D, KEY_K);
@@ -176,8 +192,9 @@ static void testar_fluxo_completo(void) {
 
     /* JOGAR NOVAMENTE (foco 0) reinicia tudo pelo ponto central. */
     quadro(&jogo, KEY_ENTER);
-    assert(jogo.tela == TELA_PARTIDA && jogo.partida.pontuacao == 0 && jogo.partida.tempo == 0.0f);
+    assert(jogo.tela == TELA_PARTIDA && jogo.partida.pontuacao == 0 && jogo.partida.tempo == -TEMPO_ANTECEDENCIA);
     assert(jogo.partida.desempenho.valor == 75);
+    terminar_preparacao(&jogo);
 
     /* Game Over: o medidor e colocado no limite e a nota passa. */
     jogo.partida.desempenho.valor = PERDA_ERRO;
@@ -186,7 +203,7 @@ static void testar_fluxo_completo(void) {
     quadro(&jogo, KEY_NULL);
     assert(apareceu("GAME OVER") && !apareceu("CONTINUAR"));
     quadro(&jogo, KEY_ENTER);   /* REINICIAR e o primeiro botao do Game Over */
-    assert(!jogo.partida.desempenho.game_over && jogo.partida.tempo == 0.0f);
+    assert(!jogo.partida.desempenho.game_over && jogo.partida.tempo == -TEMPO_ANTECEDENCIA);
 
     /* Pausa -> VOLTAR A SELECAO libera a lista. */
     quadro(&jogo, KEY_ESCAPE);
@@ -326,6 +343,21 @@ static void testar_tamanhos(bool salvar_capturas) {
                 TakeScreenshot(arquivo);
             }
             if (telas[i] == TELA_PARTIDA) {
+                /* Sustains pendentes e ativos, cauda maior que a tela e contagem. */
+                jogo.partida.notas->duracao = 4;
+                quadro(&jogo, KEY_NULL);
+                jogo.partida.notas->estado = NOTA_SUSTENTANDO;
+                pistas_seguradas = 1u << jogo.partida.notas->pista;
+                quadro(&jogo, KEY_NULL);
+                if (tamanhos[t][0] == 900 && tamanhos[t][1] == 600) {
+                    Image captura = LoadImageFromScreen();
+                    assert(ExportImage(captura, "/tmp/final_act_sustentacao.png"));
+                    UnloadImage(captura);
+                }
+                jogo.partida.preparacao_restante = 1;
+                quadro(&jogo, KEY_NULL);
+                jogo.partida.preparacao_restante = 0;
+                pistas_seguradas = 0;
                 /* Pausa e Game Over por cima da partida. */
                 jogo.partida.desempenho.game_over = true;
                 quadro(&jogo, KEY_NULL);
@@ -348,6 +380,107 @@ static void testar_tamanhos(bool salvar_capturas) {
     puts("OK: todas as telas cabem em 1920x1080, 1280x720, 900x600, 640x360 e 640x480.");
 }
 
+/* Audio gerado em /tmp: eventos conhecidos, sem depender dos mapas do catalogo. */
+static void testar_faixa_completa(void) {
+    char pasta[] = "/tmp/final_act_audio_XXXXXX";
+    assert(mkdtemp(pasta) != NULL);
+    char caminho_audio[128];
+    snprintf(caminho_audio, sizeof(caminho_audio), "%s/audio.wav", pasta);
+    Wave onda = { 0 };
+    onda.frameCount = 4 * 44100;
+    onda.sampleRate = 44100;
+    onda.sampleSize = 16;
+    onda.channels = 1;
+    short *amostras = calloc(onda.frameCount, sizeof(short));
+    assert(amostras != NULL);
+    /* Pulsos de referencia a cada meio segundo; o arquivo termina em silencio. */
+    for (unsigned int i = 0; i < onda.frameCount; i++) {
+        if (i % 22050 < 2205 && i < 3 * 44100) {
+            amostras[i] = (short)(3000 * sin(2 * 3.141592653589793 * 440 * i / 44100));
+        }
+    }
+    onda.data = amostras;
+    assert(ExportWave(onda, caminho_audio));
+    free(amostras);
+    const char *mapa = "0.2 0 0.8\n1 4\n3.99 2\n";
+    FILE *arquivo = fopen(caminho_notas, "w");
+    assert(arquivo != NULL && fputs(mapa, arquivo) >= 0 && fclose(arquivo) == 0);
+
+    InitAudioDevice();
+    assert(IsAudioDeviceReady());
+    Jogo jogo;
+    preparar_jogo_de_teste(&jogo);
+    Musica *musica = musica_atual(&jogo);
+    snprintf(musica->caminho_audio, sizeof(musica->caminho_audio), "%s", caminho_audio);
+    musica->caminho_fundo[0] = '\0';
+    iniciar_partida(&jogo);
+    assert(jogo.tela == TELA_PARTIDA && jogo.midia.estado_audio == AUDIO_PRONTO);
+    assert(fabsf(jogo.midia.duracao_audio - 4) < 0.001f);
+    SetMusicVolume(jogo.midia.musica, 0); /* Teste automatico nao precisa emitir som. */
+    terminar_preparacao(&jogo);
+    bool iniciou = false, pausou = false, acertou_comum = false;
+    double prazo = GetTime() + 12;
+    while (jogo.tela == TELA_PARTIDA && GetTime() < prazo) {
+        WaitTime(0.01);
+        float tempo = jogo.partida.tempo;
+        int tecla = KEY_NULL;
+        if (!iniciou && tempo >= 0.2f) {
+            tecla = KEY_D;
+            pistas_seguradas = 1;
+            iniciou = true;
+        }
+        if (!pausou && tempo >= 0.5f) {
+            quadro(&jogo, KEY_ESCAPE);
+            float congelado = jogo.partida.tempo;
+            int pontos = jogo.partida.pontuacao;
+            pistas_seguradas = 0;
+            for (int i = 0; i < 5; i++) { WaitTime(0.01); quadro_com(&jogo, 1, KEY_NULL, KEY_NULL); }
+            assert(jogo.partida.tempo == congelado && jogo.partida.pontuacao == pontos);
+            quadro(&jogo, KEY_ESCAPE);
+            pistas_seguradas = 1;
+            terminar_preparacao(&jogo);
+            assert(jogo.partida.tempo == congelado);
+            pausou = true;
+        }
+        if (!acertou_comum && tempo >= 1) { tecla = KEY_K; acertou_comum = true; }
+        if (tempo >= 1.1f) pistas_seguradas = 0;
+        quadro_com(&jogo, 0.01f, tecla, KEY_NULL);
+        if (!jogo.partida.audio_finalizado) assert(jogo.tela == TELA_PARTIDA);
+    }
+    assert(jogo.tela == TELA_REGISTRO_RANKING);
+    assert(iniciou && pausou && acertou_comum);
+    assert(jogo.midia.estado_audio == AUDIO_FINALIZADO && jogo.partida.tempo > 4.2f);
+    assert(jogo.partida.sustentacoes_concluidas == 1 && jogo.partida.sustentacoes_interrompidas == 0);
+    assert(jogo.partida.notas_acertadas == 2 && jogo.partida.notas_perdidas == 1);
+
+    /* Reinicio invalido conserva a lista e os resultados anteriores. */
+    Nota *lista_anterior = jogo.partida.notas;
+    int pontos = jogo.partida.pontuacao;
+    arquivo = fopen(caminho_notas, "w");
+    assert(arquivo != NULL && fputs("3 0 2\n", arquivo) >= 0 && fclose(arquivo) == 0);
+    reiniciar_partida(&jogo);
+    assert(jogo.tela == TELA_REGISTRO_RANKING && jogo.partida.notas == lista_anterior);
+    assert(jogo.partida.pontuacao == pontos && strstr(jogo.mensagem_erro, "ultrapassa") != NULL);
+    arquivo = fopen(caminho_notas, "w");
+    assert(arquivo != NULL && fputs(mapa, arquivo) >= 0 && fclose(arquivo) == 0);
+    reiniciar_partida(&jogo);
+    assert(jogo.midia.estado_audio == AUDIO_PRONTO && !jogo.partida.audio_finalizado);
+    assert(jogo.partida.sustentacoes_concluidas == 0 && jogo.partida.pontuacao == 0);
+    terminar_preparacao(&jogo);
+    quadro(&jogo, KEY_NULL);
+    assert(jogo.midia.estado_audio == AUDIO_TOCANDO);
+    /* Uma parada externa nao pode produzir vitoria nem relogio artificial. */
+    StopMusicStream(jogo.midia.musica);
+    float congelado = jogo.partida.tempo;
+    quadro_com(&jogo, 5, KEY_NULL, KEY_NULL);
+    assert(jogo.midia.estado_audio == AUDIO_FALHOU && jogo.partida.pausada);
+    assert(jogo.partida.tempo == congelado && jogo.tela == TELA_PARTIDA);
+    liberar_jogo(&jogo);
+    CloseAudioDevice();
+    assert(unlink(caminho_audio) == 0 && rmdir(pasta) == 0);
+    puts("OK: faixa WAV inteira, silencio final, sustain, pausa, janela final e falha de audio.");
+}
+
 /* So roda se houver dispositivo de audio e o arquivo da musica Popular. */
 static void testar_audio_sincronizado(void) {
     InitAudioDevice();
@@ -366,6 +499,7 @@ static void testar_audio_sincronizado(void) {
     jogo.indice_musica = indice;
     aplicar_acao(&jogo, ACAO_INICIAR_PARTIDA);
     assert(jogo.tela == TELA_PARTIDA && jogo.midia.musica_carregada);
+    terminar_preparacao(&jogo);
 
     /* O tempo do quadro fica em zero: so o audio pode fazer o tempo andar. */
     for (int i = 0; i < 15; i++) { WaitTime(0.02); quadro(&jogo, KEY_NULL); }
@@ -384,12 +518,14 @@ static void testar_audio_sincronizado(void) {
 
     /* Continuar: volta a andar a partir do mesmo ponto. */
     quadro(&jogo, KEY_ESCAPE);
+    terminar_preparacao(&jogo);
     for (int i = 0; i < 5; i++) { WaitTime(0.02); quadro(&jogo, KEY_NULL); }
     assert(jogo.partida.tempo > tempo_pausa);
 
     /* Reiniciar: audio e notas voltam ao zero juntos. */
     aplicar_acao(&jogo, ACAO_REINICIAR);
-    assert(jogo.partida.tempo == 0.0f);
+    assert(jogo.partida.tempo == -TEMPO_ANTECEDENCIA);
+    terminar_preparacao(&jogo);
     quadro(&jogo, KEY_NULL);
     assert(jogo.partida.tempo < tempo_pausa);
 
@@ -400,6 +536,69 @@ static void testar_audio_sincronizado(void) {
     printf("OK: audio sincronizado (tocou %.2f s, pausa congelou, reinicio voltou ao zero).\n", tempo_tocando);
 }
 
+/* Opcional: percorre o MP3 real inteiro, sem editar mapa, midia ou ranking do usuario. */
+static void testar_mp3_completo(bool mapa_real) {
+    InitAudioDevice();
+    assert(IsAudioDeviceReady());
+    Jogo jogo;
+    iniciar_jogo(&jogo);
+    jogo.indice_musica = buscar_indice_por_titulo(jogo.catalogo, jogo.total_musicas, "Dancing Queen");
+    assert(jogo.indice_musica >= 0);
+    Musica *musica = musica_atual(&jogo);
+    if (!mapa_real) snprintf(musica->caminho_notas, sizeof(musica->caminho_notas), "%s", caminho_notas);
+    snprintf(musica->caminho_ranking, sizeof(musica->caminho_ranking), "%s", caminho_ranking);
+    FILE *arquivo = fopen(caminho_notas, "w");
+    assert(arquivo != NULL && fputs("0.2 0 0.8\n", arquivo) >= 0 && fclose(arquivo) == 0);
+    iniciar_partida(&jogo);
+    assert(jogo.midia.musica_carregada && jogo.tela == TELA_PARTIDA);
+    SetMusicVolume(jogo.midia.musica, 0);
+    terminar_preparacao(&jogo);
+    int total_notas = 0, total_sustains = 0;
+    for (Nota *nota = jogo.partida.notas; nota != NULL; nota = nota->proximo) {
+        total_notas++;
+        if (nota->duracao > 0) total_sustains++;
+    }
+    double inicio = GetTime();
+    double prazo = inicio + jogo.midia.duracao_audio + 15;
+    bool acertou = false;
+    float anterior = 0;
+    printf("MP3 completo: %.3f segundos, volume zero.\n", jogo.midia.duracao_audio);
+    while (jogo.tela == TELA_PARTIDA && GetTime() < prazo) {
+        WaitTime(0.01);
+        int tecla = KEY_NULL, segunda_tecla = KEY_NULL;
+        if (mapa_real) {
+            pistas_seguradas = 0;
+            for (const Nota *nota = jogo.partida.notas; nota != NULL; nota = nota->proximo) {
+                if (nota->estado == NOTA_SUSTENTANDO) pistas_seguradas |= 1u << nota->pista;
+                if (nota->estado == NOTA_PENDENTE && nota->tempo_alvo <= jogo.partida.tempo) {
+                    if (tecla == KEY_NULL) tecla = TECLAS_PISTAS[nota->pista];
+                    else { assert(segunda_tecla == KEY_NULL); segunda_tecla = TECLAS_PISTAS[nota->pista]; }
+                    pistas_seguradas |= 1u << nota->pista;
+                }
+            }
+        } else if (!acertou && jogo.partida.tempo >= 0.2f) {
+            tecla = KEY_D;
+            pistas_seguradas = 1;
+            acertou = true;
+        }
+        quadro_com(&jogo, 0.01f, tecla, segunda_tecla);
+        assert(jogo.partida.tempo >= anterior);
+        anterior = jogo.partida.tempo;
+        if (!jogo.partida.audio_finalizado) assert(jogo.tela == TELA_PARTIDA);
+    }
+    assert(jogo.tela == TELA_REGISTRO_RANKING && jogo.midia.estado_audio == AUDIO_FINALIZADO);
+    assert(jogo.partida.sustentacoes_concluidas == total_sustains);
+    assert(jogo.partida.notas_acertadas == total_notas && jogo.partida.notas_perdidas == 0);
+    assert(jogo.partida.sustentacoes_interrompidas == 0);
+    assert(jogo.partida.tempo >= jogo.midia.duracao_audio);
+    assert(GetTime() - inicio >= jogo.midia.duracao_audio - 0.5);
+    printf("OK: MP3 inteiro, %d notas, %d sustains e vitoria apos %.3f segundos de audio.\n",
+           total_notas, total_sustains, jogo.midia.duracao_audio);
+    pistas_seguradas = 0;
+    liberar_jogo(&jogo);
+    CloseAudioDevice();
+}
+
 int main(int argc, char **argv) {
     setvbuf(stdout, NULL, _IOLBF, 0);
     SetConfigFlags(0);
@@ -408,10 +607,15 @@ int main(int argc, char **argv) {
     criar_temporario(caminho_notas, "2 4\n1 0\n2 0\n");
     criar_temporario(caminho_ranking, "");
 
-    testar_fluxo_completo();
-    testar_ranking_existente();
-    testar_tamanhos(argc > 1 && strcmp(argv[1], "capturas") == 0);
-    testar_audio_sincronizado();
+    if (argc > 1 && (strcmp(argv[1], "audio-completo") == 0 || strcmp(argv[1], "mapa-completo") == 0)) {
+        testar_mp3_completo(strcmp(argv[1], "mapa-completo") == 0);
+    } else {
+        testar_fluxo_completo();
+        testar_ranking_existente();
+        testar_tamanhos(argc > 1 && strcmp(argv[1], "capturas") == 0);
+        testar_audio_sincronizado();
+        testar_faixa_completa();
+    }
 
     assert(unlink(caminho_notas) == 0 && unlink(caminho_ranking) == 0);
     CloseWindow();

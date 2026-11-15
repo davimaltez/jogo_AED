@@ -1,0 +1,6169 @@
+{
+  "audio_sha256": "b3973408cd9033d44f7f2551ccc1c5df9f235a1c1a9c870b002322b0ca5a4cab",
+  "midi_sha256": "dbb2a6064fcdc852cfccafb7a3defeaea59415b26810d3d5d0970e8cb0a85bda",
+  "ancoras_principal": [
+    [
+      10.0,
+      3.799999999999992,
+      0.7142385287635724
+    ],
+    [
+      18.0,
+      11.731999999999994,
+      0.7513511537670726
+    ],
+    [
+      26.0,
+      19.793999999999993,
+      0.754318259689008
+    ],
+    [
+      34.0,
+      27.796,
+      0.7547513434106986
+    ],
+    [
+      42.0,
+      35.77799999999999,
+      0.764352439197924
+    ],
+    [
+      50.0,
+      43.769999999999996,
+      0.6625779929384836
+    ],
+    [
+      58.0,
+      51.901999999999994,
+      0.7179595890211543
+    ],
+    [
+      66.0,
+      59.93399999999999,
+      0.660034224433449
+    ],
+    [
+      74.0,
+      67.836,
+      0.7464343610626853
+    ],
+    [
+      82.0,
+      75.878,
+      0.6257333331223099
+    ],
+    [
+      90.0,
+      84.02,
+      0.7223510581449307
+    ],
+    [
+      98.0,
+      92.09199999999998,
+      0.8018627219358219
+    ],
+    [
+      106.0,
+      100.124,
+      0.7914525985202839
+    ],
+    [
+      114.0,
+      108.126,
+      0.7967133359352595
+    ],
+    [
+      122.0,
+      116.13799999999999,
+      0.7624476207789399
+    ],
+    [
+      130.0,
+      124.15,
+      0.814978381628746
+    ],
+    [
+      138.0,
+      132.142,
+      0.7916222964451682
+    ],
+    [
+      146.0,
+      140.174,
+      0.7432529289525253
+    ],
+    [
+      154.0,
+      148.26600000000002,
+      0.6387265222784012
+    ],
+    [
+      162.0,
+      156.248,
+      0.7211699258932363
+    ],
+    [
+      170.0,
+      164.35,
+      0.7763082354774272
+    ],
+    [
+      178.0,
+      172.44199999999998,
+      0.7639568196855779
+    ],
+    [
+      186.0,
+      180.374,
+      0.7695634931649645
+    ],
+    [
+      194.0,
+      188.45600000000002,
+      0.7224548695328734
+    ],
+    [
+      202.0,
+      196.468,
+      0.8062543114105374
+    ],
+    [
+      210.0,
+      204.47,
+      0.7778639626332612
+    ]
+  ],
+  "ancoras_repeticao": [
+    [
+      109.36,
+      209.05744000000016,
+      0.7846576420012426
+    ],
+    [
+      113.0,
+      212.71200000000016,
+      0.7936253129921061
+    ],
+    [
+      117.0,
+      216.66800000000015,
+      0.7863036285053002
+    ],
+    [
+      121.0,
+      220.70400000000015,
+      0.7457896016942939
+    ],
+    [
+      124.0,
+      223.6360000000001,
+      0.7082720144007776
+    ]
+  ],
+  "total": 750,
+  "sustentacoes": 147,
+  "primeiro": 0.285,
+  "ultimo": 241.291,
+  "eventos": [
+    {
+      "tempo": 0.285,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 89
+    },
+    {
+      "tempo": 0.435,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 79
+    },
+    {
+      "tempo": 0.585,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 1.129,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 1.129,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 1.56,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 1.56,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 2.029,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 2.029,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 2.46,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 2.46,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 3.529,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 3.529,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 3.958,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 3.958,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 4.421,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 4.421,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 4.847,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 4.847,
+      "pista": 0,
+      "duracao": 0.66,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 5.902,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 5.902,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 6.328,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 6.328,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 6.791,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 6.791,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 7.217,
+      "pista": 1,
+      "duracao": 0.654,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 7.217,
+      "pista": 0,
+      "duracao": 0.71,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 7.976,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 92
+    },
+    {
+      "tempo": 8.105,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 92
+    },
+    {
+      "tempo": 8.272,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 8.568,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 8.568,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 8.698,
+      "pista": 3,
+      "duracao": 1.241,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 9.161,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 9.587,
+      "pista": 1,
+      "duracao": 0.667,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 10.642,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 10.642,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 11.068,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 11.068,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 11.531,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 11.531,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 11.961,
+      "pista": 1,
+      "duracao": 0.709,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 11.961,
+      "pista": 0,
+      "duracao": 0.778,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 13.033,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 13.033,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 13.466,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 13.466,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 13.937,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 13.937,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 14.369,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 14.369,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 15.442,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 15.442,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 15.875,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 15.875,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 16.346,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 73
+    },
+    {
+      "tempo": 16.346,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 17.08,
+      "pista": 3,
+      "duracao": 0.59,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 17.08,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 83
+    },
+    {
+      "tempo": 17.682,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 17.832,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 17.983,
+      "pista": 2,
+      "duracao": 1.788,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 17.983,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 18.585,
+      "pista": 1,
+      "duracao": 1.173,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 20.088,
+      "pista": 4,
+      "duracao": 0.478,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 20.088,
+      "pista": 1,
+      "duracao": 0.478,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 20.686,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 20.985,
+      "pista": 3,
+      "duracao": 1.108,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 21.583,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 21.882,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 22.479,
+      "pista": 4,
+      "duracao": 0.478,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 22.479,
+      "pista": 1,
+      "duracao": 0.478,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 23.077,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 23.376,
+      "pista": 3,
+      "duracao": 0.604,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 23.974,
+      "pista": 4,
+      "duracao": 0.809,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 24.273,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 24.87,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 25.319,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 25.319,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 25.767,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 25.767,
+      "pista": 1,
+      "duracao": 1.158,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 26.066,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 26.514,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 26.963,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 27.261,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 27.261,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 27.411,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 27.56,
+      "pista": 1,
+      "duracao": 0.814,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 27.728,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 83
+    },
+    {
+      "tempo": 28.157,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 85
+    },
+    {
+      "tempo": 28.455,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 28.753,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 28.753,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 28.903,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 28.903,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 29.052,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 29.052,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 29.201,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 29.35,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 29.648,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 29.648,
+      "pista": 3,
+      "duracao": 2.205,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 29.816,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 30.095,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 30.244,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 30.542,
+      "pista": 2,
+      "duracao": 1.261,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 32.033,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 32.201,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 32.48,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 32.629,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 32.927,
+      "pista": 2,
+      "duracao": 0.775,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 33.095,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 33.523,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 33.822,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 33.971,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 34.269,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 34.418,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 34.586,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 34.865,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 35.014,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 35.312,
+      "pista": 2,
+      "duracao": 3.0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 35.48,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 35.909,
+      "pista": 1,
+      "duracao": 0.697,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 36.804,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 92
+    },
+    {
+      "tempo": 36.972,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 37.271,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 37.401,
+      "pista": 3,
+      "duracao": 1.461,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 40.685,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 40.685,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 40.983,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 40.983,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 43.073,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 43.073,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 43.371,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 43.371,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 43.972,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 43.972,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 44.275,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 44.427,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 44.731,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 44.883,
+      "pista": 1,
+      "duracao": 1.101,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 45.035,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 45.187,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 45.49,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 45.794,
+      "pista": 0,
+      "duracao": 2.43,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 46.402,
+      "pista": 1,
+      "duracao": 0.652,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 47.313,
+      "pista": 1,
+      "duracao": 0.759,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 48.224,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 68
+    },
+    {
+      "tempo": 48.831,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 48.831,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 49.135,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 49.287,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 49.591,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 49.743,
+      "pista": 1,
+      "duracao": 1.253,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 49.894,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 50.046,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 50.35,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 50.654,
+      "pista": 0,
+      "duracao": 2.103,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 51.261,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 52.169,
+      "pista": 1,
+      "duracao": 1.212,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 52.919,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 53.069,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 53.219,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 53.538,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 53.669,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 53.669,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 74
+    },
+    {
+      "tempo": 53.969,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 54.119,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 54.119,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 54.419,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 54.569,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 54.569,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 54.869,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 55.169,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 55.169,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 55.338,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 55.638,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 80
+    },
+    {
+      "tempo": 55.938,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 56.069,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 56.069,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 74
+    },
+    {
+      "tempo": 56.369,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 56.519,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 56.519,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 56.819,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 56.969,
+      "pista": 1,
+      "duracao": 0.469,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 56.969,
+      "pista": 2,
+      "duracao": 1.481,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 57.869,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 58.019,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 57
+    },
+    {
+      "tempo": 58.319,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 56
+    },
+    {
+      "tempo": 58.469,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 52
+    },
+    {
+      "tempo": 58.919,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 58.919,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 59.069,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 59.369,
+      "pista": 0,
+      "duracao": 3.0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 59.369,
+      "pista": 2,
+      "duracao": 1.466,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 61.315,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 61.739,
+      "pista": 4,
+      "duracao": 1.224,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 63.215,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 63.215,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 63.51,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 63.658,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 63.658,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 63.953,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 64.1,
+      "pista": 1,
+      "duracao": 1.205,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 64.248,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 64.395,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 64.691,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 65.281,
+      "pista": 0,
+      "duracao": 2.275,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 65.576,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 66.037,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 66.461,
+      "pista": 1,
+      "duracao": 1.224,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 67.939,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 67.939,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 68.239,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 68.389,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 68.389,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 68.69,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 68.84,
+      "pista": 1,
+      "duracao": 1.227,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 68.99,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 69.14,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 69.441,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 70.342,
+      "pista": 0,
+      "duracao": 2.14,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 70.342,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 70.811,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 71.243,
+      "pista": 1,
+      "duracao": 1.252,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 72.613,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 72.745,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 72.745,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 74
+    },
+    {
+      "tempo": 73.045,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 73.195,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 73.195,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 73.496,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 73.646,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 73.646,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 73.946,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 74.247,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 74.247,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 74.416,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 74.716,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 80
+    },
+    {
+      "tempo": 75.016,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 75.148,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 75.148,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 74
+    },
+    {
+      "tempo": 75.448,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 75.598,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 75.598,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 75.899,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 76.051,
+      "pista": 1,
+      "duracao": 0.558,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 76.051,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 76.659,
+      "pista": 2,
+      "duracao": 0.697,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 76.963,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 77.115,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 57
+    },
+    {
+      "tempo": 77.419,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 56
+    },
+    {
+      "tempo": 77.572,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 52
+    },
+    {
+      "tempo": 77.572,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 78.028,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 78.028,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 78.18,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 78.484,
+      "pista": 0,
+      "duracao": 2.192,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 78.484,
+      "pista": 2,
+      "duracao": 1.502,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 80.48,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 80.917,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 80.917,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 81.221,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 57
+    },
+    {
+      "tempo": 81.677,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 82.133,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 82.437,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 82.437,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 73
+    },
+    {
+      "tempo": 82.893,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 62
+    },
+    {
+      "tempo": 82.893,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 74
+    },
+    {
+      "tempo": 83.35,
+      "pista": 0,
+      "duracao": 1.344,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 62
+    },
+    {
+      "tempo": 83.35,
+      "pista": 1,
+      "duracao": 0.929,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 74
+    },
+    {
+      "tempo": 84.712,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 84.863,
+      "pista": 0,
+      "duracao": 0.955,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 84.863,
+      "pista": 2,
+      "duracao": 2.117,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 86.069,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 86.521,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 86.973,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 87.275,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 87.444,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 87.727,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 87.878,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 88.179,
+      "pista": 2,
+      "duracao": 1.262,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 88.349,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 88.782,
+      "pista": 1,
+      "duracao": 0.653,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 89.687,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 89.856,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 90.139,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 90.29,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 90.591,
+      "pista": 2,
+      "duracao": 0.559,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 90.761,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 91.194,
+      "pista": 3,
+      "duracao": 0.553,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 91.364,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 91.495,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 91.797,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 92.098,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 92.267,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 92.548,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 92.698,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 92.998,
+      "pista": 2,
+      "duracao": 3.0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 93.167,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 93.598,
+      "pista": 1,
+      "duracao": 0.737,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 94.498,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 92
+    },
+    {
+      "tempo": 94.667,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 94.967,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 95.098,
+      "pista": 3,
+      "duracao": 1.294,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 96.898,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 97.067,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 97.348,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 97.498,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 97.798,
+      "pista": 2,
+      "duracao": 1.212,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 97.967,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 98.398,
+      "pista": 1,
+      "duracao": 0.7,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 99.298,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 99.467,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 99.748,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 99.898,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 100.198,
+      "pista": 2,
+      "duracao": 0.573,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 100.366,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 100.796,
+      "pista": 3,
+      "duracao": 0.585,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 101.394,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 101.692,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 101.861,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 102.141,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 102.29,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 102.589,
+      "pista": 4,
+      "duracao": 0.859,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 102.757,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 73
+    },
+    {
+      "tempo": 103.187,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 73
+    },
+    {
+      "tempo": 103.355,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 97
+    },
+    {
+      "tempo": 103.486,
+      "pista": 2,
+      "duracao": 0.592,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 103.953,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 95
+    },
+    {
+      "tempo": 104.083,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 104.233,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 104.382,
+      "pista": 1,
+      "duracao": 1.731,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 104.55,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 104.98,
+      "pista": 3,
+      "duracao": 1.332,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 106.474,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 106.474,
+      "pista": 1,
+      "duracao": 1.252,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 107.072,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 107.371,
+      "pista": 3,
+      "duracao": 1.04,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 107.969,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 108.268,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 108.866,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 108.866,
+      "pista": 1,
+      "duracao": 1.209,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 109.465,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 109.764,
+      "pista": 3,
+      "duracao": 0.642,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 110.363,
+      "pista": 4,
+      "duracao": 0.736,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 110.662,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 111.26,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 111.26,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 111.709,
+      "pista": 3,
+      "duracao": 0.455,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 111.709,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 112.158,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 112.457,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 112.906,
+      "pista": 3,
+      "duracao": 0.486,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 113.355,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 113.654,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 113.654,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 113.804,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 113.954,
+      "pista": 1,
+      "duracao": 0.848,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 114.122,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 83
+    },
+    {
+      "tempo": 114.552,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 85
+    },
+    {
+      "tempo": 114.851,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 115.151,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 115.3,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 115.3,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 115.45,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 115.45,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 115.599,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 115.749,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 116.048,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 116.048,
+      "pista": 3,
+      "duracao": 2.425,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 116.217,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 116.497,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 116.647,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 116.946,
+      "pista": 2,
+      "duracao": 1.322,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 118.442,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 118.611,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 118.891,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 119.041,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 119.34,
+      "pista": 2,
+      "duracao": 0.778,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 119.508,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 119.938,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 120.238,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 120.387,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 120.687,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 120.836,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 121.005,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 121.285,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 121.435,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 121.734,
+      "pista": 2,
+      "duracao": 3.0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 121.902,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 122.332,
+      "pista": 1,
+      "duracao": 0.767,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 123.23,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 92
+    },
+    {
+      "tempo": 123.399,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 123.698,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 123.829,
+      "pista": 3,
+      "duracao": 1.512,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 125.788,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 125.788,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 126.218,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 126.218,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 126.684,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 126.684,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 127.113,
+      "pista": 1,
+      "duracao": 0.833,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 127.113,
+      "pista": 0,
+      "duracao": 0.871,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 128.176,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 128.176,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 128.606,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 128.606,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 129.072,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 129.072,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 129.501,
+      "pista": 1,
+      "duracao": 0.808,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 129.501,
+      "pista": 0,
+      "duracao": 0.84,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 131.889,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 131.889,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 132.188,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 132.188,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 134.288,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 134.288,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 134.588,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 134.588,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 62
+    },
+    {
+      "tempo": 135.188,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 135.188,
+      "pista": 1,
+      "duracao": 0.712,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 135.488,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 135.638,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 135.938,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 136.088,
+      "pista": 1,
+      "duracao": 1.219,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 136.238,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 136.388,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 136.688,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 136.988,
+      "pista": 0,
+      "duracao": 2.65,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 137.588,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 138.488,
+      "pista": 1,
+      "duracao": 1.206,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 139.988,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 139.988,
+      "pista": 1,
+      "duracao": 0.704,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 140.289,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 140.44,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 140.742,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 140.893,
+      "pista": 1,
+      "duracao": 1.272,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 64
+    },
+    {
+      "tempo": 141.044,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 141.195,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 141.497,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 142.404,
+      "pista": 0,
+      "duracao": 2.21,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 142.404,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 143.311,
+      "pista": 1,
+      "duracao": 1.316,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 66
+    },
+    {
+      "tempo": 144.822,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 144.822,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 74
+    },
+    {
+      "tempo": 145.124,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 145.275,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 145.275,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 145.578,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 145.729,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 145.729,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 146.031,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 146.333,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 146.333,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 146.503,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 146.805,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 80
+    },
+    {
+      "tempo": 147.108,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 147.24,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 147.24,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 74
+    },
+    {
+      "tempo": 147.542,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 147.693,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 147.693,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 147.996,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 148.147,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 148.147,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 148.745,
+      "pista": 2,
+      "duracao": 0.689,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 149.043,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 149.192,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 57
+    },
+    {
+      "tempo": 149.49,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 56
+    },
+    {
+      "tempo": 149.639,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 52
+    },
+    {
+      "tempo": 149.639,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 76
+    },
+    {
+      "tempo": 150.086,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 150.086,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 150.235,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 150.533,
+      "pista": 0,
+      "duracao": 2.18,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 54
+    },
+    {
+      "tempo": 150.533,
+      "pista": 2,
+      "duracao": 1.472,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 152.49,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 152.918,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 152.918,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 153.216,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 57
+    },
+    {
+      "tempo": 153.664,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 154.111,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 154.409,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 154.409,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 73
+    },
+    {
+      "tempo": 154.856,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 62
+    },
+    {
+      "tempo": 154.856,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 74
+    },
+    {
+      "tempo": 155.303,
+      "pista": 0,
+      "duracao": 1.322,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 62
+    },
+    {
+      "tempo": 155.303,
+      "pista": 1,
+      "duracao": 1.095,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 74
+    },
+    {
+      "tempo": 156.651,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 61
+    },
+    {
+      "tempo": 156.802,
+      "pista": 0,
+      "duracao": 0.977,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 59
+    },
+    {
+      "tempo": 156.802,
+      "pista": 2,
+      "duracao": 1.797,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 158.013,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 64
+    },
+    {
+      "tempo": 158.467,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 158.92,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 159.223,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 159.393,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 159.677,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 159.828,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 160.131,
+      "pista": 2,
+      "duracao": 1.305,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 160.301,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 160.736,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 160.906,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 161.039,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 161.644,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 161.814,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 162.098,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 162.249,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 162.552,
+      "pista": 2,
+      "duracao": 0.574,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 162.722,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 163.157,
+      "pista": 3,
+      "duracao": 0.479,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 163.327,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 95
+    },
+    {
+      "tempo": 163.46,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 95
+    },
+    {
+      "tempo": 163.762,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 164.065,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 164.235,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 164.519,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 164.67,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 164.972,
+      "pista": 2,
+      "duracao": 3.0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 165.142,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 165.576,
+      "pista": 1,
+      "duracao": 0.686,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 166.483,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 92
+    },
+    {
+      "tempo": 166.653,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 166.955,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 167.088,
+      "pista": 3,
+      "duracao": 1.643,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 168.901,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 169.071,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 169.354,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 169.505,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 169.808,
+      "pista": 2,
+      "duracao": 1.24,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 169.978,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 170.412,
+      "pista": 1,
+      "duracao": 0.819,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 171.319,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 171.489,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 171.772,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 171.923,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 172.226,
+      "pista": 2,
+      "duracao": 0.547,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 172.396,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 172.822,
+      "pista": 3,
+      "duracao": 0.586,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 172.989,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 173.119,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 173.415,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 173.711,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 173.878,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 174.156,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 174.304,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 174.6,
+      "pista": 4,
+      "duracao": 0.883,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 174.767,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 73
+    },
+    {
+      "tempo": 175.359,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 97
+    },
+    {
+      "tempo": 175.489,
+      "pista": 2,
+      "duracao": 0.586,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 175.952,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 95
+    },
+    {
+      "tempo": 176.081,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 176.229,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 176.377,
+      "pista": 1,
+      "duracao": 1.784,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 176.544,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 176.97,
+      "pista": 3,
+      "duracao": 1.432,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 178.451,
+      "pista": 4,
+      "duracao": 0.549,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 179.044,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 179.34,
+      "pista": 3,
+      "duracao": 1.106,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 179.933,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 68
+    },
+    {
+      "tempo": 180.229,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 68
+    },
+    {
+      "tempo": 180.83,
+      "pista": 4,
+      "duracao": 0.484,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 180.83,
+      "pista": 1,
+      "duracao": 0.484,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 181.434,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 181.735,
+      "pista": 3,
+      "duracao": 0.61,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 182.339,
+      "pista": 4,
+      "duracao": 0.899,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 182.641,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 183.245,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 183.698,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 183.698,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 83
+    },
+    {
+      "tempo": 184.15,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 184.15,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 80
+    },
+    {
+      "tempo": 184.452,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 184.452,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 184.905,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 184.905,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 83
+    },
+    {
+      "tempo": 185.358,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 185.358,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 80
+    },
+    {
+      "tempo": 185.66,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 185.66,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 185.811,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 185.961,
+      "pista": 1,
+      "duracao": 0.874,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 186.131,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 83
+    },
+    {
+      "tempo": 186.565,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 85
+    },
+    {
+      "tempo": 186.867,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 187.169,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 187.169,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 187.32,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 187.32,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 187.471,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 187.471,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 187.622,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 187.773,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 188.075,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 188.075,
+      "pista": 3,
+      "duracao": 2.385,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 188.244,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 188.527,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 188.676,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 188.976,
+      "pista": 2,
+      "duracao": 1.315,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 190.472,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 190.64,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 190.921,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 191.07,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 191.37,
+      "pista": 2,
+      "duracao": 0.777,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 191.538,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 191.968,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 192.267,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 192.417,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 192.716,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 192.866,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 193.034,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 193.315,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 193.464,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 193.764,
+      "pista": 2,
+      "duracao": 3.0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 193.932,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 194.362,
+      "pista": 1,
+      "duracao": 0.767,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 195.428,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 195.858,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 196.326,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 196.756,
+      "pista": 1,
+      "duracao": 0.791,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 197.82,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 197.82,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 198.25,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 198.25,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 198.717,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 198.717,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 199.147,
+      "pista": 1,
+      "duracao": 0.753,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 199.147,
+      "pista": 0,
+      "duracao": 0.853,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 200.043,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 92
+    },
+    {
+      "tempo": 200.211,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 200.51,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 200.51,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 78
+    },
+    {
+      "tempo": 200.641,
+      "pista": 3,
+      "duracao": 1.076,
+      "origem": "principal",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 201.108,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 201.538,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 201.837,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 201.986,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 202.285,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 202.434,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 202.602,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 202.883,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 203.032,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 203.331,
+      "pista": 2,
+      "duracao": 3.0,
+      "origem": "principal",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 203.499,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 203.929,
+      "pista": 1,
+      "duracao": 0.767,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 204.995,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 205.427,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 205.895,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 206.327,
+      "pista": 1,
+      "duracao": 0.762,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 207.395,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 207.395,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 207.827,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 207.827,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 208.295,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 208.295,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "principal",
+      "canal": 3,
+      "altura": 61
+    },
+    {
+      "tempo": 209.058,
+      "pista": 3,
+      "duracao": 0.594,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 209.058,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 97
+    },
+    {
+      "tempo": 209.527,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 95
+    },
+    {
+      "tempo": 209.658,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 209.808,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 209.958,
+      "pista": 2,
+      "duracao": 1.737,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 210.127,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 93
+    },
+    {
+      "tempo": 210.558,
+      "pista": 3,
+      "duracao": 1.337,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 212.058,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 212.058,
+      "pista": 1,
+      "duracao": 1.247,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 212.658,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 212.955,
+      "pista": 3,
+      "duracao": 1.028,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 213.546,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 213.841,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 214.432,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 214.432,
+      "pista": 1,
+      "duracao": 1.194,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 215.023,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 215.319,
+      "pista": 3,
+      "duracao": 0.634,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 215.91,
+      "pista": 4,
+      "duracao": 0.726,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 216.205,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 71
+    },
+    {
+      "tempo": 216.799,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 216.799,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 217.251,
+      "pista": 3,
+      "duracao": 0.459,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 217.251,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 217.703,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 218.005,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 218.457,
+      "pista": 3,
+      "duracao": 0.49,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 218.909,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 219.211,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 219.211,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 81
+    },
+    {
+      "tempo": 219.361,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 219.512,
+      "pista": 1,
+      "duracao": 0.854,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 66
+    },
+    {
+      "tempo": 219.682,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 83
+    },
+    {
+      "tempo": 220.115,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 85
+    },
+    {
+      "tempo": 220.417,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 220.718,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 220.864,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 73
+    },
+    {
+      "tempo": 220.864,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 221.01,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 221.01,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 221.156,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 221.302,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 90
+    },
+    {
+      "tempo": 221.594,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 221.594,
+      "pista": 3,
+      "duracao": 2.375,
+      "origem": "repeticao_final",
+      "canal": 11,
+      "altura": 88
+    },
+    {
+      "tempo": 221.758,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 222.032,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 222.178,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 222.47,
+      "pista": 2,
+      "duracao": 1.293,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 223.938,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 224.107,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 224.388,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 224.538,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 224.838,
+      "pista": 2,
+      "duracao": 0.78,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 225.007,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 225.438,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 225.738,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 71
+    },
+    {
+      "tempo": 225.888,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 226.188,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 226.338,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 68
+    },
+    {
+      "tempo": 226.507,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 226.788,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 226.938,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "repeticao_final",
+      "canal": 3,
+      "altura": 69
+    },
+    {
+      "tempo": 227.238,
+      "pista": 2,
+      "duracao": 3.0,
+      "origem": "repeticao_final",
+      "canal": 4,
+      "altura": 69
+    },
+    {
+      "tempo": 227.797,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 73
+    },
+    {
+      "tempo": 228.146,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 70
+    },
+    {
+      "tempo": 228.846,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 94
+    },
+    {
+      "tempo": 229.196,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 72
+    },
+    {
+      "tempo": 229.396,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 70
+    },
+    {
+      "tempo": 229.796,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 67
+    },
+    {
+      "tempo": 230.046,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 62
+    },
+    {
+      "tempo": 230.595,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 71
+    },
+    {
+      "tempo": 230.845,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 81
+    },
+    {
+      "tempo": 231.095,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 86
+    },
+    {
+      "tempo": 231.745,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 73
+    },
+    {
+      "tempo": 232.145,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 93
+    },
+    {
+      "tempo": 233.044,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 85
+    },
+    {
+      "tempo": 233.694,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 78
+    },
+    {
+      "tempo": 234.394,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 86
+    },
+    {
+      "tempo": 234.644,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 90
+    },
+    {
+      "tempo": 235.743,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 85
+    },
+    {
+      "tempo": 236.043,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 83
+    },
+    {
+      "tempo": 236.393,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 88
+    },
+    {
+      "tempo": 236.643,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 68
+    },
+    {
+      "tempo": 237.292,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 85
+    },
+    {
+      "tempo": 237.542,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 61
+    },
+    {
+      "tempo": 238.092,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 64
+    },
+    {
+      "tempo": 238.442,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 70
+    },
+    {
+      "tempo": 238.692,
+      "pista": 3,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 88
+    },
+    {
+      "tempo": 239.191,
+      "pista": 4,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 95
+    },
+    {
+      "tempo": 239.491,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 74
+    },
+    {
+      "tempo": 239.691,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 64
+    },
+    {
+      "tempo": 240.041,
+      "pista": 0,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 65
+    },
+    {
+      "tempo": 240.341,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 79
+    },
+    {
+      "tempo": 240.641,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 72
+    },
+    {
+      "tempo": 240.991,
+      "pista": 1,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 70
+    },
+    {
+      "tempo": 241.291,
+      "pista": 2,
+      "duracao": 0,
+      "origem": "ataque_tonal_final",
+      "canal": null,
+      "altura": 76
+    }
+  ]
+}

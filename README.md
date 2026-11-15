@@ -4,7 +4,7 @@ Projeto acadêmico de Algoritmos e Estruturas de Dados: um jogo de ritmo com tem
 
 ## Como funciona
 
-O jogador escolhe uma música e pressiona as teclas **D, F, G, J e K** quando as notas chegam à linha de acerto, acumulando pontos e combos.
+O jogador escolhe uma música e pressiona as teclas **D, F, G, J e K** quando as notas chegam à linha de acerto, acumulando pontos e combos. Nas notas longas, mantém a tecla até a cauda chegar à linha.
 
 ## Navegação dos menus
 
@@ -19,7 +19,10 @@ O jogador escolhe uma música e pressiona as teclas **D, F, G, J e K** quando as
 
 ## Organização dos arquivos
 
-- `principal.c`: interface, menus e partida.
+- `principal.c`: laço principal, entradas e transições entre telas.
+- `partida.c/.h`: regras e relógio da partida, sem dependência de raylib.
+- `midia_partida.c/.h`: carregamento e estados de reprodução do áudio.
+- `interface.c/.h`: desenho das telas, notas e sustentações.
 - `catalogo_musicas.c/.h`: catálogo e ordenação com Merge Sort.
 - `lista_notas.c/.h`: gerenciamento das notas em uma lista simplesmente encadeada.
 - `desempenho.c/.h`: regras do medidor e condição de Game Over.
@@ -27,12 +30,12 @@ O jogador escolhe uma música e pressiona as teclas **D, F, G, J e K** quando as
 
 ## Recursos das músicas
 
-Cada música tem uma pasta em `assets/musicas/`: `defying_gravity`,
+Cada música tem uma pasta em `assets/musicas/`. O catálogo atual usa `popular`,
 `dancing_queen`, `city_of_stars`, `this_is_me` e `breaking_free`.
 Coloque os recursos correspondentes dentro de cada pasta:
 
 ```text
-assets/musicas/defying_gravity/
+assets/musicas/dancing_queen/
 ├── audio.mp3
 ├── fundo.png
 └── notas.txt
@@ -40,28 +43,37 @@ assets/musicas/defying_gravity/
 
 Os caminhos ficam na struct `Musica`, no catálogo. Recursos compartilhados
 podem ficar em `assets/interface/fontes/` e `assets/interface/imagens/`.
-As cinco pastas já contêm `notas.txt` com sequências de demonstração.
-Áudios e imagens ainda precisam ser adicionados. Execute o jogo a partir
+Os demais mapas disponíveis são sequências de demonstração; Dancing Queen
+tem uma adaptação difícil completa, descrita abaixo. Os recursos podem
+estar incompletos. Popular usa `popular.wav`, conforme o catálogo. Execute o jogo a partir
 da raiz do projeto para que os caminhos relativos sejam encontrados.
 
 ## Formato dos arquivos de notas
 
-Cada linha contém `tempo pista`, separados por espaços ou tabulações:
+Cada linha contém `tempo pista [duracao]`, separados por espaços ou tabulações.
+O terceiro campo é opcional; omitido ou zero representa uma nota comum:
 
 ```text
-# tempo_em_segundos pista
+# tempo_em_segundos pista duracao_opcional
 4.00 2
 2.00 0
 2.00 4
 3.25 1
+5.00 3 2.00
 ```
 
-O tempo é relativo ao início da partida, em segundos. Aceita zero e números
+O tempo marca o acerto relativo ao início do arquivo de áudio, em segundos,
+incluindo seus silêncios. Não é o instante de aparição da nota. Aceita zero e números
 decimais finitos não negativos, com ponto decimal e expoente opcional
 (`2e0` equivale a `2.0`). A conversão deve caber em `float`, até `FLT_MAX`
 de `<float.h>`; erros de faixa, inclusive valores pequenos demais para a
 conversão, são rejeitados. A precisão é a do `float` usado pelo jogo.
 A pista é um inteiro decimal de 0 a 4: **0=D, 1=F, 2=G, 3=J, 4=K**.
+A duração segue as mesmas regras numéricas. Uma duração positiva define uma
+sustentação; `5.00 3 2.00` começa aos 5 s e termina aos 7 s. A soma precisa
+ser finita e representar um instante maior que o início. Com áudio, nenhum
+evento pode terminar depois da duração da faixa; essa validação ocorre antes
+de substituir a partida anterior.
 
 São aceitos espaços antes/depois dos campos, linhas vazias e comentários
 em linhas próprias iniciadas por `#`, com espaços opcionais antes dele.
@@ -84,10 +96,11 @@ inf 2
 2.0 1 extra
 ```
 
-Notas simultâneas usam linhas diferentes com o mesmo tempo. Cada linha é
-um evento independente; registros repetidos não são eliminados. A ordem
-do arquivo pode ser qualquer uma. O exemplo é ordenado para os tempos
-`2.00, 2.00, 3.25, 4.00`, mantendo a pista 0 antes da pista 4 no empate.
+Notas simultâneas em pistas diferentes usam linhas com o mesmo tempo.
+Duplicatas e sobreposições na mesma pista são rejeitadas. Uma nota pode
+começar exatamente quando a sustentação anterior termina. A ordem do arquivo
+pode ser qualquer uma. O Merge Sort mantém a pista 0 antes da pista 4 no
+empate do exemplo, preservando a ordem relativa original.
 
 `Musica.caminho_notas` determina o arquivo carregado, inclusive após ordenar
 o catálogo. Para cadastrar outra música, informe seu caminho nesse campo;
@@ -115,24 +128,58 @@ ou no Game Over. A causa aparece na tela e o caminho é registrado no
 terminal. Corrija o arquivo e tente novamente. Não há substituição
 automática por notas geradas.
 
-Os cinco arquivos de demonstração reproduzem os eventos do gerador antigo,
-com precisão suficiente para recuperar os mesmos valores de `float`.
-Grupos de tempos aparecem em ordem inversa para demonstrar a ordenação;
+Parte dos arquivos de demonstração reproduz os eventos do gerador antigo.
+Grupos de tempos aparecem fora de ordem para demonstrar a ordenação;
 a ordem das notas simultâneas é mantida. `carregar_notas_iniciais` continua
 disponível para testes. Essas sequências não são transcrições das músicas.
 
 ## Status atual
 
-Em desenvolvimento. As notas são carregadas de arquivos e ordenadas antes
-da partida. A conclusão normal leva à tela de vitória/resultados. O tempo
-continua avançando por `GetFrameTime`; a reprodução de áudio e a sincronização
-musical não foram implementadas.
+Em desenvolvimento. O jogo inicia em janela; F11 alterna a tela cheia.
+As notas são carregadas e ordenadas antes da partida. Há notas comuns e
+longas, contagem inicial de 1,9 s e retomada de pausa com 1 s de preparação.
+O relógio durante a reprodução vem de `GetMusicTimePlayed`, consultado uma
+vez por atualização após alimentar o stream. Julgamento e desenho usam essa
+mesma amostra. Pequenos recuos da leitura não fazem o jogo voltar no tempo.
+
+O áudio possui estados separados: ausente, pronto, tocando, pausado,
+finalizado e falha. Uma parada inesperada pausa a partida com aviso, sem
+passar silenciosamente para o relógio de quadros. O fim natural é registrado
+durante a atualização do stream sem looping; o relógio é ancorado na duração
+antes da resolução das últimas janelas. Um áudio finalizado não é retomado
+ao entrar no ranking. Ausência de áudio mantém um modo de demonstração,
+identificado na tela, que usa `GetFrameTime` e termina pela lista.
+
+Com exceção da adaptação de Dancing Queen, os mapas atuais são de demonstração;
+o relógio correto não os transforma em transcrições das gravações. É necessário conferir
+os timestamps na versão exata do áudio. BPM ajuda a preparar a grade, mas
+não é necessário na execução. A precisão percebida ainda depende de
+latência de áudio, tela e teclado; não há calibração de hardware implementada.
 
 ## Conclusão normal e resultados
 
-Uma partida ativa termina normalmente quando sua lista não vazia contém
-somente notas acertadas ou perdidas. `todas_notas_resolvidas` percorre a
-lista sem alterar seus nós. A verificação acontece depois dos acertos,
+### Dancing Queen: mapa difícil
+
+Dificuldade 5/5, revisada para **somente teclado**, com 535 notas,
+105 sustentações e 189 ataques em acorde. O mapa usa apenas os canais de
+piano do MIDI, com ajustes pelos ataques no áudio. Voz e ataques genéricos
+do fechamento foram removidos. Até duas teclas são exigidas simultaneamente.
+
+O último evento termina em 227,064 s; o restante fica sem notas por falta
+de referência de teclado suficientemente confirmada. A vitória ainda aguarda
+o fim dos 244,227 s de áudio e a resolução das notas.
+**A conferência auditiva humana ainda está pendente**; o teste automático
+não comprova sincronização perceptiva perfeita. Há uma prévia de 30 s com
+cliques nos ataques em `referencias_musicais/dancing_queen/previa_teclado_30s.ogg`.
+Fontes, limitações, geração reproduzível, backup do mapa anterior e testes
+estão em [RELATORIO.md](referencias_musicais/dancing_queen/RELATORIO.md).
+
+### Condição de conclusão
+
+Com áudio, uma partida ativa termina normalmente somente após o fim natural
+da faixa e a resolução da lista não vazia. Notas em sustentação ainda não
+estão resolvidas; sustentações interrompidas estão. `todas_notas_resolvidas`
+percorre a lista sem alterar seus nós. A verificação acontece depois dos acertos,
 perdas e penalizações do quadro: se o medidor chegou a zero, o Game Over
 tem prioridade, inclusive quando a última nota acabou de ser resolvida.
 Durante a pausa, a conclusão não é verificada.
@@ -140,8 +187,10 @@ Durante a pausa, a conclusão não é verificada.
 Uma nota ainda pendente impede a vitória. O acerto mantém sua tolerância
 de 0,20 s; a perda só ocorre depois de ultrapassar `tempo_alvo + 0,22 s`.
 No instante exato desse limite a nota continua pendente. Notas simultâneas
-precisam ser resolvidas individualmente. Se a última nota for acertada
-antecipadamente dentro da janela, a conclusão já pode ocorrer. Uma sequência
+precisam ser resolvidas individualmente. Acertar a última nota antecipadamente
+não encerra o áudio. O silêncio final faz parte da duração. Após o término,
+o relógio avança apenas para resolver janelas pendentes, sem novas notas
+além da faixa. Uma sequência
 curta pode ser concluída mesmo com todas as notas perdidas, desde que o
 medidor continue acima de zero.
 
@@ -159,6 +208,70 @@ feito durante a partida.
 
 Se o recarregamento falhar, os resultados e a lista anterior permanecem
 preservados, com a causa exibida na tela. Fechar o jogo também libera a lista.
+
+## Notas longas e pontuação
+
+Cada sustentação ocupa um único nó, com início, duração, estado e pontos já
+creditados. O Merge Sort continua ordenando por início, sem copiar nós.
+O pressionamento inicial conserva a janela de 0,20 s, os pontos
+`100 + combo_anterior * 10`, o aumento do combo e o ganho de 3 no medidor.
+Segurar antecipadamente sem um novo pressionamento não acerta a cabeça.
+
+A sustentação soma **50 pontos por segundo**, sem multiplicador adicional,
+limitados ao intervalo entre início efetivamente acertado e fim da nota.
+O total é calculado a partir do tempo do áudio, não por quadro; frações
+nunca são descartadas repetidamente a cada atualização. Acertar antes do
+alvo não acrescenta tempo extra; acertar depois perde aquela fração inicial.
+
+Soltar antes do fim interrompe a nota, zera o combo e retira **8 do medidor
+uma única vez**. Os pontos já ganhos ficam; não há retomada da mesma nota.
+A tolerância adicional de soltura é zero nesta versão. Soltar no instante
+final é permitido. A leitura é por quadro: no quadro em que se observa uma
+soltura, o intervalo desde a última amostra segurada não recebe pontos,
+pois não sabemos o instante exato da soltura. Travamentos e entradas
+inteiras entre quadros não podem ser reconstruídos com precisão.
+
+Pausa e preparação não pontuam nem penalizam. Ao continuar, há 1 s para
+reposicionar as teclas das sustentações antes de o áudio voltar. Reiniciar
+recarrega notas e zera todos os estados. Os resultados mostram sustentações
+completas e interrompidas separadamente: "Acertos" inclui as cabeças
+acertadas; "Notas perdidas" inclui apenas cabeças não acertadas.
+O ranking mantém seu formato e seus registros; pontuações de mapas ou
+regras diferentes não são diretamente comparáveis.
+
+## Verificação desta implementação
+
+Para preservar um executável existente, compile em outro destino:
+
+```sh
+make TARGET=/tmp/final_act_teste_sustain
+/tmp/final_act_teste_sustain
+make test
+make test-grafico
+# Teste opcional de toda a faixa Dancing Queen, com volume zero:
+/tmp/final_act_teste_partida audio-completo
+```
+
+Execute na raiz do projeto no Linux/WSL. Variáveis locais de GPU podem ser
+aplicadas ao comando de execução, mas não fazem parte do código/Makefile.
+Os testes usam notas, ranking e WAV temporários em `/tmp`; não editam os
+recursos do catálogo. O teste gráfico exige janela e dispositivo de áudio.
+
+`teste_sustentacao.c` cobre pontos em diferentes divisões de quadros, acerto
+antecipado/tardio, interrupção, acordes mistos, pausa, preparação e conclusão.
+O teste gráfico percorre uma faixa WAV de 4 s com silêncio final, verifica
+sustentação com pausa, erro de mapa no reinício, última janela de julgamento,
+parada inesperada e layouts de 640x360 até 1920x1080.
+Esses testes não substituem ouvir e jogar os mapas reais, avaliar latência,
+balanceamento e desempenho em tela cheia.
+
+Verificado no WSL Ubuntu em 13/11/2026: compilação, `make test`,
+`make test-grafico` e teste integral do MP3 Dancing Queen (244,227 s), com
+volume zero e mapa temporário. O relógio não retrocedeu e a vitória aguardou
+o fim da faixa. A suíte de sustentação também passou com AddressSanitizer e
+UndefinedBehaviorSanitizer. A captura de sustentação em 900x600 foi inspecionada.
+O teste de catálogo avisa e pula `breaking_free/notas.txt`, que não está
+disponível. Não foram alterados mapas, áudios ou rankings do catálogo.
 
 ## Medidor de desempenho
 
@@ -242,7 +355,8 @@ Consulte a [declaração oficial da raylib 5.5](https://github.com/raysan5/rayli
 - Os testes existentes de desempenho e partida continuam aprovados.
 
 A avaliação manual de jogabilidade em uma partida completa não foi realizada.
-Áudio e sincronização musical continuam fora deste escopo.
+Esse registro histórico antecede o controle de áudio e as notas longas
+descritos nas seções de status e verificação acima.
 
 ### Limitação identificada no teste gráfico com Valgrind
 

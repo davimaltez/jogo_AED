@@ -71,7 +71,10 @@ static void testar_formatos_invalidos(void) {
         "2 0\n3 1.5\n", "2 0\n3 -1\n", "2 0\n3 5\n", "2 0\n3 999999999999999999999999\n",
         "2 0\n-1 1\n", "2 0\nnan 1\n", "2 0\ninf 1\n", "2 0\n-inf 1\n",
         "2 0\n1e100 1\n", "2 0\n1e-100 1\n", "2 0\n2,5 1\n", "2 0\n0x1p2 1\n",
-        "2 0\n3+1\n", "2 0\n3 1x\n", "2 0\n3 0x1\n", "2 0\n3 1 2\n"
+        "2 0\n3+1\n", "2 0\n3 1x\n", "2 0\n3 0x1\n", "2 0\n3 1 2 extra\n",
+        "2 0\n3 1 -1\n", "2 0\n3 1 nan\n", "2 0\n3 1 inf\n",
+        "2 0\n3 1 1e100\n", "2 0\n3 1 1e-100\n", "2 0\n3 1 0x1p2\n",
+        "2 0\n3e38 1 3e38\n", "2 0\n3 1 0.1x\n", "2 0\n3 1 0,1\n"
     };
     for (size_t i = 0; i < sizeof(invalidos) / sizeof(invalidos[0]); i++) {
         testar_rejeicao(invalidos[i], strlen(invalidos[i]), "Linha 2:");
@@ -85,6 +88,25 @@ static void testar_formatos_invalidos(void) {
     memset(longa, ' ', sizeof(longa));
     memcpy(longa, "2 0\n", 4);
     testar_rejeicao(longa, sizeof(longa), "Linha excede 255");
+    const char *sobrepostas[] = { "1 0 2\n2 0\n", "1 0\n1 0\n", "2 1 2\n1 1 2\n" };
+    for (size_t i = 0; i < sizeof(sobrepostas) / sizeof(sobrepostas[0]); i++) {
+        testar_rejeicao(sobrepostas[i], strlen(sobrepostas[i]), "sobrepostas");
+    }
+}
+
+static void testar_duracoes(void) {
+    const char *conteudo = "4 0\n1 0 3\n1 4 2\n0 2 0\n";
+    escrever_arquivo(conteudo, strlen(conteudo));
+    Nota *lista = NULL;
+    char erro[160];
+    assert(carregar_notas_arquivo(&lista, caminho, erro, sizeof(erro)));
+    assert(lista->duracao == 0 && lista->proximo->duracao == 3);
+    assert(lista->proximo->pista == 0 && lista->proximo->proximo->pista == 4);
+    assert(validar_duracao_notas(lista, 4.0f, erro, sizeof(erro)));
+    assert(!validar_duracao_notas(lista, 3.9f, erro, sizeof(erro)));
+    assert(!validar_duracao_notas(lista, 0.0f, erro, sizeof(erro)));
+    assert(lista->proximo->estado == NOTA_PENDENTE);
+    liberar_lista_notas(&lista);
 }
 
 static void testar_arquivo_valido(void) {
@@ -201,6 +223,7 @@ int main(void) {
     assert(descritor >= 0 && close(descritor) == 0);
     testar_formatos_invalidos();
     testar_arquivo_valido();
+    testar_duracoes();
     testar_falhas();
     testar_arquivos_do_catalogo();
     assert(unlink(caminho) == 0);

@@ -28,18 +28,23 @@ static void teclas_de(unsigned int bits, bool teclas[TOTAL_PISTAS]) {
 static void quadro(Partida *partida, float tempo, unsigned int bits) {
     bool teclas[TOTAL_PISTAS];
     teclas_de(bits, teclas);
-    atualizar_partida(partida, tempo, teclas);
+    atualizar_partida(partida, tempo, teclas, teclas);
 }
 
 static void testar_relogio(void) {
     /* Bloqueada: nada muda, nem com audio. */
-    assert(calcular_tempo_partida(5.0f, 0.016f, true, true, 9.0f) == 5.0f);
+    assert(calcular_tempo_partida(5.0f, 0.016f, true, true, 9.0f, false, 10) == 5.0f);
     /* Audio tocando: o tempo do audio manda, mesmo se o quadro demorou. */
-    assert(calcular_tempo_partida(5.0f, 0.5f, false, true, 5.1f) == 5.1f);
+    assert(calcular_tempo_partida(5.0f, 0.5f, false, true, 5.1f, false, 10) == 5.1f);
     /* O audio nunca faz o tempo voltar. */
-    assert(calcular_tempo_partida(5.0f, 0.016f, false, true, 4.98f) == 5.0f);
+    assert(calcular_tempo_partida(5.0f, 0.016f, false, true, 4.98f, false, 10) == 5.0f);
     /* Sem audio (ausente ou terminou): soma o tempo do quadro. */
-    assert(fabsf(calcular_tempo_partida(5.0f, 0.25f, false, false, 0.0f) - 5.25f) < 1e-6f);
+    assert(fabsf(calcular_tempo_partida(5.0f, 0.25f, false, false, 0.0f, false, 0) - 5.25f) < 1e-6f);
+    /* Audio parado inesperadamente nao permite trocar para o relogio de quadros. */
+    assert(calcular_tempo_partida(5, 2, false, true, 5, false, 10) == 5);
+    /* Fim entre quadros: ancora na duracao antes de resolver a janela final. */
+    assert(calcular_tempo_partida(9.9f, 2, false, true, 0, true, 10) == 10);
+    assert(calcular_tempo_partida(10, 0.25f, false, true, 0, true, 10) == 10.25f);
     puts("OK: relogio da partida (pausa, audio, sem audio).");
 }
 

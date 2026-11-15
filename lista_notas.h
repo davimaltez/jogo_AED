@@ -12,7 +12,9 @@
 typedef enum {
     NOTA_PENDENTE,   /* Nota ainda nao alcancou a linha ou aguarda acerto */
     NOTA_ACERTADA,   /* Jogador pressionou a tecla correta na janela */
-    NOTA_PERDIDA     /* Passou da linha sem acerto */
+    NOTA_PERDIDA,    /* Passou da linha sem acerto */
+    NOTA_SUSTENTANDO,
+    NOTA_INTERROMPIDA /* Inicio acertado, mas a tecla foi solta antes do fim */
 } EstadoNota;
 
 /*
@@ -20,6 +22,9 @@ typedef enum {
  */
 typedef struct Nota {
     float tempo_alvo;       /* Instante em que a nota deve ser tocada (em segundos) */
+    float duracao;          /* Zero = nota comum; positiva = sustentacao */
+    float inicio_sustentacao; /* Primeiro instante pontuavel, apos acertar a cabeca */
+    int pontos_sustentacao; /* Total ja creditado, para nao depender do FPS */
     int pista;              /* Pista correspondente: 0 = D, 1 = F, 2 = G, 3 = J, 4 = K */
     EstadoNota estado;      /* Pendente, acertada ou perdida */
     struct Nota *proximo;   /* Ponteiro para o proximo no da lista */
@@ -49,6 +54,10 @@ void merge_sort_notas(Nota **cabeca);
  */
 bool carregar_notas_arquivo(Nota **cabeca, const char *caminho,
                            char *mensagem_erro, size_t tamanho_mensagem);
+
+/* Valida o fim dos eventos contra a duracao do audio, sem alterar a lista. */
+bool validar_duracao_notas(const Nota *cabeca, float duracao_audio,
+                          char *mensagem_erro, size_t tamanho_mensagem);
 
 /*
  * Verifica se a tecla pressionada pelo jogador corresponde a uma nota pendente na pista.

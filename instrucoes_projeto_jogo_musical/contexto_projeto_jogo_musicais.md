@@ -312,10 +312,15 @@ quando os arquivos existem (ver a seção de organização e áudio abaixo).
 
 ## Arquivos de notas e preparação da partida (decisão confirmada)
 
-Cada linha de `notas.txt` contém `tempo pista`: tempo decimal em segundos,
+Cada linha de `notas.txt` contém `tempo pista [duracao]`: tempo decimal em segundos,
 finito, não negativo e representável em `float`; pista inteira de 0 a 4,
 correspondente a D, F, G, J e K. Espaços e tabulações separam os campos.
 Linhas vazias e comentários em linhas próprias iniciadas por `#` são aceitos.
+O terceiro campo opcional indica a duração da sustentação; omitido ou zero
+mantém a nota comum. Duração e instante final precisam ser finitos e válidos.
+Sobreposições e duplicatas na mesma pista são rejeitadas após a ordenação;
+acordes em pistas diferentes são aceitos. Com áudio, o início/reinício também
+valida se o fim de cada evento cabe na faixa antes de trocar a partida.
 O limite é 255 caracteres por linha, sem contar LF/CRLF. Arquivos sem notas,
 campos extras, bytes nulos e conversões numéricas com erro são rejeitados.
 O README documenta limites e exemplos completos.
@@ -327,11 +332,14 @@ Falhas liberam a lista temporária e preservam a lista e os indicadores da
 partida. Início e reinício só avançam em caso de sucesso; erros aparecem na
 tela e no terminal. Não existe fallback automático para notas geradas.
 
-Os cinco arquivos demonstram eventos fora de ordem, reproduzindo os tempos
-e pistas do gerador anterior. O gerador foi mantido para testes. A ordenação
+Parte dos arquivos de demonstração contém eventos fora de ordem, reproduzindo
+tempos e pistas do gerador anterior. Dancing Queen agora tem uma adaptação
+difícil específica, descrita abaixo. O gerador foi mantido para testes. A ordenação
 ocorre uma vez por carregamento, antes da utilização da lista na partida.
-O relógio segue o áudio quando há música tocando e usa `GetFrameTime` quando
-não há (ver a seção de organização e áudio abaixo). Pontuação, combos, medidor e controles permanecem com suas regras.
+O relógio segue o áudio quando carregado; uma parada inesperada bloqueia a
+partida com aviso, sem trocar o relógio para `GetFrameTime`. O modo sem áudio
+é uma demonstração identificada na tela. Após o fim natural, o relógio é
+ancorado na duração e avança apenas para resolver janelas de julgamento finais.
 
 ## Medidor de desempenho (implementação solicitada)
 
@@ -346,8 +354,10 @@ Lista encadeada, catálogo em vetor e Merge Sort permanecem preservados.
 
 ## Conclusão normal e tela de resultados (implementação confirmada)
 
-A partida é concluída quando a lista não vazia tem todas as notas acertadas
-ou perdidas e o medidor não acionou Game Over. A consulta
+A partida com áudio é concluída somente depois do fim natural da faixa e
+da resolução da lista não vazia, sem Game Over. Sem áudio, permanece a
+conclusão pela lista. Sustentações ativas impedem a vitória; completas ou
+interrompidas são resolvidas. A consulta
 `todas_notas_resolvidas` não altera os nós. A decisão ocorre depois dos
 acertos, perdas e penalizações do quadro, com prioridade para a derrota.
 Durante a pausa, não ocorre conclusão. Uma nota pendente, inclusive em um
@@ -409,6 +419,54 @@ Decisões aprovadas pela estudante em 11/11/2026:
     tamanho mínimo de janela 640x360.
 
 ## 11. Resumo rápido da arquitetura
+
+### Atualização de 13/11/2026: duração integral e sustentações
+
+- A reprodução tem estados explícitos em `MidiaPartida`: ausente, pronta,
+  tocando, pausada, finalizada e falha. O fim natural é registrado durante
+  `UpdateMusicStream`; não depende de igualdade entre tempo e duração.
+- Início/reinício têm preparação de 1,9 s, com notas se aproximando antes do
+  áudio. Retomar a pausa oferece 1 s para reposicionar as teclas. Nenhuma
+  preparação pontua. Durante a reprodução, regras e desenho compartilham
+  uma amostra de `GetMusicTimePlayed` por atualização.
+- Cada nota longa continua sendo um nó da lista. A cabeça usa as regras
+  anteriores; a sustentação vale 50 pontos por segundo efetivamente
+  reconhecido, sem bônus de combo adicional. Soltar antes do fim interrompe
+  a nota, zera combo e aplica uma única perda de 8 no medidor, sem retomada.
+  Soltura no fim é válida; tolerância adicional de soltura: zero.
+- Pontos são calculados pelo total de tempo, limitados ao início/fim, sem
+  arredondamento por quadro. Um intervalo cuja soltura só foi observada no
+  quadro seguinte não ganha pontos retroativos. A precisão de entrada é
+  limitada pela leitura por quadro; não se promete reconstrução de entradas
+  durante travamentos. Não há calibração de latência de hardware ainda.
+- Resultados distinguem sustentações completas e interrompidas. Acertos
+  contam cabeças acertadas; notas perdidas contam cabeças não acertadas.
+- A lista, os Merge Sort de notas/catálogo/ranking e os arquivos de ranking
+  são preservados. Os demais mapas continuam sendo demonstrações; Dancing
+  Queen recebeu a adaptação descrita abaixo. Avaliar latência/jogabilidade
+  ainda exige conferência musical.
+- O jogo inicia em janela e mantém F11. O executável preexistente não é
+  substituído por testes; destinos de compilação separados ficam em `/tmp`.
+
+### Síntese
+
+#### Dancing Queen — atualização em 14/11/2026
+
+Catálogo em dificuldade 5/5; mapa revisado a pedido do usuário para somente
+teclado: 535 notas, 105 sustentações e 189 ataques de duas teclas, do instante
+0,120 até 227,064 s. O áudio original
+permanece intacto e a vitória aguarda seu fim natural em aproximadamente
+244,227 s. Lista encadeada, Merge Sort e regras da partida não foram alterados
+nesta etapa. O trabalho de análise ocorre offline, sem custo adicional no jogo.
+
+A adaptação agora utiliza exclusivamente os canais de piano 3 e 11 do MIDI
+3381, com ajuste por canal e verificação dos ataques esperados no áudio.
+Eventos vocais e ataques genéricos do fechamento foram removidos. Depois
+do último evento, não são inventadas notas para preencher o final sem uma
+referência de teclado suficientemente confirmada. A conferência auditiva
+humana continua pendente: o teste de execução não prova sincronização musical
+perfeita. Os mapas anteriores foram preservados nas referências. Detalhes e reprodução em
+`referencias_musicais/dancing_queen/RELATORIO.md`.
 
   -----------------------------------------------------------------------
   Parte                               Decisão

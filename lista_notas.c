@@ -16,6 +16,9 @@ Nota *criar_nota(float tempo_alvo, int pista) {
     }
 
     nova_nota->tempo_alvo = tempo_alvo;
+    nova_nota->duracao = 0.0f;
+    nova_nota->inicio_sustentacao = 0.0f;
+    nova_nota->pontos_sustentacao = 0;
     nova_nota->pista = pista;
     nova_nota->estado = NOTA_PENDENTE;
     nova_nota->proximo = NULL;
@@ -144,7 +147,7 @@ static int ler_linha_notas(FILE *arquivo, char linha[257]) {
     return 1;
 }
 
-static bool interpretar_evento(char *linha, float *tempo, int *pista,
+static bool interpretar_evento(char *linha, float *tempo, int *pista, float *duracao,
                               const char **causa) {
     char *fim;
     errno = 0;
@@ -173,7 +176,31 @@ static bool interpretar_evento(char *linha, float *tempo, int *pista,
         *causa = "Pista invalida (use 0 a 4).";
         return false;
     }
+    if (*fim != '\0' && !isspace((unsigned char)*fim)) {
+        *causa = "Registro malformado.";
+        return false;
+    }
     while (isspace((unsigned char)*fim)) fim++;
+    *duracao = 0.0f;
+    if (*fim != '\0') {
+        char *inicio_duracao = fim;
+        errno = 0;
+        *duracao = strtof(inicio_duracao, &fim);
+        if (fim == inicio_duracao || errno == ERANGE || !isfinite(*duracao) ||
+            *duracao < 0.0f || !isfinite(*tempo + *duracao) ||
+            (*duracao > 0.0f && *tempo + *duracao <= *tempo)) {
+            *causa = "Duracao invalida.";
+            return false;
+        }
+        for (char *atual = inicio_duracao; atual < fim; atual++) {
+            if (!isdigit((unsigned char)*atual) && *atual != '+' && *atual != '-' &&
+                *atual != '.' && *atual != 'e' && *atual != 'E') {
+                *causa = "Duracao invalida.";
+                return false;
+            }
+        }
+        while (isspace((unsigned char)*fim)) fim++;
+    }
     if (*fim != '\0') {
         *causa = "Registro malformado ou campos extras.";
         return false;
@@ -207,14 +234,15 @@ bool carregar_notas_arquivo(Nota **cabeca, const char *caminho,
         while (isspace((unsigned char)*inicio)) inicio++;
         if (*inicio == '\0' || *inicio == '#') continue;
 
-        float tempo;
+        float tempo, duracao;
         int pista;
-        if (!interpretar_evento(inicio, &tempo, &pista, &causa)) break;
+        if (!interpretar_evento(inicio, &tempo, &pista, &duracao, &causa)) break;
         Nota *nova_nota = criar_nota(tempo, pista);
         if (nova_nota == NULL) {
             causa = "Memoria insuficiente para carregar as notas.";
             break;
         }
+        nova_nota->duracao = duracao;
         /* Anexa em O(1), mantendo a ordem de leitura antes do Merge Sort. */
         if (ultima_nota == NULL) nova_lista = nova_nota;
         else ultima_nota->proximo = nova_nota;
@@ -238,9 +266,38 @@ bool carregar_notas_arquivo(Nota **cabeca, const char *caminho,
         return false;
     }
     merge_sort_notas(&nova_lista);
+    /* Depois de ordenar, basta lembrar a ultima nota de cada pista. */
+    const Nota *anteriores[TOTAL_PISTAS] = { NULL };
+    for (const Nota *nota = nova_lista; nota != NULL; nota = nota->proximo) {
+        const Nota *anterior = anteriores[nota->pista];
+        if (anterior != NULL && (nota->tempo_alvo == anterior->tempo_alvo ||
+            nota->tempo_alvo < anterior->tempo_alvo + anterior->duracao)) {
+            informar_erro(mensagem_erro, tamanho_mensagem,
+                          "Notas sobrepostas na mesma pista.", 0);
+            liberar_lista_notas(&nova_lista);
+            return false;
+        }
+        anteriores[nota->pista] = nota;
+    }
     /* A lista anterior so e descartada quando a substituta esta pronta. */
     liberar_lista_notas(cabeca);
     *cabeca = nova_lista;
+    return true;
+}
+
+bool validar_duracao_notas(const Nota *cabeca, float duracao_audio,
+                          char *mensagem_erro, size_t tamanho_mensagem) {
+    if (!isfinite(duracao_audio) || duracao_audio <= 0.0f) {
+        informar_erro(mensagem_erro, tamanho_mensagem, "Duracao do audio invalida.", 0);
+        return false;
+    }
+    for (const Nota *nota = cabeca; nota != NULL; nota = nota->proximo) {
+        if (nota->tempo_alvo + nota->duracao > duracao_audio) {
+            informar_erro(mensagem_erro, tamanho_mensagem,
+                          "Nota ultrapassa a duracao do audio.", 0);
+            return false;
+        }
+    }
     return true;
 }
 
@@ -252,12 +309,15 @@ bool verificar_acerto(Nota *cabeca, int pista, float tempo_atual, float janela_a
     Nota *atual = cabeca;
 
     while (atual != NULL) {
+        if (atual->estado == NOTA_SUSTENTANDO && atual->pista == pista &&
+            tempo_atual < atual->tempo_alvo + atual->duracao) return false;
         if (atual->estado == NOTA_PENDENTE && atual->pista == pista) {
             float diferenca = (float)fabs(tempo_atual - atual->tempo_alvo);
 
             /* Se a nota esta dentro do intervalo de acerto permitido */
             if (diferenca <= janela_acerto) {
-                atual->estado = NOTA_ACERTADA;
+                atual->estado = atual->duracao > 0.0f ? NOTA_SUSTENTANDO : NOTA_ACERTADA;
+                atual->inicio_sustentacao = fmaxf(tempo_atual, atual->tempo_alvo);
                 return true;
             }
         }
@@ -291,7 +351,8 @@ bool todas_notas_resolvidas(const Nota *cabeca) {
     if (cabeca == NULL) return false;
     const Nota *atual = cabeca;
     while (atual != NULL) {
-        if (atual->estado != NOTA_ACERTADA && atual->estado != NOTA_PERDIDA) {
+        if (atual->estado != NOTA_ACERTADA && atual->estado != NOTA_PERDIDA &&
+            atual->estado != NOTA_INTERROMPIDA) {
             return false;
         }
         atual = atual->proximo;
