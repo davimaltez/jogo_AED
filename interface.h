@@ -44,6 +44,33 @@ void navegar_menu(int *foco, int quantidade);
 
 void desenhar_fundo_teatro(int largura, int altura);
 
+/*
+ * Abertura teatral: as cortinas se abrem sobre o menu principal.
+ * O estado e so um relogio; tudo o que aparece na tela e calculado a
+ * partir dele, sem texturas e sem alocar memoria.
+ */
+#define DURACAO_ABERTURA 2.2f
+
+typedef struct {
+    bool ativa;     /* enquanto true, os menus nao recebem entrada */
+    float tempo;    /* segundos desde o inicio da abertura */
+} AberturaTeatral;
+
+/* Deixa a abertura desligada (o jogo comeca direto no menu). */
+void iniciar_abertura(AberturaTeatral *abertura);
+
+/* Liga a abertura a partir do segundo zero. */
+void comecar_abertura(AberturaTeatral *abertura);
+
+/*
+ * Avanca o relogio (com o passo limitado, para um quadro lento nao dar
+ * salto) e encerra a abertura no fim do tempo ou quando "pular" e true.
+ */
+void atualizar_abertura(AberturaTeatral *abertura, float tempo_quadro, bool pular);
+
+/* Desenha as cortinas por cima do menu ja desenhado. Nao altera nada. */
+void desenhar_abertura(const AberturaTeatral *abertura, int largura, int altura);
+
 AcaoMenu desenhar_menu_principal(int largura, int altura, Vector2 mouse, int *foco);
 
 AcaoMenu desenhar_tela_como_jogar(int largura, int altura, Vector2 mouse, int *foco);

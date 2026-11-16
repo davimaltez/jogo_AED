@@ -35,6 +35,17 @@ typedef enum {
 #define MENU_PAUSA 101
 #define MENU_GAME_OVER 102
 
+#define VOLUME_MUSICA_MENU 0.55f
+#define TOTAL_CAMINHOS_MUSICA_MENU 2
+
+/* Musica de fundo dos menus: um unico stream, aberto na inicializacao. */
+typedef struct {
+    Music musica;
+    bool carregada;
+    bool iniciada;      /* PlayMusicStream ja foi chamado alguma vez */
+    bool tocando;       /* false enquanto esta pausada por uma partida */
+} MusicaMenu;
+
 /*
  * Todo o estado do programa fica nesta struct, criada no main.
  * As funcoes recebem um ponteiro para ela, em vez de usar variaveis globais.
@@ -50,8 +61,10 @@ typedef struct {
     Partida partida;                /* lista de notas, pontos, medidor... */
     MidiaPartida midia;             /* audio e fundo da musica atual */
     EfeitosPartida efeitos;         /* animacoes da tela de partida (so visual) */
+    MusicaMenu musica_menu;         /* trilha dos menus (pausa durante a partida) */
+    AberturaTeatral abertura;       /* cortinas que abrem o jogo (so visual) */
 
-    Ranking ranking;                /* ranking da musica que acabou de ser jogada */
+    Ranking ranking;               /* ranking da musica que acabou de ser jogada */
     int posicao_ranking;            /* posicao da ultima pontuacao (-1 = fora) */
     char nome_jogador[TAMANHO_NOME];
     char aviso_ranking[64];
@@ -66,6 +79,75 @@ typedef struct {
 /* Tabela fixa (somente leitura) que liga cada pista a uma tecla. */
 static const int TECLAS_PISTAS[TOTAL_PISTAS] = { KEY_D, KEY_F, KEY_G, KEY_J, KEY_K };
 
+/* Arquivos aceitos para a trilha dos menus (somente leitura); vale o primeiro que existir. */
+static const char *const CAMINHOS_MUSICA_MENU[TOTAL_CAMINHOS_MUSICA_MENU] = {
+    "assets/musicas/fundo/Symphonic Electronic Crossover.wav",
+    "assets/musicas/fundo/Shortened Punchy Intro.wav"
+};
+
+/* ================= Musica dos menus ================= */
+
+/*
+ * Chamada uma unica vez, no main. Se o audio ou o arquivo nao estiverem
+ * disponiveis, o jogo segue normalmente, apenas sem trilha nos menus.
+ */
+static void carregar_musica_menu(MusicaMenu *musica_menu) {
+    if (musica_menu->carregada) return;
+    if (!IsAudioDeviceReady()) {
+        TraceLog(LOG_WARNING, "Dispositivo de audio indisponivel; menus sem musica.");
+        return;
+    }
+    const char *caminho = NULL;
+    for (int i = 0; i < TOTAL_CAMINHOS_MUSICA_MENU && caminho == NULL; i++) {
+        if (FileExists(CAMINHOS_MUSICA_MENU[i])) caminho = CAMINHOS_MUSICA_MENU[i];
+    }
+    if (caminho == NULL) {
+        TraceLog(LOG_WARNING, "Musica do menu nao encontrada: %s", CAMINHOS_MUSICA_MENU[0]);
+        return;
+    }
+    /*
+     * Mesmo buffer das musicas da partida. Com o tamanho padrao, um quadro
+     * um pouco mais lento esvazia o stream e o som sai com chiados/estalos.
+     */
+    SetAudioStreamBufferSizeDefault(8192);
+    musica_menu->musica = LoadMusicStream(caminho);
+    if (!IsMusicValid(musica_menu->musica)) {
+        TraceLog(LOG_WARNING, "Nao foi possivel abrir a musica do menu: %s", caminho);
+        return;
+    }
+    musica_menu->musica.looping = true;
+    SetMusicVolume(musica_menu->musica, VOLUME_MUSICA_MENU);
+    musica_menu->carregada = true;
+}
+
+/* Uma vez por quadro: toca e alimenta o stream nos menus, pausa nas partidas. */
+static void atualizar_musica_menu(MusicaMenu *musica_menu, bool em_menu) {
+    if (!musica_menu->carregada) return;
+    if (!em_menu) {
+        if (musica_menu->tocando) {
+            PauseMusicStream(musica_menu->musica);
+            musica_menu->tocando = false;
+        }
+        return;
+    }
+    if (!musica_menu->tocando) {
+        if (musica_menu->iniciada) ResumeMusicStream(musica_menu->musica);
+        else PlayMusicStream(musica_menu->musica);
+        musica_menu->iniciada = true;
+        musica_menu->tocando = true;
+    }
+    UpdateMusicStream(musica_menu->musica);
+}
+
+static void descarregar_musica_menu(MusicaMenu *musica_menu) {
+    if (!musica_menu->carregada) return;
+    StopMusicStream(musica_menu->musica);
+    UnloadMusicStream(musica_menu->musica);
+    musica_menu->carregada = false;
+    musica_menu->iniciada = false;
+    musica_menu->tocando = false;
+}
+
 static void iniciar_jogo(Jogo *jogo) {
     jogo->tela = TELA_MENU_PRINCIPAL;
     inicializar_catalogo(jogo->catalogo, &jogo->total_musicas);
@@ -76,6 +158,11 @@ static void iniciar_jogo(Jogo *jogo) {
     iniciar_estrutura_partida(&jogo->partida);
     iniciar_midia_partida(&jogo->midia);
     iniciar_efeitos_partida(&jogo->efeitos);
+    /* Trilha e abertura comecam desligadas; quem as liga e o main. */
+    jogo->musica_menu.carregada = false;
+    jogo->musica_menu.iniciada = false;
+    jogo->musica_menu.tocando = false;
+    iniciar_abertura(&jogo->abertura);
 
     iniciar_ranking(&jogo->ranking);
     jogo->posicao_ranking = -1;
@@ -92,6 +179,7 @@ static void iniciar_jogo(Jogo *jogo) {
 static void liberar_jogo(Jogo *jogo) {
     encerrar_partida(&jogo->partida);
     descarregar_midia_partida(&jogo->midia);
+    descarregar_musica_menu(&jogo->musica_menu);
 }
 
 static Musica *musica_atual(Jogo *jogo) {
@@ -542,18 +630,29 @@ static void executar_quadro(Jogo *jogo) {
     int altura = GetScreenHeight();
     Vector2 mouse = GetMousePosition();
     EstadoTela tela_no_inicio = jogo->tela;
+    bool abertura_no_inicio = jogo->abertura.ativa;
 
     /* 1) Atualizacao: entrada, tempo e regras, sem desenhar nada. */
-    tratar_tecla_esc(jogo);
+    if (abertura_no_inicio) {
+        /* Durante a abertura a unica entrada aceita e a que a pula. */
+        bool pular = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_SPACE) ||
+                     IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+        atualizar_abertura(&jogo->abertura, GetFrameTime(), pular);
+    } else {
+        tratar_tecla_esc(jogo);
+    }
     atualizar_jogo(jogo);
     atualizar_foco_menu(jogo);
+    atualizar_musica_menu(&jogo->musica_menu, !tela_de_partida(jogo->tela));
 
     /* 2) Renderizacao: desenha o estado atual e recolhe a escolha do menu. */
     bool teclas_seguradas[TOTAL_PISTAS];
     ler_teclas_seguradas(teclas_seguradas);
+    /* O quadro que pula a abertura ainda fica bloqueado: o Enter nao aciona o menu. */
+    bool entrada_liberada = jogo->tela == tela_no_inicio && !abertura_no_inicio;
     BeginDrawing();
-    AcaoMenu acao = desenhar_jogo(jogo, largura, altura, mouse,
-                                  jogo->tela == tela_no_inicio, teclas_seguradas);
+    AcaoMenu acao = desenhar_jogo(jogo, largura, altura, mouse, entrada_liberada, teclas_seguradas);
+    desenhar_abertura(&jogo->abertura, largura, altura);
     EndDrawing();
 
     /* 3) A escolha do menu so muda o estado depois do quadro desenhado. */
@@ -572,6 +671,8 @@ int main(void) {
 
     Jogo jogo;
     iniciar_jogo(&jogo);
+    carregar_musica_menu(&jogo.musica_menu);
+    comecar_abertura(&jogo.abertura);
 
     while (!WindowShouldClose() && !jogo.deve_sair) {
         executar_quadro(&jogo);

@@ -315,6 +315,232 @@ void desenhar_fundo_teatro(int largura, int altura) {
     desenhar_vinheta(largura, altura, 110);
 }
 
+/* ================= Abertura teatral ================= */
+
+#define PASSO_MAXIMO_ABERTURA 0.05f   /* um quadro lento avanca no maximo isto */
+#define DOBRAS_CORTINA 10
+#define PONTAS_BAMBOLINA 9
+#define CONFETES_ABERTURA 44
+
+/* Momentos da abertura, em segundos. */
+#define ABERTURA_INICIO_TITULO 0.30f
+#define ABERTURA_ATRASO_LETRA 0.05f
+#define ABERTURA_INICIO_CORTINA 0.95f
+#define ABERTURA_FIM_CORTINA 2.10f
+
+#define COR_CORTINA_TOPO      (Color){ 172, 24, 46, 255 }
+#define COR_CORTINA_BASE      (Color){ 82, 9, 30, 255 }
+#define COR_FRANJA_ESCURA     (Color){ 130, 85, 20, 255 }
+
+void iniciar_abertura(AberturaTeatral *abertura) {
+    abertura->ativa = false;
+    abertura->tempo = 0.0f;
+}
+
+void comecar_abertura(AberturaTeatral *abertura) {
+    abertura->ativa = true;
+    abertura->tempo = 0.0f;
+}
+
+void atualizar_abertura(AberturaTeatral *abertura, float tempo_quadro, bool pular) {
+    if (!abertura->ativa) return;
+    abertura->tempo += limitar(tempo_quadro, 0.0f, PASSO_MAXIMO_ABERTURA);
+    if (pular || abertura->tempo >= DURACAO_ABERTURA) {
+        abertura->tempo = DURACAO_ABERTURA;
+        abertura->ativa = false;
+    }
+}
+
+/* Quanto (0 a 1) ja passou do trecho que vai de "inicio" a "fim" segundos. */
+static float trecho(float tempo, float inicio, float fim) {
+    return limitar((tempo - inicio) / (fim - inicio), 0.0f, 1.0f);
+}
+
+/* Ease-out cubico: comeca rapido e desacelera ate parar. */
+static float suavizar_saida(float progresso) {
+    float resto = 1.0f - progresso;
+    return 1.0f - resto * resto * resto;
+}
+
+/* Um lado da cortina: tecido em degrade, dobras, franja e galao dourados. */
+static void desenhar_pano_cortina(int x, int largura_pano, int altura, bool lado_esquerdo,
+                                  float escala, float tempo, float sombra_no_palco) {
+    if (largura_pano <= 0) return;
+    DrawRectangleGradientV(x, 0, largura_pano, altura, COR_CORTINA_TOPO, COR_CORTINA_BASE);
+
+    /* As dobras se apertam sozinhas conforme o pano encolhe. */
+    float largura_dobra = largura_pano / (float)DOBRAS_CORTINA;
+    Color sombra = { 0, 0, 0, 125 };
+    for (int i = 0; i < DOBRAS_CORTINA; i++) {
+        int inicio = x + (int)(i * largura_dobra);
+        int fim = x + (int)((i + 1) * largura_dobra);
+        if (fim - inicio < 1) continue;
+        float ondular = 0.70f + 0.30f * sinf(tempo * 3.2f + i * 1.3f);
+        Color luz = cor_alfa((Color){ 255, 130, 110, 70 }, ondular);
+        if (lado_esquerdo) DrawRectangleGradientH(inicio, 0, fim - inicio, altura, sombra, luz);
+        else DrawRectangleGradientH(inicio, 0, fim - inicio, altura, luz, sombra);
+    }
+
+    int franja = escalar(14, escala);
+    DrawRectangleGradientV(x, altura - franja, largura_pano, franja, COR_DOURADO_BRILHO, COR_FRANJA_ESCURA);
+
+    int galao = escalar(5, escala);
+    if (galao > largura_pano) galao = largura_pano;
+    int x_galao = lado_esquerdo ? x + largura_pano - galao : x;
+    DrawRectangleGradientV(x_galao, 0, galao, altura, COR_DOURADO_BRILHO, COR_BOTAO_BORDA);
+
+    /* Sombra que a borda da cortina projeta no palco ja revelado. */
+    int largura_sombra = escalar(46, escala);
+    Color escuro = { 0, 0, 0, (unsigned char)(140 * limitar(sombra_no_palco, 0.0f, 1.0f)) };
+    Color transparente = { 0, 0, 0, 0 };
+    if (lado_esquerdo) {
+        DrawRectangleGradientH(x + largura_pano, 0, largura_sombra, altura, escuro, transparente);
+    } else {
+        DrawRectangleGradientH(x - largura_sombra, 0, largura_sombra, altura, transparente, escuro);
+    }
+}
+
+/* Faixa de tecido no alto do palco, com pontas douradas. "subida" 1 = fora da tela. */
+static void desenhar_bambolina(int largura, float escala, float subida) {
+    float altura_faixa = (float)escalar(46, escala);
+    float altura_ponta = (float)escalar(28, escala);
+    float borda = (float)escalar(5, escala);
+    /* A folga de 4 bordas leva tambem os pingentes para fora da tela. */
+    float y = -(altura_faixa + altura_ponta + borda * 4.0f) * subida;
+    float largura_ponta = largura / (float)PONTAS_BAMBOLINA;
+
+    for (int i = 0; i < PONTAS_BAMBOLINA; i++) {
+        float esquerda = i * largura_ponta;
+        float direita = esquerda + largura_ponta;
+        float meio = esquerda + largura_ponta / 2.0f;
+        float base = y + altura_faixa - 1.0f;
+        triangulo((Vector2){ esquerda - borda, base }, (Vector2){ direita + borda, base },
+                  (Vector2){ meio, base + altura_ponta + borda * 2.0f }, COR_DOURADO);
+        triangulo((Vector2){ esquerda, base }, (Vector2){ direita, base },
+                  (Vector2){ meio, base + altura_ponta }, (Color){ 120, 14, 36, 255 });
+        DrawPoly((Vector2){ meio, base + altura_ponta + borda * 2.0f }, 6, borda * 1.3f, 0.0f, COR_DOURADO_BRILHO);
+    }
+    DrawRectangleGradientV(0, (int)y, largura, (int)altura_faixa, (Color){ 70, 8, 26, 255 }, (Color){ 140, 18, 42, 255 });
+    DrawRectangle(0, (int)(y + altura_faixa) - escalar(4, escala), largura, escalar(4, escala), COR_DOURADO);
+}
+
+/* Feixe dourado que sai do alto do teatro e termina num clarao redondo. */
+static void desenhar_feixe_abertura(Vector2 origem, Vector2 alvo, float raio, float intensidade) {
+    if (intensidade <= 0.0f) return;
+    triangulo(origem, (Vector2){ alvo.x - raio, alvo.y }, (Vector2){ alvo.x + raio, alvo.y },
+              cor_alfa((Color){ 255, 214, 120, 38 }, intensidade));
+    brilho_radial(alvo, raio * 1.7f, cor_alfa((Color){ 255, 205, 105, 80 }, intensidade));
+}
+
+/*
+ * Confetes dourados que saltam da fresta quando a cortina comeca a abrir.
+ * Como na poeira do fundo, cada um e calculado so pelo indice e pela idade.
+ */
+static void desenhar_confetes_abertura(Vector2 origem, float escala, float idade) {
+    static const Color cores[4] = {
+        { 255, 215, 90, 255 }, { 255, 240, 170, 255 }, { 255, 130, 150, 255 }, { 200, 160, 255, 255 }
+    };
+    if (idade <= 0.0f) return;
+    float gravidade = 820.0f * escala;
+    for (int i = 0; i < CONFETES_ABERTURA; i++) {
+        unsigned int base = 1000u + (unsigned int)i * 5u;
+        float vida = 0.65f + 0.50f * ruido(base);
+        float progresso = idade / vida;
+        if (progresso >= 1.0f) continue;
+        float angulo = -PI * (0.06f + 0.88f * ruido(base + 1u));   /* leque para cima */
+        float rapidez = (240.0f + 560.0f * ruido(base + 2u)) * escala;
+        Vector2 posicao = {
+            origem.x + cosf(angulo) * rapidez * idade,
+            origem.y + sinf(angulo) * rapidez * idade + 0.5f * gravidade * idade * idade
+        };
+        float raio = (3.0f + 4.0f * ruido(base + 3u)) * escala;
+        float giro = idade * (300.0f + 500.0f * ruido(base + 4u)) + i * 37.0f;
+        DrawPoly(posicao, 4, raio, giro, cor_alfa(cores[i % 4], 1.0f - progresso * progresso));
+    }
+}
+
+/*
+ * O titulo entra letra por letra, exatamente onde o menu principal o desenha
+ * (mesma fonte, tamanho e espacamento). Assim, quando a abertura termina,
+ * o titulo do menu assume o lugar sem nenhum salto.
+ */
+static void desenhar_titulo_abertura(int largura, int altura, float escala, float tempo, float cortina_aberta) {
+    const char *titulo = "FINAL ACT";
+    int total_letras = (int)strlen(titulo);
+    int tamanho = fonte(100, escala);
+    Font fonte_padrao = GetFontDefault();
+    float espacamento = (float)(tamanho / 10);   /* o mesmo que DrawText usa */
+    float deslocamento_sombra = (float)escalar(4, escala);
+    float x = (float)(int)(largura / 2.0f - MeasureText(titulo, tamanho) / 2.0f);
+    float y = (float)(int)(altura * 0.14f);
+    /* Um reflexo branco atravessa as letras da esquerda para a direita. */
+    float reflexo = trecho(tempo, 0.95f, 1.50f) * (total_letras + 4) - 2.0f;
+
+    for (int i = 0; i < total_letras; i++) {
+        char letra[2] = { titulo[i], '\0' };
+        float inicio = ABERTURA_INICIO_TITULO + i * ABERTURA_ATRASO_LETRA;
+        float entrada = suavizar_saida(trecho(tempo, inicio, inicio + 0.26f));
+        if (titulo[i] != ' ' && entrada > 0.0f) {
+            float distancia = i - reflexo;
+            float brilho = 1.0f / (1.0f + distancia * distancia * 1.6f);
+            Vector2 posicao = { x, y + (1.0f - entrada) * tamanho * 0.40f };
+            Vector2 sombra = { posicao.x + deslocamento_sombra, posicao.y + deslocamento_sombra };
+            DrawTextEx(fonte_padrao, letra, sombra, (float)tamanho, 0.0f,
+                       cor_alfa(COR_SOMBRA_TEXTO, entrada * (1.0f - cortina_aberta)));
+            DrawTextEx(fonte_padrao, letra, posicao, (float)tamanho, 0.0f,
+                       cor_alfa(misturar(COR_DOURADO, WHITE, 0.85f * brilho), entrada));
+        }
+        x += MeasureTextEx(fonte_padrao, letra, (float)tamanho, 0.0f).x + espacamento;
+    }
+}
+
+void desenhar_abertura(const AberturaTeatral *abertura, int largura, int altura) {
+    if (!abertura->ativa) return;
+    float tempo = abertura->tempo;
+    float escala = calcular_escala(largura, altura);
+    float cortina_aberta = suavizar_saida(trecho(tempo, ABERTURA_INICIO_CORTINA, ABERTURA_FIM_CORTINA));
+    Vector2 centro_titulo = { largura / 2.0f, altura * 0.14f + fonte(100, escala) * 0.5f };
+
+    /* Cortinas: fechadas, cada uma cobre metade da tela; abertas, somem pelas laterais. */
+    int metade = largura / 2 + 1;
+    int largura_pano = (int)(metade * (1.0f - 1.05f * cortina_aberta));
+    desenhar_pano_cortina(0, largura_pano, altura, true, escala, tempo, cortina_aberta * 4.0f);
+    desenhar_pano_cortina(largura - largura_pano, largura_pano, altura, false, escala, tempo, cortina_aberta * 4.0f);
+    desenhar_bambolina(largura, escala, suavizar_saida(trecho(tempo, 1.25f, ABERTURA_FIM_CORTINA)));
+
+    /* Holofotes: varrem o pano, convergem no titulo e se apagam com o palco revelado. */
+    float convergencia = suavizar_saida(trecho(tempo, 0.05f, 0.90f));
+    float intensidade = trecho(tempo, 0.05f, 0.35f) * (1.0f - trecho(tempo, 1.45f, 2.05f));
+    float desvio = (1.0f - convergencia) * largura * 0.36f;
+    float balanco = (1.0f - convergencia) * altura * 0.24f;
+    float raio = (float)escalar(150, escala);
+    BeginBlendMode(BLEND_ADDITIVE);
+    desenhar_feixe_abertura((Vector2){ largura * 0.10f, 0.0f },
+                            (Vector2){ centro_titulo.x - desvio, centro_titulo.y + balanco * (0.6f + sinf(tempo * 7.0f)) },
+                            raio, intensidade);
+    desenhar_feixe_abertura((Vector2){ largura * 0.90f, 0.0f },
+                            (Vector2){ centro_titulo.x + desvio, centro_titulo.y + balanco * (0.6f + cosf(tempo * 6.0f)) },
+                            raio, intensidade);
+    /* Clarao no instante em que os dois feixes se encontram. */
+    float clarao = sinf(PI * trecho(tempo, 0.78f, 1.40f));
+    brilho_radial(centro_titulo, escalar(260, escala) * (0.6f + 0.8f * trecho(tempo, 0.78f, 1.40f)),
+                  cor_alfa((Color){ 255, 220, 140, 120 }, clarao));
+    desenhar_confetes_abertura(centro_titulo, escala, tempo - ABERTURA_INICIO_CORTINA);
+    EndBlendMode();
+
+    desenhar_titulo_abertura(largura, altura, escala, tempo, cortina_aberta);
+
+    float aviso = trecho(tempo, 0.45f, 0.85f) * (1.0f - trecho(tempo, 1.55f, 1.95f));
+    if (aviso > 0.0f) {
+        desenhar_texto_centralizado("ENTER, ESPACO ou CLIQUE para pular", largura / 2.0f,
+                                    (float)(altura - escalar(52, escala)), fonte(16, escala),
+                                    cor_alfa(COR_TEXTO_SUAVE, 0.75f * aviso));
+    }
+
+    /* A sala comeca no escuro e as luzes sobem. */
+    DrawRectangle(0, 0, largura, altura, Fade(BLACK, 1.0f - trecho(tempo, 0.0f, 0.30f)));
+}
+
 /* ================= Menu principal ================= */
 
 AcaoMenu desenhar_menu_principal(int largura, int altura, Vector2 mouse, int *foco) {
