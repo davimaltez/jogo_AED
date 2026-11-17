@@ -3,10 +3,10 @@
 
 /*
  * Preenche o vetor com as musicas iniciais baseadas em filmes musicais.
- * Cada musica possui uma pasta de recursos; o carregamento sera implementado depois.
+ * Cada musica possui sua pasta de audio, notas, fundo e ranking.
  */
 void inicializar_catalogo(Musica catalogo[], int *quantidade) {
-    *quantidade = 5;
+    *quantidade = 6;
 
     /* Musica 1 - Wicked */
     strncpy(catalogo[0].titulo, "Popular", sizeof(catalogo[0].titulo) - 1);
@@ -82,6 +82,17 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[4].caminho_fundo[sizeof(catalogo[4].caminho_fundo) - 1] = '\0';
     strncpy(catalogo[4].caminho_ranking, "assets/musicas/breaking_free/ranking.txt", sizeof(catalogo[4].caminho_ranking) - 1);
     catalogo[4].caminho_ranking[sizeof(catalogo[4].caminho_ranking) - 1] = '\0';
+
+    /* Musica 6 - origem provisoria; nivel medio do gerador offline. */
+    catalogo[5] = (Musica){
+        .titulo = "Twist and Shout",
+        .filme = "Twist and Shout",
+        .dificuldade = 3,
+        .caminho_audio = "assets/musicas/twist_and_shout/audio.mp3",
+        .caminho_notas = "assets/musicas/twist_and_shout/notas.txt",
+        .caminho_fundo = "assets/musicas/twist_and_shout/fundo_jogo.png",
+        .caminho_ranking = "assets/musicas/twist_and_shout/ranking.txt"
+    };
 }
 
 /*

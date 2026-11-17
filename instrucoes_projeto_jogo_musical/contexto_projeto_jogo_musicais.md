@@ -521,3 +521,15 @@ HPSS nao isola teclado de voz; qualidade musical em gravacoes reais requer
 conferencia auditiva. Densidades por nivel sao presets iniciais ajustaveis,
 nao uma classificacao definitiva. Consulte o README da ferramenta para
 limites, resultados dos testes e orientacoes de ajuste.
+
+## Integracao de Twist and Shout
+
+O catalogo e sua capacidade passaram de cinco para seis musicas. A nova
+musica usa os recursos em `assets/musicas/twist_and_shout/`, mapa do gerador
+offline no nivel inicial 3/5 (329 notas, oito sustentacoes) e ranking proprio.
+O filme/origem esta provisoriamente identificado como "Twist and Shout".
+O MP3 e a imagem fornecidos foram preservados. Como `fundo.png` era JPEG,
+foi criada a copia `fundo_jogo.png` em PNG valido para a raylib.
+Lista encadeada, Merge Sort, regras e relogio da partida permanecem iguais.
+Os cinco candidatos foram guardados em `mapas_gerados/`; a conferencia
+auditiva do mapa publicado ainda esta pendente.

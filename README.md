@@ -1,5 +1,9 @@
 # FINAL ACT
 
+Twist and Shout foi adicionada ao catalogo com nivel inicial 3/5,
+329 notas e oito sustentacoes. Veja os recursos, testes e limites em
+[assets/musicas/twist_and_shout/README.md](assets/musicas/twist_and_shout/README.md).
+
 Geracao automatica offline de mapas: veja
 [ferramentas/gerador_mapas/README.md](ferramentas/gerador_mapas/README.md)
 para compilar com `make gerador`, gerar cinco dificuldades a partir de MP3/WAV
