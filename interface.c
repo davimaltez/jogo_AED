@@ -742,19 +742,34 @@ static bool desenhar_lista_musicas(Rectangle painel, float y_inicio, float escal
         }
         float largura_texto = item.width - recuo_texto - escalar(8, escala);
 
+
+        /* Em cartoes baixos, os detalhes continuam no painel da direita. */
+        bool compacto = altura_item < 38.0f;
         int fonte_titulo = fonte(24, escala);
-        if (fonte_titulo > altura_item * 0.36f) fonte_titulo = (int)(altura_item * 0.36f);
+        float limite_titulo = altura_item * (compacto ? 0.65f : 0.36f);
+        if (fonte_titulo > limite_titulo) fonte_titulo = (int)limite_titulo;
+        if (fonte_titulo < FONTE_MINIMA) fonte_titulo = FONTE_MINIMA;
         fonte_titulo = fonte_que_cabe(catalogo[i].titulo, fonte_titulo, largura_texto);
-        DrawText(catalogo[i].titulo, (int)(item.x + recuo_texto), (int)(item.y + altura_item * 0.14f),
+        float y_titulo = compacto ? item.y + (altura_item - fonte_titulo) / 2.0f
+                                  : item.y + altura_item * 0.14f;
+        DrawText(catalogo[i].titulo, (int)(item.x + recuo_texto), (int)y_titulo,
                  fonte_titulo, selecionada ? COR_DOURADO : WHITE);
 
-        char informacoes[96];
-        snprintf(informacoes, sizeof(informacoes), "%s  *  Nivel %d", catalogo[i].filme, catalogo[i].dificuldade);
-        int fonte_info = fonte(17, escala);
-        if (fonte_info > altura_item * 0.26f) fonte_info = (int)(altura_item * 0.26f);
-        fonte_info = fonte_que_cabe(informacoes, fonte_info, largura_texto);
-        DrawText(informacoes, (int)(item.x + recuo_texto), (int)(item.y + altura_item * 0.56f),
-                 fonte_info, COR_TEXTO_SUAVE);
+        if (!compacto) {
+            char informacoes[96];
+            if (catalogo[i].dificuldade == 0) {
+                snprintf(informacoes, sizeof(informacoes), "%s  *  A definir", catalogo[i].filme);
+            } else {
+                snprintf(informacoes, sizeof(informacoes), "%s  *  Nivel %d",
+                         catalogo[i].filme, catalogo[i].dificuldade);
+            }
+            int fonte_info = fonte(17, escala);
+            if (fonte_info > altura_item * 0.26f) fonte_info = (int)(altura_item * 0.26f);
+            if (fonte_info < FONTE_MINIMA) fonte_info = FONTE_MINIMA;
+            fonte_info = fonte_que_cabe(informacoes, fonte_info, largura_texto);
+            DrawText(informacoes, (int)(item.x + recuo_texto), (int)(item.y + altura_item * 0.56f),
+                     fonte_info, COR_TEXTO_SUAVE);
+        }
     }
     return enter_em_musica;
 }
@@ -777,7 +792,11 @@ static AcaoMenu desenhar_detalhes_musica(Rectangle painel, float escala, Vector2
 
     DrawText("Dificuldade:", (int)x, (int)(y + escalar(200, escala)), fonte(18, escala), COR_ROTULO);
     char texto_nivel[32];
-    snprintf(texto_nivel, sizeof(texto_nivel), "Nivel %d de 5", musica->dificuldade);
+    if (musica->dificuldade == 0) {
+        snprintf(texto_nivel, sizeof(texto_nivel), "A definir");
+    } else {
+        snprintf(texto_nivel, sizeof(texto_nivel), "Nivel %d de 5", musica->dificuldade);
+    }
     DrawText(texto_nivel, (int)x, (int)(y + escalar(224, escala)), fonte(22, escala), COR_DOURADO_BRILHO);
 
     for (int nivel = 1; nivel <= 5; nivel++) {
@@ -810,7 +829,9 @@ static AcaoMenu desenhar_detalhes_musica(Rectangle painel, float escala, Vector2
         int tamanho = fonte_que_cabe(mensagem_erro, fonte(15, escala), largura_texto);
         DrawText(mensagem_erro, (int)x, (int)y_aviso, tamanho, RED);
     } else {
-        const char *dica = "ENTER numa musica tambem inicia a partida.";
+        const char *dica = FileExists(musica->caminho_notas)
+                         ? "ENTER numa musica tambem inicia a partida."
+                         : "Mapa de notas pendente.";
         int tamanho = fonte_que_cabe(dica, fonte(15, escala), largura_texto);
         DrawText(dica, (int)x, (int)y_aviso, tamanho, COR_TEXTO_SUAVE);
     }

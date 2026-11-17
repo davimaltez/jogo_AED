@@ -6,7 +6,7 @@
  * Cada musica possui sua pasta de audio, notas, fundo e ranking.
  */
 void inicializar_catalogo(Musica catalogo[], int *quantidade) {
-    *quantidade = 6;
+    *quantidade = 8;
 
     /* Musica 1 - Wicked */
     strncpy(catalogo[0].titulo, "Popular", sizeof(catalogo[0].titulo) - 1);
@@ -93,6 +93,25 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_fundo = "assets/musicas/twist_and_shout/fundo_jogo.png",
         .caminho_ranking = "assets/musicas/twist_and_shout/ranking.txt"
     };
+    /* Mapas pendentes: dificuldade ainda nao classificada. */
+    catalogo[6] = (Musica){
+        .titulo = "I'm Still Standing",
+        .filme = "Sing: Quem Canta Seus Males Espanta",
+        .dificuldade = 0,
+        .caminho_audio = "assets/musicas/im_still_standing/audio.wav",
+        .caminho_notas = "assets/musicas/im_still_standing/notas.txt",
+        .caminho_fundo = "assets/musicas/im_still_standing/fundo.png",
+        .caminho_ranking = "assets/musicas/im_still_standing/ranking.txt"
+    };
+    catalogo[7] = (Musica){
+        .titulo = "Um Sonho Eu Tenho",
+        .filme = "Enrolados",
+        .dificuldade = 0,
+        .caminho_audio = "assets/musicas/um_sonho_eu_tenho/audio.wav",
+        .caminho_notas = "assets/musicas/um_sonho_eu_tenho/notas.txt",
+        .caminho_fundo = "assets/musicas/um_sonho_eu_tenho/fundo.png",
+        .caminho_ranking = "assets/musicas/um_sonho_eu_tenho/ranking.txt"
+    };
 }
 
 /*
@@ -105,6 +124,11 @@ static bool comparar_musicas(Musica a, Musica b, CriterioOrdenacao criterio) {
         return strcmp(a.titulo, b.titulo) <= 0;
     }
 
+    /* Sem classificacao fica ao final nos dois sentidos de dificuldade. */
+    if (a.dificuldade == 0 || b.dificuldade == 0) {
+        if (a.dificuldade == b.dificuldade) return strcmp(a.titulo, b.titulo) <= 0;
+        return b.dificuldade == 0;
+    }
     if (criterio == ORDEM_DIFICULDADE_CRESCENTE) {
         if (a.dificuldade < b.dificuldade) {
             return true;

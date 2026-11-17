@@ -58,16 +58,55 @@ int main(void) {
     liberar_lista_notas(&notas);
     assert(notas == NULL);
 
-    /* Regressao: o catalogo continua ordenando structs com seus recursos. */
-    Musica catalogo[MAX_MUSICAS];
+
+    /* Ordenar deve mover o registro completo, preservando todos os recursos. */
+    Musica catalogo[MAX_MUSICAS], original[MAX_MUSICAS];
     int total;
     inicializar_catalogo(catalogo, &total);
-    ordenar_catalogo(catalogo, total, ORDEM_TITULO_AZ);
-    for (int i = 1; i < total; i++) assert(strcmp(catalogo[i-1].titulo, catalogo[i].titulo) <= 0);
-    ordenar_catalogo(catalogo, total, ORDEM_DIFICULDADE_CRESCENTE);
-    for (int i = 1; i < total; i++) assert(catalogo[i-1].dificuldade <= catalogo[i].dificuldade);
-    ordenar_catalogo(catalogo, total, ORDEM_DIFICULDADE_DECRESCENTE);
-    for (int i = 1; i < total; i++) assert(catalogo[i-1].dificuldade >= catalogo[i].dificuldade);
+    assert(MAX_MUSICAS == 8 && total == 8);
+    memcpy(original, catalogo, sizeof(catalogo));
+    assert(strcmp(catalogo[6].titulo, "I'm Still Standing") == 0);
+    assert(strcmp(catalogo[6].filme, "Sing: Quem Canta Seus Males Espanta") == 0);
+    assert(strcmp(catalogo[7].titulo, "Um Sonho Eu Tenho") == 0);
+    assert(strcmp(catalogo[7].filme, "Enrolados") == 0);
+    const char *pastas[] = {"im_still_standing", "um_sonho_eu_tenho"};
+    for (int i = 6; i < 8; i++) {
+        char caminho[128];
+        assert(catalogo[i].dificuldade == 0);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/audio.wav", pastas[i - 6]);
+        assert(strcmp(catalogo[i].caminho_audio, caminho) == 0);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/notas.txt", pastas[i - 6]);
+        assert(strcmp(catalogo[i].caminho_notas, caminho) == 0);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/fundo.png", pastas[i - 6]);
+        assert(strcmp(catalogo[i].caminho_fundo, caminho) == 0);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/ranking.txt", pastas[i - 6]);
+        assert(strcmp(catalogo[i].caminho_ranking, caminho) == 0);
+    }
+    const CriterioOrdenacao criterios[] = {
+        ORDEM_TITULO_AZ, ORDEM_DIFICULDADE_CRESCENTE, ORDEM_DIFICULDADE_DECRESCENTE
+    };
+    const char *esperadas[][8] = {
+        {"Breaking Free", "City of Stars", "Dancing Queen", "I'm Still Standing",
+         "Popular", "This Is Me", "Twist and Shout", "Um Sonho Eu Tenho"},
+        {"City of Stars", "Breaking Free", "This Is Me", "Twist and Shout",
+         "Popular", "Dancing Queen", "I'm Still Standing", "Um Sonho Eu Tenho"},
+        {"Dancing Queen", "Popular", "This Is Me", "Twist and Shout",
+         "Breaking Free", "City of Stars", "I'm Still Standing", "Um Sonho Eu Tenho"}
+    };
+    for (int criterio = 0; criterio < 3; criterio++) {
+        ordenar_catalogo(catalogo, total, criterios[criterio]);
+        for (int i = 0; i < total; i++) {
+            assert(strcmp(catalogo[i].titulo, esperadas[criterio][i]) == 0);
+            int indice = buscar_indice_por_titulo(original, total, catalogo[i].titulo);
+            assert(indice >= 0);
+            assert(strcmp(catalogo[i].filme, original[indice].filme) == 0);
+            assert(catalogo[i].dificuldade == original[indice].dificuldade);
+            assert(strcmp(catalogo[i].caminho_audio, original[indice].caminho_audio) == 0);
+            assert(strcmp(catalogo[i].caminho_notas, original[indice].caminho_notas) == 0);
+            assert(strcmp(catalogo[i].caminho_fundo, original[indice].caminho_fundo) == 0);
+            assert(strcmp(catalogo[i].caminho_ranking, original[indice].caminho_ranking) == 0);
+        }
+    }
 
     puts("OK: limites, recuperacao, Game Over, reinicio, notas e catalogo.");
     return 0;

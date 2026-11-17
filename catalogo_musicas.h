@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define MAX_MUSICAS 6
+#define MAX_MUSICAS 8
 
 /*
  * Criterios de ordenacao disponiveis para o catalogo.
@@ -22,7 +22,7 @@ typedef enum {
 typedef struct {
     char titulo[64];
     char filme[64];
-    int dificuldade;
+    int dificuldade;           /* 0 = a definir; niveis publicados de 1 a 5 */
     char caminho_audio[128];
     char caminho_notas[128];
     char caminho_fundo[128];

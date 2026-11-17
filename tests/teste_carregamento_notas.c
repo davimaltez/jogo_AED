@@ -201,7 +201,14 @@ static void testar_arquivos_do_catalogo(void) {
         /* Musicas ainda nao adicionadas pelo grupo sao avisadas, sem travar os testes. */
         FILE *existe = fopen(catalogo[i].caminho_notas, "r");
         if (existe == NULL) {
-            printf("AVISO: %s ainda nao existe; teste pulado.\n", catalogo[i].caminho_notas);
+            Nota *original = criar_nota(9.0f, 2);
+            assert(original != NULL);
+            carregadas = original;
+            assert(!carregar_notas_arquivo(&carregadas, catalogo[i].caminho_notas, erro, sizeof(erro)));
+            assert(erro[0] != '\0' && carregadas == original);
+            assert(carregadas->tempo_alvo == 9.0f && carregadas->proximo == NULL);
+            liberar_lista_notas(&carregadas);
+            printf("AVISO: %s ausente; rejeicao verificada, mapa nao validado.\n", catalogo[i].caminho_notas);
             continue;
         }
         fclose(existe);

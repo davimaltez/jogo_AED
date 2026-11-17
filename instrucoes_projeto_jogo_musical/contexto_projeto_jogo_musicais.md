@@ -533,3 +533,77 @@ foi criada a copia `fundo_jogo.png` em PNG valido para a raylib.
 Lista encadeada, Merge Sort, regras e relogio da partida permanecem iguais.
 Os cinco candidatos foram guardados em `mapas_gerados/`; a conferencia
 auditiva do mapa publicado ainda esta pendente.
+
+## Integracao de duas musicas com mapas pendentes (17/11/2026)
+
+O catalogo agora tem oito musicas, preservando as seis anteriores:
+
+| Titulo | Artista | Filme confirmado | Pasta |
+| --- | --- | --- | --- |
+| I'm Still Standing | Taron Egerton | Sing: Quem Canta Seus Males Espanta | assets/musicas/im_still_standing/ |
+| Um Sonho Eu Tenho | Mauro Ramos | Enrolados | assets/musicas/um_sonho_eu_tenho/ |
+
+Os WAV foram copiados de /mnt/c/Users/gabri/OneDrive/Desktop/musicasjogodepif/,
+mantendo os nomes originais na origem e usando audio.wav nas pastas do jogo.
+As copias tiveram SHA-256 identico aos originais. Nenhum arquivo de origem
+foi modificado ou removido. Ambos sao PCM stereo, 44100 Hz, 16 bits;
+duracoes informadas pela raylib: 187,951 s e 192,235 s, respectivamente.
+
+A dificuldade interna 0 significa **A definir**, sem representar um nivel
+jogavel. Nas duas ordenacoes por dificuldade, entradas pendentes ficam ao
+final, em ordem de titulo. O Merge Sort e o vetor de Musica foram mantidos.
+Os artistas ficam documentados aqui, sem acrescentar campos a struct.
+
+Os caminhos de notas.txt, fundo.png e ranking.txt estao cadastrados,
+mas esses arquivos ainda nao existem nas duas pastas. A interface avisa
+"Mapa de notas pendente"; Enter e INICIAR PARTIDA continuam usando o
+carregamento validado, que rejeita a ausencia e conserva a tela e o estado.
+Nao foram criados mapas vazios, ficticios ou candidatos nesta integracao.
+Fundo e opcional no sistema atual. Ranking ausente aparece vazio e sera
+gravado no caminho individual quando houver uma vitoria registrada.
+
+Para tornar cada faixa jogavel, preparar um notas.txt real, nao vazio,
+no formato tempo pista [duracao], revisado contra o audio exato. O mapa
+deve passar pelo carregador e pela validacao da duracao, incluindo caudas.
+Somente apos revisao atribuir dificuldade de 1 a 5. Adicionar uma imagem
+PNG valida em fundo.png quando disponivel.
+
+A ferramenta offline existente aceita WAV e pode gerar candidatos numa
+etapa posterior, sem alterar a reproducao ou os mapas publicados:
+
+    make gerador
+    /tmp/final_act_gerador_mapas assets/musicas/im_still_standing/audio.wav /tmp/mapas_im_still_standing
+    /tmp/final_act_gerador_mapas assets/musicas/um_sonho_eu_tenho/audio.wav /tmp/mapas_um_sonho_eu_tenho
+
+Cada destino precisa ser uma pasta nova. Os cinco candidatos exigem revisao
+auditiva e escolha manual antes de publicar notas.txt; a geracao nao
+garante sincronizacao musical nem isolamento de instrumentos.
+
+Validacao executada no WSL Ubuntu nesta integracao:
+
+- make TARGET=/tmp/final_act_integracao: compilacao aprovada, preservando
+  o executavel preexistente final_act.
+- make test: aprovado, incluindo catalogo, carregador, estruturas, regras,
+  ranking, sustentacoes, Dancing Queen e sinais sinteticos do gerador.
+  Os mapas ausentes de Breaking Free e das duas novas musicas tiveram a
+  rejeicao verificada; isso nao valida mapas que ainda nao existem.
+- make test-grafico: aprovado. Teclado e mouse percorrem oito itens,
+  filtros conservam a selecao e iniciar sem mapa conserva o estado.
+  WAV reais abertos com o modulo existente, com reproducao breve em volume
+  zero, relogio, pausa, retomada, reinicio e liberacao verificados.
+  O teste WAV sintetico existente verifica fim integral e conclusao.
+- /tmp/final_act_teste_partida catalogo: aprovado; gera capturas em
+  /tmp/final_act_catalogo_*.png. Inspecionadas visualmente as capturas de
+  640x360 (I'm Still Standing) e 1280x720 (Um Sonho Eu Tenho).
+  Cartoes baixos mostram apenas o titulo; o painel direito conserva os
+  detalhes, mantendo o estilo visual.
+- A primeira tentativa de captura por TakeScreenshot nao gravou os arquivos
+  por tratar o destino como relativo. O teste foi corrigido para
+  LoadImageFromScreen/ExportImage, com verificacao do retorno, e reexecutado.
+
+A raylib em execucao informou 6.1-dev (pkg-config informa 5.5).
+Nao foi feita avaliacao auditiva, nem reproducao integral dos dois novos
+WAV. Sem mapas, nao ha validacao de sincronizacao musical dessas faixas.
+Audio, relogio, contagem regressiva, pontuacao, Game Over, sustentacoes,
+conclusao, lista encadeada e rankings existentes nao tiveram suas regras
+alteradas.

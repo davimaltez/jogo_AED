@@ -14,6 +14,10 @@ static int total_teclas_do_quadro = 0;
 static const char *letras_do_quadro = "";
 static float tempo_do_quadro = 0.0f;
 static bool usar_tempo_real = false;
+static bool clique_mouse = false;
+static Vector2 posicao_mouse = { -1, -1 };
+static Rectangle titulos_catalogo[MAX_MUSICAS];
+static int total_titulos_catalogo = 0;
 static unsigned int pistas_seguradas = 0;
 
 /* ---------- Textos desenhados no ultimo quadro ---------- */
@@ -40,8 +44,8 @@ bool __wrap_IsKeyDown(int tecla) {
     }
     return false;
 }
-bool __wrap_IsMouseButtonPressed(int botao) { (void)botao; return false; }
-Vector2 __wrap_GetMousePosition(void) { return (Vector2){ -1, -1 }; }
+bool __wrap_IsMouseButtonPressed(int botao) { return botao == MOUSE_BUTTON_LEFT && clique_mouse; }
+Vector2 __wrap_GetMousePosition(void) { return posicao_mouse; }
 void __wrap_ToggleFullscreen(void) { /* mantem a janela de teste oculta */ }
 void __wrap_SetConfigFlags(unsigned int flags) { __real_SetConfigFlags(flags | FLAG_WINDOW_HIDDEN); }
 
@@ -66,6 +70,17 @@ void __wrap_DrawText(const char *texto, int x, int y, int tamanho, Color cor) {
         }
         texto_fora_da_janela = true;
     }
+    /* Titulos reais da coluna esquerda: limites do texto e alvos para cliques. */
+    const char *titulos[] = {"Popular", "Dancing Queen", "City of Stars", "This Is Me",
+                            "Breaking Free", "Twist and Shout", "I'm Still Standing", "Um Sonho Eu Tenho"};
+    if (x < GetScreenWidth() / 2) {
+        for (int i = 0; i < MAX_MUSICAS; i++) {
+            if (strcmp(texto, titulos[i]) == 0 && total_titulos_catalogo < MAX_MUSICAS) {
+                assert(tamanho >= 10);
+                titulos_catalogo[total_titulos_catalogo++] = (Rectangle){x, y, largura_texto, tamanho};
+            }
+        }
+    }
     __real_DrawText(texto, x, y, tamanho, cor);
 }
 
@@ -80,6 +95,7 @@ static void quadro_com(Jogo *jogo, float tempo, int tecla1, int tecla2) {
     if (tecla2 != KEY_NULL) teclas_do_quadro[total_teclas_do_quadro++] = tecla2;
     tempo_do_quadro = tempo;
     textos_desenhados[0] = '\0';
+    total_titulos_catalogo = 0;
     executar_quadro(jogo);
     total_teclas_do_quadro = 0;
     letras_do_quadro = "";
@@ -298,6 +314,118 @@ static void testar_ranking_existente(void) {
     assert(strcmp(conteudo, "500;Bia\n330;Lais\n120;Caio\n") == 0);
     liberar_jogo(&jogo);
     puts("OK: ranking existente reordenado e gravado (500 Bia, 330 Lais, 120 Caio).");
+}
+
+
+/* Oito entradas: navegacao real, cliques e rejeicao sem alterar a partida. */
+static void testar_catalogo_ampliado(bool salvar_capturas) {
+    const int tamanhos[][2] = {{1280, 720}, {900, 600}, {640, 360}, {640, 480}};
+    for (int t = 0; t < 4; t++) {
+        SetWindowSize(tamanhos[t][0], tamanhos[t][1]);
+        for (int espera = 0; espera < 5; espera++) { BeginDrawing(); EndDrawing(); }
+        Jogo jogo;
+        preparar_jogo_de_teste(&jogo);
+        quadro(&jogo, KEY_ENTER);
+        quadro(&jogo, KEY_NULL);
+        assert(total_titulos_catalogo == 8);
+        for (int i = 1; i < 8; i++) {
+            assert(titulos_catalogo[i - 1].y + titulos_catalogo[i - 1].height < titulos_catalogo[i].y);
+            quadro(&jogo, KEY_DOWN);
+            assert(jogo.indice_musica == i && jogo.foco_menu == i + 3);
+        }
+        quadro(&jogo, KEY_RIGHT);
+        assert(jogo.foco_menu == 11);
+        quadro(&jogo, KEY_DOWN);
+        assert(jogo.foco_menu == 12);
+        quadro(&jogo, KEY_LEFT);
+        assert(jogo.foco_menu == 10 && jogo.indice_musica == 7);
+        for (int i = 0; i < 8; i++) {
+            Rectangle titulo = titulos_catalogo[i];
+            posicao_mouse = (Vector2){titulo.x + 2, titulo.y + titulo.height / 2};
+            clique_mouse = true;
+            quadro(&jogo, KEY_NULL);
+            clique_mouse = false;
+            posicao_mouse = (Vector2){-1, -1};
+            assert(jogo.indice_musica == i && jogo.foco_menu == i + 3);
+        }
+        const char *novas[] = {"I'm Still Standing", "Um Sonho Eu Tenho"};
+        for (int n = 0; n < 2; n++) {
+            jogo.indice_musica = buscar_indice_por_titulo(jogo.catalogo, jogo.total_musicas, novas[n]);
+            jogo.foco_menu = jogo.indice_musica + 3;
+            Musica *musica = musica_atual(&jogo);
+            /* Inexistente mesmo quando os mapas reais forem publicados futuramente. */
+            snprintf(musica->caminho_notas, sizeof(musica->caminho_notas), "%s/ausente", caminho_notas);
+            jogo.mensagem_erro[0] = '\0';
+            quadro(&jogo, KEY_NULL);
+            assert(apareceu("A definir") && !apareceu("Nivel 0"));
+            assert(apareceu("Mapa de notas pendente.") && apareceu(musica->filme));
+            if (salvar_capturas) {
+                char captura[128];
+                snprintf(captura, sizeof(captura), "/tmp/final_act_catalogo_%d_%dx%d.png",
+                         n, tamanhos[t][0], tamanhos[t][1]);
+                Image imagem = LoadImageFromScreen();
+                assert(ExportImage(imagem, captura));
+                UnloadImage(imagem);
+            }
+            jogo.partida.pontuacao = 123;
+            quadro(&jogo, KEY_ENTER);
+            assert(jogo.tela == TELA_SELECAO_MUSICAS && jogo.partida.notas == NULL);
+            assert(jogo.partida.pontuacao == 123 && jogo.mensagem_erro[0] != '\0');
+            assert(!jogo.midia.musica_carregada);
+            quadro(&jogo, KEY_RIGHT);
+            quadro(&jogo, KEY_ENTER);
+            assert(jogo.tela == TELA_SELECAO_MUSICAS && jogo.partida.pontuacao == 123);
+            for (int criterio = 0; criterio < 3; criterio++) {
+                jogo.foco_menu = criterio;
+                quadro(&jogo, KEY_ENTER);
+                assert(strcmp(musica_atual(&jogo)->titulo, novas[n]) == 0);
+            }
+        }
+        assert(!texto_fora_da_janela);
+        liberar_jogo(&jogo);
+    }
+    SetWindowSize(900, 600);
+    puts("OK: oito musicas, teclado, mouse, filtros, A definir e bloqueio sem mapa.");
+}
+
+/* Abre os WAV reais pelo modulo de midia, sem gerar mapas. */
+static void testar_novos_wav(void) {
+    InitAudioDevice();
+    assert(IsAudioDeviceReady());
+    Musica catalogo[MAX_MUSICAS];
+    int total;
+    inicializar_catalogo(catalogo, &total);
+    const char *titulos[] = {"I'm Still Standing", "Um Sonho Eu Tenho"};
+    for (int i = 0; i < 2; i++) {
+        int indice = buscar_indice_por_titulo(catalogo, total, titulos[i]);
+        assert(indice >= 0);
+        MidiaPartida midia;
+        iniciar_midia_partida(&midia);
+        carregar_midia_partida(&midia, &catalogo[indice]);
+        assert(midia.musica_carregada && midia.estado_audio == AUDIO_PRONTO);
+        assert(midia.duracao_audio > 180 && midia.duracao_audio < 200);
+        SetMusicVolume(midia.musica, 0);
+        atualizar_audio_partida(&midia, false);
+        for (int quadro_audio = 0; quadro_audio < 20; quadro_audio++) {
+            WaitTime(0.01);
+            atualizar_audio_partida(&midia, false);
+        }
+        assert(midia.estado_audio == AUDIO_TOCANDO && tempo_audio_partida(&midia) > 0);
+        atualizar_audio_partida(&midia, true);
+        float congelado = tempo_audio_partida(&midia);
+        WaitTime(0.02);
+        atualizar_audio_partida(&midia, true);
+        assert(midia.estado_audio == AUDIO_PAUSADO && tempo_audio_partida(&midia) == congelado);
+        atualizar_audio_partida(&midia, false);
+        assert(midia.estado_audio == AUDIO_TOCANDO);
+        reiniciar_audio_partida(&midia);
+        assert(midia.estado_audio == AUDIO_PRONTO && tempo_audio_partida(&midia) == 0);
+        printf("OK: WAV %s (%.3f s), abertura, relogio, pausa, retomada e reinicio.\n",
+               titulos[i], midia.duracao_audio);
+        descarregar_midia_partida(&midia);
+        assert(!midia.musica_carregada && midia.estado_audio == AUDIO_AUSENTE);
+    }
+    CloseAudioDevice();
 }
 
 /* Desenha cada tela em varios tamanhos e confere que nenhum texto sai da janela. */
@@ -607,11 +735,15 @@ int main(int argc, char **argv) {
     criar_temporario(caminho_notas, "2 4\n1 0\n2 0\n");
     criar_temporario(caminho_ranking, "");
 
-    if (argc > 1 && (strcmp(argv[1], "audio-completo") == 0 || strcmp(argv[1], "mapa-completo") == 0)) {
+    if (argc > 1 && strcmp(argv[1], "catalogo") == 0) {
+        testar_catalogo_ampliado(true);
+    } else if (argc > 1 && (strcmp(argv[1], "audio-completo") == 0 || strcmp(argv[1], "mapa-completo") == 0)) {
         testar_mp3_completo(strcmp(argv[1], "mapa-completo") == 0);
     } else {
         testar_fluxo_completo();
         testar_ranking_existente();
+        testar_catalogo_ampliado(false);
+        testar_novos_wav();
         testar_tamanhos(argc > 1 && strcmp(argv[1], "capturas") == 0);
         testar_audio_sincronizado();
         testar_faixa_completa();
