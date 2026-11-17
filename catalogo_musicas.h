@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 
-#define MAX_MUSICAS 8
+#define MAX_MUSICAS 6
 
 /*
  * Criterios de ordenacao disponiveis para o catalogo.

@@ -71,8 +71,7 @@ void __wrap_DrawText(const char *texto, int x, int y, int tamanho, Color cor) {
         texto_fora_da_janela = true;
     }
     /* Titulos reais da coluna esquerda: limites do texto e alvos para cliques. */
-    const char *titulos[] = {"Popular", "Dancing Queen", "City of Stars", "This Is Me",
-                            "Breaking Free", "Twist and Shout", "I'm Still Standing", "Um Sonho Eu Tenho"};
+    const char *titulos[] = {"Popular", "Dancing Queen", "Breaking Free", "Twist and Shout", "I'm Still Standing", "Um Sonho Eu Tenho"};
     if (x < GetScreenWidth() / 2) {
         for (int i = 0; i < MAX_MUSICAS; i++) {
             if (strcmp(texto, titulos[i]) == 0 && total_titulos_catalogo < MAX_MUSICAS) {
@@ -156,10 +155,10 @@ static void testar_fluxo_completo(void) {
     quadro(&jogo, KEY_ENTER);
     assert(jogo.tela == TELA_SELECAO_MUSICAS);
 
-    /* Seta para baixo seleciona a segunda musica (ordem A-Z: City of Stars). */
+    /* Seta para baixo seleciona a segunda musica (ordem A-Z: Dancing Queen). */
     quadro(&jogo, KEY_DOWN);
     assert(jogo.indice_musica == 1 && jogo.foco_menu == 4);
-    assert(strcmp(jogo.catalogo[1].titulo, "City of Stars") == 0);
+    assert(strcmp(jogo.catalogo[1].titulo, "Dancing Queen") == 0);
 
     /* Arquivo invalido: continua na selecao e mostra o erro. */
     snprintf(jogo.catalogo[1].caminho_notas, sizeof(jogo.catalogo[1].caminho_notas), "/dev/null");
@@ -252,7 +251,7 @@ static void testar_fluxo_completo(void) {
     assert(jogo.tela == TELA_RANKING_MUSICA && jogo.posicao_ranking == -1);
     assert(jogo.ranking.quantidade == 1 && jogo.partida.notas == NULL);
     quadro(&jogo, KEY_NULL);
-    assert(apareceu("RANKING DA MUSICA") && apareceu("Lais") && apareceu("City of Stars"));
+    assert(apareceu("RANKING DA MUSICA") && apareceu("Lais") && apareceu("Dancing Queen"));
     quadro(&jogo, KEY_ENTER);   /* botao VOLTAR AO CATALOGO */
     assert(jogo.tela == TELA_SELECAO_MUSICAS);
     quadro(&jogo, KEY_NULL);
@@ -317,7 +316,7 @@ static void testar_ranking_existente(void) {
 }
 
 
-/* Oito entradas: navegacao real, cliques e rejeicao sem alterar a partida. */
+/* Todas as entradas: navegacao real, cliques e rejeicao sem alterar a partida. */
 static void testar_catalogo_ampliado(bool salvar_capturas) {
     const int tamanhos[][2] = {{1280, 720}, {900, 600}, {640, 360}, {640, 480}};
     for (int t = 0; t < 4; t++) {
@@ -327,19 +326,19 @@ static void testar_catalogo_ampliado(bool salvar_capturas) {
         preparar_jogo_de_teste(&jogo);
         quadro(&jogo, KEY_ENTER);
         quadro(&jogo, KEY_NULL);
-        assert(total_titulos_catalogo == 8);
-        for (int i = 1; i < 8; i++) {
+        assert(total_titulos_catalogo == MAX_MUSICAS);
+        for (int i = 1; i < MAX_MUSICAS; i++) {
             assert(titulos_catalogo[i - 1].y + titulos_catalogo[i - 1].height < titulos_catalogo[i].y);
             quadro(&jogo, KEY_DOWN);
             assert(jogo.indice_musica == i && jogo.foco_menu == i + 3);
         }
         quadro(&jogo, KEY_RIGHT);
-        assert(jogo.foco_menu == 11);
+        assert(jogo.foco_menu == MAX_MUSICAS + 3);
         quadro(&jogo, KEY_DOWN);
-        assert(jogo.foco_menu == 12);
+        assert(jogo.foco_menu == MAX_MUSICAS + 4);
         quadro(&jogo, KEY_LEFT);
-        assert(jogo.foco_menu == 10 && jogo.indice_musica == 7);
-        for (int i = 0; i < 8; i++) {
+        assert(jogo.foco_menu == MAX_MUSICAS + 2 && jogo.indice_musica == MAX_MUSICAS - 1);
+        for (int i = 0; i < MAX_MUSICAS; i++) {
             Rectangle titulo = titulos_catalogo[i];
             posicao_mouse = (Vector2){titulo.x + 2, titulo.y + titulo.height / 2};
             clique_mouse = true;
