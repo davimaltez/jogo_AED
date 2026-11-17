@@ -4,13 +4,12 @@ Jogo de ritmo com tema de **filmes musicais**, desenvolvido em **C** com a bibli
 
 O jogador escolhe uma música do catálogo e precisa apertar a tecla certa quando cada nota chega à linha dourada. Acertos somam pontos e combos; erros baixam o medidor de desempenho. Se o medidor zerar, é Game Over. Quem termina a música grava o nome no ranking daquela música.
 
----
 
 ## ▶️ Como executar
 
 ### Requisitos
 
-- Linux ou WSL (Windows)
+- Ubuntu/WSL
 - GCC e Make
 - raylib 5.5
 
@@ -86,4 +85,3 @@ O projeto usa **Merge Sort** em três lugares:
 
 O Merge Sort divide os dados ao meio até sobrar um elemento, depois intercala as partes já ordenadas. A complexidade é **O(n log n)**. A versão usada é **estável**: elementos iguais mantêm a ordem original.
 
----
