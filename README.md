@@ -7,13 +7,17 @@ O jogador escolhe uma música do catálogo e precisa apertar a tecla certa quand
 
 ## ▶️ Como executar
 
-### Requisitos
+Dá para compilar de duas formas: pelo **WSL/Ubuntu** ou direto no **Windows** (MSYS2). O `Makefile` detecta o sistema sozinho. No Windows o áudio sai pelo WASAPI, sem o chiado que aparece no WSL.
+
+### Opção A: WSL/Ubuntu
+
+#### Requisitos
 
 - Ubuntu/WSL
 - GCC e Make
 - raylib 5.5
 
-### 1. Instalar as dependências e a raylib (uma vez só)
+#### 1. Instalar as dependências e a raylib (uma vez só)
 
 ```sh
 sudo apt update
@@ -27,7 +31,7 @@ sudo make install
 cd ../..
 ```
 
-### 2. Compilar e jogar
+#### 2. Compilar e jogar
 
 Dentro da pasta do projeto:
 
@@ -35,6 +39,28 @@ Dentro da pasta do projeto:
 make
 make run
 ```
+
+### Opção B: Windows (MSYS2 UCRT64)
+
+#### 1. Instalar (uma vez só)
+
+Instale o [MSYS2](https://www.msys2.org/) e, no terminal **MSYS2 UCRT64**:
+
+```sh
+pacman -S --needed mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-make mingw-w64-ucrt-x86_64-raylib
+```
+
+#### 2. Compilar e jogar
+
+No PowerShell, dentro da pasta do projeto:
+
+```powershell
+$env:PATH = "C:\msys64\ucrt64\bin;$env:PATH"   # gcc, make e a DLL da raylib
+mingw32-make
+.\final_act.exe
+```
+
+Isso gera `final_act.exe` (ignorado pelo git). Os testes (`make test`) continuam só no WSL.
 
 ### Controles
 
