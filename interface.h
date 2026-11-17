@@ -117,6 +117,7 @@ typedef struct {
     int combo_anterior;
     float pulso_pontos;
     float pulso_combo;
+    float celebracao;                   /* 1 a cada 25 de combo, cai ate 0 (tema Popular) */
     Faisca faiscas[MAX_FAISCAS];
     int proxima_faisca;                 /* as faiscas sao reaproveitadas em circulo */
     unsigned int semente;

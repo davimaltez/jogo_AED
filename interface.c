@@ -1088,8 +1088,10 @@ static void atualizar_efeitos(EfeitosPartida *efeitos, const Partida *partida,
     }
     if (partida->combo > efeitos->combo_anterior) {
         efeitos->pulso_combo = 1.0f;
+        if (partida->combo / 25 > efeitos->combo_anterior / 25) efeitos->celebracao = 1.0f;
     }
     efeitos->combo_anterior = partida->combo;
+    efeitos->celebracao = decair(efeitos->celebracao, tempo_quadro, 1.4f);
     efeitos->pulso_pontos = decair(efeitos->pulso_pontos, tempo_quadro, 0.22f);
     efeitos->pulso_combo = decair(efeitos->pulso_combo, tempo_quadro, 0.22f);
 
@@ -1522,25 +1524,626 @@ static void desenhar_painel_informacoes(int largura, int altura, float escala,
                                 fonte(18, escala), (Color){ 190, 180, 200, 220 });
 }
 
+/* ================= Tema da musica Popular (Wicked) ================= */
+
+/*
+ * Enfeites exclusivos de Popular, combinando com o fundo cor-de-rosa:
+ * bolhas da Glinda, petalas de cerejeira, brilhos no ceu e um "toque de
+ * varinha" a cada 25 de combo. Como as particulas de ambiente, tudo e
+ * calculado a partir do relogio e do indice (sem vetores, sem alocacao,
+ * sem texturas), e cada camada troca o modo de mistura uma unica vez.
+ */
+#define POPULAR_BOLHAS 9
+#define POPULAR_PETALAS 16
+#define POPULAR_BRILHOS 22
+#define POPULAR_ESTRELAS_VARINHA 12
+
+static const Color COR_POPULAR_ROSA = { 255, 120, 200, 255 };
+static const Color COR_POPULAR_CIANO = { 140, 235, 255, 255 };
+static const Color COR_POPULAR_ESMERALDA = { 90, 255, 160, 255 };
+
+static bool musica_e_popular(const Musica *musica) {
+    return strcmp(musica->titulo, "Popular") == 0;
+}
+
+/* Estrela de quatro pontas: dois losangos finos cruzados (4 triangulos). */
+static void estrela_quatro_pontas(Vector2 centro, float tamanho, Color cor) {
+    float fino = tamanho * 0.18f;
+    Vector2 cima = { centro.x, centro.y - tamanho };
+    Vector2 baixo = { centro.x, centro.y + tamanho };
+    Vector2 esquerda = { centro.x - tamanho, centro.y };
+    Vector2 direita = { centro.x + tamanho, centro.y };
+    triangulo(cima, (Vector2){ centro.x - fino, centro.y }, (Vector2){ centro.x + fino, centro.y }, cor);
+    triangulo(baixo, (Vector2){ centro.x - fino, centro.y }, (Vector2){ centro.x + fino, centro.y }, cor);
+    triangulo(esquerda, (Vector2){ centro.x, centro.y - fino }, (Vector2){ centro.x, centro.y + fino }, cor);
+    triangulo(direita, (Vector2){ centro.x, centro.y - fino }, (Vector2){ centro.x, centro.y + fino }, cor);
+}
+
+/* Bolha de sabao: miolo quase transparente, borda furta-cor e reflexo. */
+static void desenhar_bolha(Vector2 centro, float raio, float tempo, float opacidade) {
+    float giro = tempo * 40.0f;
+    float espessura = raio * 0.10f + 1.0f;
+    DrawCircleV(centro, raio, cor_alfa(COR_POPULAR_ROSA, 0.05f * opacidade));
+    DrawRing(centro, raio - espessura, raio, giro, giro + 180.0f, 20, cor_alfa(COR_POPULAR_ROSA, 0.45f * opacidade));
+    DrawRing(centro, raio - espessura, raio, giro + 180.0f, giro + 360.0f, 20,
+             cor_alfa(COR_POPULAR_CIANO, 0.40f * opacidade));
+    DrawCircleV((Vector2){ centro.x - raio * 0.38f, centro.y - raio * 0.40f }, raio * 0.16f,
+                cor_alfa(WHITE, 0.70f * opacidade));
+}
+
+static void desenhar_ambiente_popular(int largura, int altura, float escala, float tempo) {
+    BeginBlendMode(BLEND_ADDITIVE);
+
+    /* Brilhos no ceu: piscam rapido (seno elevado a uma potencia) em pontos fixos. */
+    for (int i = 0; i < POPULAR_BRILHOS; i++) {
+        unsigned int base = 500u + (unsigned int)i * 5u;
+        float onda = 0.5f + 0.5f * sinf(tempo * (1.4f + 1.6f * ruido(base)) + 6.283f * ruido(base + 1u));
+        float piscar = onda * onda * onda * onda;
+        piscar *= piscar;
+        if (piscar < 0.04f) continue;
+        Vector2 posicao = { ruido(base + 2u) * largura, ruido(base + 3u) * altura * 0.45f };
+        float tamanho = (4.0f + 7.0f * ruido(base + 4u)) * escala * (0.6f + 0.4f * piscar);
+        Color cor = i % 4 == 0 ? COR_POPULAR_ESMERALDA : (i % 2 ? WHITE : COR_POPULAR_ROSA);
+        brilho_radial(posicao, tamanho * 1.6f, cor_alfa(cor, 0.25f * piscar));
+        estrela_quatro_pontas(posicao, tamanho, cor_alfa(cor, 0.85f * piscar));
+    }
+
+    /* Bolhas subindo pelas laterais, balancando devagar. */
+    for (int i = 0; i < POPULAR_BOLHAS; i++) {
+        unsigned int base = 700u + (unsigned int)i * 6u;
+        float percurso = ruido(base) + tempo * (0.025f + 0.025f * ruido(base + 1u));
+        percurso -= floorf(percurso);
+        float lado = ruido(base + 2u);
+        float x = lado < 0.5f ? 0.02f + 0.36f * lado : 0.62f + 0.36f * (lado - 0.5f);
+        Vector2 centro = {
+            (x + 0.015f * sinf(tempo * 0.9f + 6.283f * ruido(base + 3u))) * largura,
+            (1.08f - 1.16f * percurso) * altura
+        };
+        float raio = (14.0f + 26.0f * ruido(base + 4u)) * escala;
+        desenhar_bolha(centro, raio, tempo + (float)i, sinf(PI * percurso));
+    }
+
+    /* Petalas de cerejeira caindo na diagonal e girando. */
+    for (int i = 0; i < POPULAR_PETALAS; i++) {
+        unsigned int base = 900u + (unsigned int)i * 6u;
+        float percurso = ruido(base) + tempo * (0.04f + 0.04f * ruido(base + 1u));
+        percurso -= floorf(percurso);
+        Vector2 centro = {
+            (ruido(base + 2u) + 0.18f * percurso + 0.03f * sinf(tempo * 1.7f + (float)i)) * largura,
+            (-0.05f + 1.10f * percurso) * altura
+        };
+        float raio = (7.0f + 5.0f * ruido(base + 3u)) * escala;
+        float angulo = tempo * (1.0f + 2.0f * ruido(base + 4u)) + (float)i;
+        float c = cosf(angulo), s = sinf(angulo);
+        /* Folha com ponta, larga no meio e curta atras, girada pelo angulo. */
+        Vector2 ponta = { centro.x + c * raio, centro.y + s * raio };
+        Vector2 tras = { centro.x - c * raio * 0.7f, centro.y - s * raio * 0.7f };
+        Vector2 lado_a = { centro.x - s * raio * 0.55f, centro.y + c * raio * 0.55f };
+        Vector2 lado_b = { centro.x + s * raio * 0.55f, centro.y - c * raio * 0.55f };
+        Color cor = cor_alfa(i % 3 == 0 ? (Color){ 255, 225, 240, 255 } : (Color){ 255, 160, 205, 255 },
+                             0.80f * sinf(PI * percurso));
+        triangulo(ponta, lado_a, tras, cor);
+        triangulo(ponta, tras, lado_b, cor);
+    }
+    EndBlendMode();
+}
+
+/* Brilho rosa no horizonte (a Cidade das Esmeraldas) que cresce na celebracao. */
+static void desenhar_horizonte_popular(const GeometriaPista *pista, const EfeitosPartida *efeitos) {
+    float respirar = 0.5f + 0.5f * sinf(efeitos->relogio * 1.1f);
+    float celebracao = efeitos->celebracao;
+    BeginBlendMode(BLEND_ADDITIVE);
+    brilho_radial((Vector2){ pista->centro_x, pista->y_topo }, pista->largura_topo * (0.9f + 0.6f * celebracao),
+                  cor_alfa(COR_POPULAR_ROSA, 0.22f + 0.10f * respirar + 0.45f * celebracao));
+    brilho_radial((Vector2){ pista->centro_x, pista->y_topo }, pista->largura_topo * 0.45f,
+                  cor_alfa(COR_POPULAR_ESMERALDA, 0.12f + 0.08f * respirar));
+    EndBlendMode();
+}
+
+/* Cada nota ganha um brilho que pisca no canto, cada uma no seu ritmo. */
+static void desenhar_brilho_notas_popular(const GeometriaPista *pista, float escala, const Partida *partida,
+                                          float tempo) {
+    NotaVisivel visivel;
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (const Nota *atual = partida->notas; atual != NULL; atual = atual->proximo) {
+        if (!calcular_nota_visivel(pista, escala, partida, atual, &visivel)) continue;
+        float piscar = 0.5f + 0.5f * sinf(tempo * 5.0f + atual->tempo_alvo * 7.0f);
+        Rectangle nota = visivel.retangulo;
+        Vector2 canto = { nota.x + nota.width * 0.82f, nota.y + nota.height * 0.22f };
+        float tamanho = nota.height * (0.30f + 0.30f * piscar);
+        estrela_quatro_pontas(canto, tamanho, cor_alfa(WHITE, (0.45f + 0.55f * piscar) * visivel.opacidade));
+    }
+    EndBlendMode();
+}
+
+/*
+ * Acerto: uma bolha furta-cor estoura no receptor. Celebracao (25, 50, 75...
+ * de combo): um anel de estrelas sai do horizonte, como um toque de varinha.
+ */
+static void desenhar_destaques_popular(const GeometriaPista *pista, float escala, const EfeitosPartida *efeitos) {
+    float largura_coluna = largura_pista_em(pista, pista->y_alvo) / TOTAL_PISTAS;
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        float impacto = efeitos->impacto[p];
+        if (impacto <= 0.0f) continue;
+        Vector2 centro = { x_pista_em(pista, pista->y_alvo, (p + 0.5f) / TOTAL_PISTAS), pista->y_alvo };
+        float abertura = 1.0f - impacto;
+        float raio = largura_coluna * (0.48f + 0.50f * abertura);
+        float espessura = (1.0f + 2.5f * impacto) * escala;
+        float giro = efeitos->relogio * 120.0f;
+        DrawRing(centro, raio - espessura, raio, giro, giro + 180.0f, 24, cor_alfa(COR_POPULAR_ROSA, impacto));
+        DrawRing(centro, raio - espessura, raio, giro + 180.0f, giro + 360.0f, 24, cor_alfa(COR_POPULAR_CIANO, impacto));
+        /* Gotinhas da bolha estourada, em cruz diagonal. */
+        for (int k = 0; k < 4; k++) {
+            float angulo = PI * 0.25f + k * PI * 0.5f;
+            Vector2 gota = { centro.x + cosf(angulo) * raio * 1.25f, centro.y + sinf(angulo) * raio * 0.9f };
+            estrela_quatro_pontas(gota, 5.0f * escala * impacto + 1.0f, cor_alfa(WHITE, impacto));
+        }
+    }
+
+    float celebracao = efeitos->celebracao;
+    if (celebracao > 0.0f) {
+        float abertura = 1.0f - celebracao;
+        Vector2 origem = { pista->centro_x, pista->y_topo };
+        float raio = pista->largura_base * (0.10f + 0.65f * abertura);
+        for (int k = 0; k < POPULAR_ESTRELAS_VARINHA; k++) {
+            float angulo = efeitos->relogio * 0.8f + k * (2.0f * PI / POPULAR_ESTRELAS_VARINHA);
+            Vector2 estrela = { origem.x + cosf(angulo) * raio, origem.y + sinf(angulo) * raio * 0.55f };
+            Color cor = k % 3 == 0 ? COR_POPULAR_ESMERALDA : (k % 2 ? COR_POPULAR_ROSA : WHITE);
+            float tamanho = (8.0f + 10.0f * celebracao) * escala;
+            brilho_radial(estrela, tamanho * 1.8f, cor_alfa(cor, 0.35f * celebracao));
+            estrela_quatro_pontas(estrela, tamanho, cor_alfa(cor, celebracao));
+        }
+    }
+    EndBlendMode();
+}
+
+/* ================= Tema da musica I'm Still Standing (Sing) ================= */
+
+/*
+ * Clima de show de talentos: letreiro de lampadas, canhoes de luz, telao de
+ * LED e plateia pulando. Tudo segue a batida da faixa (175 BPM, medida no
+ * audio) usando o tempo da partida, que acompanha a musica e congela na pausa.
+ * Nos refroes (trechos de maior energia do audio) entram globo espelhado,
+ * confete, flashes e, no ultimo, fogos. Nada e alocado: as posicoes vem do
+ * indice de cada elemento e do tempo.
+ */
+#define SING_PERIODO_BATIDA (60.0f / 175.0f)
+#define SING_FASE_BATIDA 0.128f          /* primeira batida medida no audio */
+#define SING_LAMPADAS_ESPACO 36.0f
+#define SING_PESSOAS_POR_LADO 9
+#define SING_CONFETES 54
+#define SING_CANHAO_CONFETES 36
+#define SING_FAISCAS_FOGO 22
+#define SING_PONTOS_GLOBO 36
+#define SING_ENTRADA_REFRAO 3.2f         /* duracao da faixa "I'M STILL STANDING!" */
+
+/* Inicio e fim (s) dos tres refroes, achados pela energia e repeticao do audio. */
+static const float REFROES_SING[][2] = { { 41.7f, 73.0f }, { 88.5f, 114.0f }, { 134.6f, 179.5f } };
+#define TOTAL_REFROES_SING ((int)(sizeof(REFROES_SING) / sizeof(REFROES_SING[0])))
+
+static const Color CORES_SHOW[5] = {
+    { 255, 200, 60, 255 },    /* dourado */
+    { 255, 60, 170, 255 },    /* magenta */
+    { 60, 220, 255, 255 },    /* ciano */
+    { 255, 120, 40, 255 },    /* laranja */
+    { 160, 90, 255, 255 }     /* violeta */
+};
+
+typedef struct {
+    float tempo;
+    int batida;              /* indice da batida desde o inicio da faixa */
+    float fase;              /* 0 na batida, ate 1 na seguinte */
+    float pulso;             /* 1 na batida, cai rapido ate 0 */
+    bool caixa;              /* tempos 2 e 4: onde bate a caixa */
+    int compasso;
+    float refrao;            /* 0 fora do refrao, 1 dentro (com rampa) */
+    int indice_refrao;       /* -1 fora do refrao */
+    float tempo_no_refrao;
+    Color cor;               /* cor do compasso atual */
+} RitmoShow;
+
+static bool musica_e_sing(const Musica *musica) {
+    return strcmp(musica->titulo, "I'm Still Standing") == 0;
+}
+
+static RitmoShow calcular_ritmo_show(float tempo) {
+    RitmoShow ritmo;
+    float batidas = (tempo - SING_FASE_BATIDA) / SING_PERIODO_BATIDA;
+    ritmo.tempo = tempo;
+    ritmo.batida = (int)floorf(batidas);
+    ritmo.fase = batidas - floorf(batidas);
+    float resto = 1.0f - ritmo.fase;
+    ritmo.pulso = resto * resto * resto;
+    ritmo.caixa = (ritmo.batida & 1) != 0;
+    ritmo.compasso = (int)floorf(batidas / 4.0f);
+    ritmo.refrao = 0.0f;
+    ritmo.indice_refrao = -1;
+    ritmo.tempo_no_refrao = 0.0f;
+    for (int i = 0; i < TOTAL_REFROES_SING; i++) {
+        float inicio = REFROES_SING[i][0];
+        float fim = REFROES_SING[i][1];
+        if (tempo >= inicio && tempo < fim + 1.0f) {
+            ritmo.refrao = limitar((tempo - inicio) / 0.25f, 0.0f, 1.0f) * limitar((fim + 1.0f - tempo) / 1.0f, 0.0f, 1.0f);
+            ritmo.indice_refrao = i;
+            ritmo.tempo_no_refrao = tempo - inicio;
+        }
+    }
+    int indice_cor = ritmo.compasso % 5;
+    if (indice_cor < 0) indice_cor += 5;
+    ritmo.cor = CORES_SHOW[indice_cor];
+    return ritmo;
+}
+
+/* Fundo proprio para quando a musica nao tem imagem: palco escuro e telao de LED. */
+static void desenhar_palco_show(int largura, int altura, const RitmoShow *ritmo) {
+    DrawRectangleGradientV(0, 0, largura, altura, (Color){ 12, 5, 28, 255 }, (Color){ 38, 8, 44, 255 });
+
+    /* Telao: uma onda de cor atravessa os blocos e todos acendem na batida. */
+    const int colunas = 14, linhas = 8;
+    float x0 = largura * 0.24f, y0 = altura * 0.05f;
+    float bloco_l = largura * 0.52f / colunas, bloco_a = altura * 0.36f / linhas;
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int l = 0; l < linhas; l++) {
+        for (int c = 0; c < colunas; c++) {
+            float onda = 0.5f + 0.5f * sinf(c * 0.7f + l * 0.5f - ritmo->tempo * (2.0f + 3.0f * ritmo->refrao));
+            float brilho = 0.06f + 0.10f * onda + (0.06f + 0.14f * ritmo->refrao) * ritmo->pulso;
+            Color cor = misturar(ritmo->cor, CORES_SHOW[(c / 3 + l / 2) % 5], 0.5f * ritmo->refrao);
+            DrawRectangle((int)(x0 + c * bloco_l + 1), (int)(y0 + l * bloco_a + 1), (int)bloco_l - 2, (int)bloco_a - 2,
+                          cor_alfa(cor, brilho));
+        }
+    }
+    EndBlendMode();
+    desenhar_vinheta(largura, altura, 130);
+}
+
+/* Canhoes de luz presos na trelica, varrendo o palco no ritmo. */
+static void desenhar_canhoes_luz(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    static const float posicoes[4] = { 0.10f, 0.32f, 0.68f, 0.90f };
+    float y_fonte = 14.0f * escala;
+    float comprimento = altura * 1.15f;
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int i = 0; i < 4; i++) {
+        bool externo = i == 0 || i == 3;
+        float presenca = externo ? 0.55f + 0.45f * ritmo->refrao : ritmo->refrao;
+        if (presenca < 0.02f) continue;
+        float base = posicoes[i] < 0.5f ? 0.30f : -0.30f;
+        float lento = 0.35f * sinf(2.0f * PI * ritmo->tempo / (SING_PERIODO_BATIDA * 8.0f) + i * 1.7f);
+        float rapido = 0.50f * sinf(2.0f * PI * ritmo->tempo / (SING_PERIODO_BATIDA * 4.0f) + i * PI * 0.5f);
+        float angulo = base + lento + (rapido - lento) * ritmo->refrao;
+        Color cor = misturar((Color){ 255, 215, 140, 255 }, CORES_SHOW[(ritmo->compasso + i + 50) % 5], ritmo->refrao);
+        Vector2 fonte_luz = { largura * posicoes[i], y_fonte };
+        Vector2 direcao = { sinf(angulo), cosf(angulo) };
+        Vector2 normal = { cosf(angulo), -sinf(angulo) };
+        Vector2 fim = { fonte_luz.x + direcao.x * comprimento, fonte_luz.y + direcao.y * comprimento };
+        float abertura = altura * 0.13f;
+        float forca = presenca * (0.10f + 0.06f * ritmo->pulso * ritmo->refrao);
+        triangulo(fonte_luz, (Vector2){ fim.x + normal.x * abertura, fim.y + normal.y * abertura },
+                  (Vector2){ fim.x - normal.x * abertura, fim.y - normal.y * abertura }, cor_alfa(cor, forca));
+        triangulo(fonte_luz, (Vector2){ fim.x + normal.x * abertura * 0.35f, fim.y + normal.y * abertura * 0.35f },
+                  (Vector2){ fim.x - normal.x * abertura * 0.35f, fim.y - normal.y * abertura * 0.35f },
+                  cor_alfa(cor, forca * 1.3f));
+        brilho_radial(fonte_luz, 26.0f * escala, cor_alfa(cor, 0.6f * presenca));
+    }
+    EndBlendMode();
+}
+
+/* Letreiro de lampadas: no verso uma "corrida" de luz, no refrao todas piscam. */
+static void desenhar_letreiro(int largura, float escala, const RitmoShow *ritmo) {
+    float altura_trelica = 12.0f * escala;
+    DrawRectangle(0, (int)(4.0f * escala), largura, (int)altura_trelica, (Color){ 30, 26, 36, 255 });
+    DrawLineEx((Vector2){ 0, 4.0f * escala }, (Vector2){ (float)largura, 4.0f * escala }, 1.5f, (Color){ 90, 80, 100, 255 });
+    DrawLineEx((Vector2){ 0, 4.0f * escala + altura_trelica }, (Vector2){ (float)largura, 4.0f * escala + altura_trelica },
+               1.5f, (Color){ 90, 80, 100, 255 });
+    float espaco = SING_LAMPADAS_ESPACO * escala;
+    int total = (int)(largura / espaco) + 1;
+    float y = 4.0f * escala + altura_trelica * 0.5f;
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int i = 0; i < total; i++) {
+        float corrida = ((i + ritmo->batida) % 4 + 4) % 4 == 0 ? 1.0f : 0.22f;
+        float alternado = ((i + ritmo->batida) & 1) == 0 ? 1.0f : 0.45f;
+        float luz = corrida + (alternado - corrida) * ritmo->refrao;
+        Vector2 centro = { espaco * 0.5f + i * espaco, y };
+        Color cor = misturar((Color){ 255, 220, 140, 255 }, ritmo->cor, 0.6f * ritmo->refrao);
+        brilho_radial(centro, 11.0f * escala, cor_alfa(cor, 0.45f * luz));
+        DrawCircleV(centro, 3.5f * escala, cor_alfa(misturar(cor, WHITE, 0.5f), 0.35f + 0.65f * luz));
+    }
+    EndBlendMode();
+}
+
+/* Silhueta de uma pessoa da plateia; os bracos sobem conforme "bracos" (0 a 1). */
+static void desenhar_pessoa(Vector2 base, float tamanho, float bracos, float aceno, bool celular,
+                            float tempo, Color cor_luz) {
+    const Color silhueta = { 12, 6, 20, 255 };
+    float raio_cabeca = 12.0f * tamanho;
+    Vector2 cabeca = { base.x, base.y - 52.0f * tamanho };
+    Vector2 ombro_e = { base.x - 16.0f * tamanho, base.y - 34.0f * tamanho };
+    Vector2 ombro_d = { base.x + 16.0f * tamanho, base.y - 34.0f * tamanho };
+    float comprimento = 34.0f * tamanho;
+    if (bracos > 0.02f) {
+        /*
+         * Bracos em V acenando. "abertura" e o angulo de cada braco em relacao
+         * a vertical; com bracos = 0 eles pendem junto ao corpo.
+         */
+        float abertura_e = 0.35f + 0.25f * aceno;
+        float abertura_d = 0.35f - 0.25f * aceno;
+        float baixo = comprimento * (1.0f - bracos);
+        Vector2 mao_e = { ombro_e.x - sinf(abertura_e) * comprimento * bracos - 4.0f * tamanho * (1.0f - bracos),
+                          ombro_e.y + baixo - cosf(abertura_e) * comprimento * bracos };
+        Vector2 mao_d = { ombro_d.x + sinf(abertura_d) * comprimento * bracos + 4.0f * tamanho * (1.0f - bracos),
+                          ombro_d.y + baixo - cosf(abertura_d) * comprimento * bracos };
+        DrawLineEx(ombro_e, mao_e, 7.0f * tamanho, silhueta);
+        DrawLineEx(ombro_d, mao_d, 7.0f * tamanho, silhueta);
+        DrawCircleV(mao_e, 4.5f * tamanho, silhueta);
+        DrawCircleV(mao_d, 4.5f * tamanho, silhueta);
+    } else if (celular) {
+        /* Braco levantado segurando a luz do celular, balancando devagar. */
+        Vector2 mao = { ombro_d.x + 10.0f * tamanho + 8.0f * tamanho * sinf(tempo * 1.4f + base.x),
+                        ombro_d.y - comprimento * 0.95f };
+        DrawLineEx(ombro_d, mao, 7.0f * tamanho, silhueta);
+        BeginBlendMode(BLEND_ADDITIVE);
+        brilho_radial(mao, 16.0f * tamanho, cor_alfa(cor_luz, 0.55f));
+        DrawCircleV(mao, 3.0f * tamanho, WHITE);
+        EndBlendMode();
+    }
+    DrawRectangleRounded((Rectangle){ base.x - 20.0f * tamanho, base.y - 40.0f * tamanho, 40.0f * tamanho, 44.0f * tamanho },
+                         0.6f, 6, silhueta);
+    DrawCircleV(cabeca, raio_cabeca, silhueta);
+}
+
+/* Plateia nas laterais de baixo, pulando na batida, com contraluz colorida. */
+static void desenhar_plateia(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    BeginBlendMode(BLEND_ADDITIVE);
+    Color contraluz = misturar((Color){ 255, 170, 90, 255 }, ritmo->cor, ritmo->refrao);
+    float forca = 0.18f + 0.10f * ritmo->pulso + 0.15f * ritmo->refrao;
+    DrawRectangleGradientV(0, (int)(altura * 0.74f), (int)(largura * 0.24f), (int)(altura * 0.26f),
+                           cor_alfa(contraluz, 0.0f), cor_alfa(contraluz, forca));
+    DrawRectangleGradientV((int)(largura * 0.76f), (int)(altura * 0.74f), (int)(largura * 0.24f) + 1, (int)(altura * 0.26f),
+                           cor_alfa(contraluz, 0.0f), cor_alfa(contraluz, forca));
+    EndBlendMode();
+
+    float salto_max = (3.0f + 10.0f * ritmo->refrao) * escala;
+    for (int lado = 0; lado < 2; lado++) {
+        for (int j = 0; j < SING_PESSOAS_POR_LADO; j++) {
+            unsigned int base = 1300u + (unsigned int)(lado * 40 + j) * 4u;
+            float tamanho = (1.05f + 0.40f * ruido(base)) * escala;
+            float fracao = (j + 0.5f * ruido(base + 1u)) / SING_PESSOAS_POR_LADO;
+            float x = lado == 0 ? largura * (0.005f + 0.21f * fracao) : largura * (0.785f + 0.21f * fracao);
+            /* Cada pessoa pula com um pequeno atraso, como uma plateia de verdade. */
+            float fase = ritmo->fase - 0.08f * ruido(base + 2u);
+            fase -= floorf(fase);
+            float salto = sinf(PI * (1.0f - fase)) * salto_max * (1.0f - fase);
+            Vector2 pe = { x, altura + 2.0f * escala + 10.0f * escala * ruido(base + 3u) - salto };
+            float aceno = sinf(PI * (ritmo->batida % 2 + ritmo->fase) + j);
+            bool celular = (j + lado) % 3 == 0;
+            desenhar_pessoa(pe, tamanho, ritmo->refrao, aceno, celular, ritmo->tempo, CORES_SHOW[(j + lado) % 5]);
+        }
+    }
+}
+
+/* Globo espelhado que desce no refrao e espalha pontos de luz pela tela. */
+static void desenhar_globo(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    if (ritmo->refrao <= 0.01f) return;
+    float descida = limitar(ritmo->tempo_no_refrao / 0.6f, 0.0f, 1.0f);
+    descida = 1.0f - (1.0f - descida) * (1.0f - descida);
+    float raio = 18.0f * escala;
+    Vector2 centro = { largura * 0.5f, -raio + (altura * 0.058f + raio) * descida };
+    float opacidade = ritmo->refrao;
+
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int i = 0; i < SING_PONTOS_GLOBO; i++) {
+        unsigned int base = 1700u + (unsigned int)i * 3u;
+        float x = ruido(base) + ritmo->tempo * 0.10f;
+        x -= floorf(x);
+        Vector2 ponto = { x * largura, (0.12f + 0.80f * ruido(base + 1u)) * altura };
+        float piscar = 0.5f + 0.5f * sinf(ritmo->tempo * 6.0f + i);
+        DrawCircleV(ponto, (2.0f + 2.0f * ruido(base + 2u)) * escala,
+                    cor_alfa(CORES_SHOW[i % 5], (0.25f + 0.35f * piscar) * opacidade));
+    }
+    EndBlendMode();
+
+    DrawLineEx((Vector2){ centro.x, 0 }, (Vector2){ centro.x, centro.y - raio }, 2.0f, cor_alfa((Color){ 150, 150, 160, 255 }, opacidade));
+    DrawCircleV(centro, raio, cor_alfa((Color){ 120, 120, 140, 255 }, opacidade));
+    /* Espelhinhos: quadrados que acendem conforme o globo gira. */
+    float lado = raio / 3.2f;
+    int giro = (int)floorf(ritmo->tempo * 8.0f);
+    for (int l = -3; l <= 3; l++) {
+        for (int c = -3; c <= 3; c++) {
+            float dx = c * lado, dy = l * lado;
+            if (dx * dx + dy * dy > (raio - lado * 0.6f) * (raio - lado * 0.6f)) continue;
+            float brilho = ruido((unsigned int)((l + 3) * 7 + (c + 3) + giro * 13));
+            Color cor = misturar((Color){ 90, 90, 110, 255 }, misturar(WHITE, ritmo->cor, 0.3f), brilho);
+            DrawRectangle((int)(centro.x + dx - lado * 0.45f), (int)(centro.y + dy - lado * 0.45f),
+                          (int)(lado * 0.9f), (int)(lado * 0.9f), cor_alfa(cor, opacidade));
+        }
+    }
+    BeginBlendMode(BLEND_ADDITIVE);
+    brilho_radial(centro, raio * 2.2f, cor_alfa(WHITE, (0.15f + 0.25f * ritmo->pulso) * opacidade));
+    EndBlendMode();
+}
+
+/* Linha de acerto e trilhos acendem a cada batida. */
+static void desenhar_batida_pista(const GeometriaPista *pista, float escala, const RitmoShow *ritmo) {
+    float largura_alvo = largura_pista_em(pista, pista->y_alvo);
+    Vector2 inicio = { pista->centro_x - largura_alvo / 2.0f, pista->y_alvo };
+    Vector2 fim = { pista->centro_x + largura_alvo / 2.0f, pista->y_alvo };
+    BeginBlendMode(BLEND_ADDITIVE);
+    DrawLineEx(inicio, fim, 24.0f * escala, cor_alfa(ritmo->cor, (0.10f + 0.25f * ritmo->refrao) * ritmo->pulso));
+    for (int lado = 0; lado <= 1; lado++) {
+        Vector2 topo = { x_pista_em(pista, pista->y_topo, (float)lado), pista->y_topo };
+        Vector2 base = { x_pista_em(pista, pista->y_base, (float)lado), pista->y_base };
+        DrawLineEx(topo, base, 12.0f * escala, cor_alfa(ritmo->cor, (0.08f + 0.22f * ritmo->refrao) * ritmo->pulso));
+    }
+    EndBlendMode();
+}
+
+/* Cada acerto solta uma notinha musical que sobe da tecla. */
+static void desenhar_notas_musicais(const GeometriaPista *pista, float escala, const EfeitosPartida *efeitos) {
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        float impacto = efeitos->impacto[p];
+        if (impacto <= 0.0f) continue;
+        float subida = 1.0f - impacto;
+        float x = x_pista_em(pista, pista->y_alvo, (p + 0.5f) / TOTAL_PISTAS) + sinf(subida * 9.0f + p) * 6.0f * escala;
+        float y = pista->y_alvo - (28.0f + 70.0f * subida) * escala;
+        float t = (0.8f + 0.4f * impacto) * escala;
+        Color cor = cor_alfa(misturar(CORES_PISTAS[p], WHITE, 0.35f), impacto);
+        DrawEllipse((int)x, (int)y, 7.0f * t, 5.0f * t, cor);
+        DrawLineEx((Vector2){ x + 6.0f * t, y }, (Vector2){ x + 6.0f * t, y - 20.0f * t }, 2.5f * t, cor);
+        DrawLineEx((Vector2){ x + 6.0f * t, y - 20.0f * t }, (Vector2){ x + 13.0f * t, y - 13.0f * t }, 2.5f * t, cor);
+    }
+}
+
+/* Um pedaco de confete girando e "virando" (a largura oscila). */
+static void confete(Vector2 posicao, float tamanho, float giro, float virada, Color cor) {
+    float largura = tamanho * (0.15f + 0.85f * fabsf(cosf(virada)));
+    DrawRectanglePro((Rectangle){ posicao.x, posicao.y, largura, tamanho * 0.55f },
+                     (Vector2){ largura * 0.5f, tamanho * 0.275f }, giro, cor);
+}
+
+/* Chuva de confete do refrao. */
+static void desenhar_chuva_confete(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    if (ritmo->refrao <= 0.01f) return;
+    for (int i = 0; i < SING_CONFETES; i++) {
+        unsigned int base = 2000u + (unsigned int)i * 5u;
+        float percurso = ruido(base) + ritmo->tempo * (0.12f + 0.10f * ruido(base + 1u));
+        percurso -= floorf(percurso);
+        Vector2 posicao = { (ruido(base + 2u) + 0.02f * sinf(ritmo->tempo * 2.0f + i)) * largura,
+                            (-0.05f + 1.10f * percurso) * altura };
+        float tamanho = (9.0f + 6.0f * ruido(base + 3u)) * escala;
+        confete(posicao, tamanho, ritmo->tempo * (90.0f + 180.0f * ruido(base + 4u)) + i * 40.0f,
+                ritmo->tempo * (4.0f + 4.0f * ruido(base + 1u)) + i, cor_alfa(CORES_SHOW[i % 5], 0.9f * ritmo->refrao));
+    }
+}
+
+/* A cada 25 de combo, dois canhoes de confete disparam dos cantos de baixo. */
+static void desenhar_canhoes_confete(int largura, int altura, float escala, const EfeitosPartida *efeitos) {
+    if (efeitos->celebracao <= 0.0f) return;
+    float t = (1.0f - efeitos->celebracao) * 1.4f;
+    float gravidade = 900.0f * escala;
+    for (int i = 0; i < SING_CANHAO_CONFETES; i++) {
+        unsigned int base = 2400u + (unsigned int)i * 4u;
+        bool esquerda = (i & 1) == 0;
+        float angulo = (0.30f + 0.22f * ruido(base)) * PI;            /* abre para cima e para dentro */
+        float rapidez = (650.0f + 450.0f * ruido(base + 1u)) * escala;
+        float vx = cosf(angulo) * rapidez * (esquerda ? 1.0f : -1.0f);
+        float vy = -sinf(angulo) * rapidez;
+        Vector2 posicao = { (esquerda ? 0.0f : (float)largura) + vx * t, altura + vy * t + 0.5f * gravidade * t * t };
+        confete(posicao, (10.0f + 6.0f * ruido(base + 2u)) * escala, t * 500.0f + i * 30.0f, t * 12.0f + i,
+                cor_alfa(CORES_SHOW[i % 5], efeitos->celebracao));
+    }
+}
+
+/* Ultimo refrao: um fogo de artificio por compasso, alternando os lados. */
+static void desenhar_fogos(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    if (ritmo->indice_refrao != TOTAL_REFROES_SING - 1 || ritmo->refrao < 0.5f) return;
+    float duracao_compasso = SING_PERIODO_BATIDA * 4.0f;
+    float t = ((ritmo->batida % 4 + 4) % 4 + ritmo->fase) * SING_PERIODO_BATIDA;
+    float vida = 1.0f - t / duracao_compasso;
+    unsigned int semente = (unsigned int)(ritmo->compasso * 31 + 7);
+    bool esquerda = (ritmo->compasso & 1) == 0;
+    Vector2 centro = { largura * (esquerda ? 0.07f + 0.10f * ruido(semente) : 0.83f + 0.10f * ruido(semente)),
+                       altura * (0.17f + 0.08f * ruido(semente + 1u)) };
+    Color cor = CORES_SHOW[(ritmo->compasso % 5 + 5) % 5];
+    BeginBlendMode(BLEND_ADDITIVE);
+    if (t < 0.25f) brilho_radial(centro, 60.0f * escala, cor_alfa(WHITE, 0.6f * (1.0f - t / 0.25f)));
+    for (int k = 0; k < SING_FAISCAS_FOGO; k++) {
+        float angulo = k * (2.0f * PI / SING_FAISCAS_FOGO);
+        float alcance = 85.0f * escala * (1.0f - (1.0f - t / duracao_compasso) * (1.0f - t / duracao_compasso));
+        Vector2 ponta = { centro.x + cosf(angulo) * alcance, centro.y + sinf(angulo) * alcance + 30.0f * escala * t * t };
+        Vector2 cauda = { centro.x + cosf(angulo) * alcance * 0.75f, centro.y + sinf(angulo) * alcance * 0.75f + 30.0f * escala * t * t };
+        Color c = misturar(cor, WHITE, (k & 1) ? 0.0f : 0.5f);
+        DrawLineEx(cauda, ponta, 2.5f * escala, cor_alfa(c, vida));
+        DrawCircleV(ponta, 2.2f * escala, cor_alfa(WHITE, vida));
+    }
+    EndBlendMode();
+}
+
+/* Flash nas bordas na caixa, clarao e faixa "I'M STILL STANDING!" na entrada do refrao. */
+static void desenhar_destaques_show(int largura, int altura, float escala, const GeometriaPista *pista,
+                                    const RitmoShow *ritmo) {
+    BeginBlendMode(BLEND_ADDITIVE);
+    if (ritmo->caixa) {
+        float forca = ritmo->pulso * (0.10f + 0.30f * ritmo->refrao);
+        int faixa = (int)(largura * 0.07f);
+        DrawRectangleGradientH(0, 0, faixa, altura, cor_alfa(ritmo->cor, forca), cor_alfa(ritmo->cor, 0.0f));
+        DrawRectangleGradientH(largura - faixa, 0, faixa, altura, cor_alfa(ritmo->cor, 0.0f), cor_alfa(ritmo->cor, forca));
+    }
+    float entrada = ritmo->tempo_no_refrao;
+    if (ritmo->indice_refrao >= 0 && entrada < 0.6f) {
+        /* Clarao curto e fraco o bastante para as notas continuarem legiveis. */
+        DrawRectangle(0, 0, largura, altura, cor_alfa(WHITE, 0.18f * limitar(1.0f - entrada / 0.25f, 0.0f, 1.0f)));
+        float raio = (60.0f + 1500.0f * entrada) * escala;
+        DrawRing((Vector2){ pista->centro_x, pista->y_topo }, raio - 5.0f * escala, raio, 0.0f, 360.0f, 48,
+                 cor_alfa(misturar(WHITE, ritmo->cor, 0.5f), 0.7f * (1.0f - entrada / 0.6f)));
+    }
+    EndBlendMode();
+
+    if (ritmo->indice_refrao >= 0 && entrada < SING_ENTRADA_REFRAO) {
+        float aparecer = limitar(entrada / 0.15f, 0.0f, 1.0f);
+        float sumir = limitar((SING_ENTRADA_REFRAO - entrada) / 0.6f, 0.0f, 1.0f);
+        float opacidade = aparecer * sumir;
+        float pulo = 1.0f + 0.14f * ritmo->pulso + 0.5f * (1.0f - aparecer);
+        int tamanho = (int)(fonte(34, escala) * pulo);
+        const char *texto = "I'M STILL STANDING!";
+        float y = altura * 0.128f - tamanho * 0.5f;
+        Color cor = ritmo->caixa ? (Color){ 255, 90, 190, 255 } : COR_DOURADO_BRILHO;
+        desenhar_texto_centralizado(texto, largura / 2.0f + 3.0f, y + 3.0f, tamanho, cor_alfa(COR_SOMBRA_TEXTO, opacidade));
+        desenhar_texto_centralizado(texto, largura / 2.0f, y, tamanho, cor_alfa(cor, opacidade));
+    }
+}
+
 void desenhar_tela_partida(int largura, int altura, const Partida *partida,
                            const Musica *musica, const MidiaPartida *midia,
                            const bool teclas_seguradas[TOTAL_PISTAS], EfeitosPartida *efeitos) {
     float escala = calcular_escala(largura, altura);
     GeometriaPista pista = calcular_geometria_pista(largura, altura);
     atualizar_efeitos(efeitos, partida, &pista, escala, teclas_seguradas);
+    bool tema_popular = musica_e_popular(musica);
+    bool tema_sing = musica_e_sing(musica);
+    RitmoShow ritmo = calcular_ritmo_show(partida->tempo);
 
     if (midia->fundo_carregado) {
         /* A imagem cobre a tela inteira: nao e preciso desenhar o palco por baixo. */
         desenhar_fundo_musica(midia, largura, altura);
         desenhar_particulas_ambiente(largura, altura, escala, efeitos->relogio, 44);
         desenhar_vinheta(largura, altura, 150);
+    } else if (tema_sing) {
+        desenhar_palco_show(largura, altura, &ritmo);
     } else {
         desenhar_fundo_teatro(largura, altura);
     }
+    if (tema_popular) {
+        desenhar_ambiente_popular(largura, altura, escala, efeitos->relogio);
+    }
+    if (tema_sing) {
+        desenhar_canhoes_luz(largura, altura, escala, &ritmo);
+        desenhar_plateia(largura, altura, escala, &ritmo);
+        desenhar_letreiro(largura, escala, &ritmo);
+        desenhar_globo(largura, altura, escala, &ritmo);
+    }
     desenhar_corpo_pista(&pista, escala, partida->tempo, efeitos);
+    if (tema_popular) {
+        desenhar_horizonte_popular(&pista, efeitos);
+    }
+    if (tema_sing) {
+        desenhar_batida_pista(&pista, escala, &ritmo);
+    }
     desenhar_receptores(&pista, escala, efeitos);
     desenhar_notas(&pista, escala, partida);
+    if (tema_popular) {
+        desenhar_brilho_notas_popular(&pista, escala, partida, efeitos->relogio);
+    }
     desenhar_faiscas(efeitos, escala);
+    if (tema_popular) {
+        desenhar_destaques_popular(&pista, escala, efeitos);
+    }
+    if (tema_sing) {
+        desenhar_notas_musicais(&pista, escala, efeitos);
+        desenhar_chuva_confete(largura, altura, escala, &ritmo);
+        desenhar_canhoes_confete(largura, altura, escala, efeitos);
+        desenhar_fogos(largura, altura, escala, &ritmo);
+        desenhar_destaques_show(largura, altura, escala, &pista, &ritmo);
+    }
     desenhar_medidor(largura, altura, escala, partida->desempenho.valor, efeitos);
     desenhar_painel_informacoes(largura, altura, escala, partida, musica, efeitos);
 
