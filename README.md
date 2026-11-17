@@ -7,12 +7,6 @@ O jogador escolhe uma música do catálogo e precisa apertar a tecla certa quand
 
 ## ▶️ Como executar
 
-### Requisitos
-
-- Ubuntu/WSL
-- GCC e Make
-- raylib 5.5
-
 ### 1. Instalar as dependências e a raylib (uma vez só)
 
 ```sh
