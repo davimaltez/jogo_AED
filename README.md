@@ -7,17 +7,7 @@ O jogador escolhe uma música do catálogo e precisa apertar a tecla certa quand
 
 ## ▶️ Como executar
 
-Dá para compilar de duas formas: pelo **WSL/Ubuntu** ou direto no **Windows** (MSYS2). O `Makefile` detecta o sistema sozinho. No Windows o áudio sai pelo WASAPI, sem o chiado que aparece no WSL.
-
-### Opção A: WSL/Ubuntu
-
-#### Requisitos
-
-- Ubuntu/WSL
-- GCC e Make
-- raylib 5.5
-
-#### 1. Instalar as dependências e a raylib (uma vez só)
+### 1. Instalar as dependências e a raylib (uma vez só)
 
 ```sh
 sudo apt update
