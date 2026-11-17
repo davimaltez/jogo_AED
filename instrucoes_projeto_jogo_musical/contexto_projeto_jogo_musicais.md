@@ -465,8 +465,7 @@ Eventos vocais e ataques genéricos do fechamento foram removidos. Depois
 do último evento, não são inventadas notas para preencher o final sem uma
 referência de teclado suficientemente confirmada. A conferência auditiva
 humana continua pendente: o teste de execução não prova sincronização musical
-perfeita. Os mapas anteriores foram preservados nas referências. Detalhes e reprodução em
-`referencias_musicais/dancing_queen/RELATORIO.md`.
+perfeita. Os arquivos intermediarios de analise foram removidos; o mapa publicado permanece em `assets/musicas/dancing_queen/notas.txt`.
 
   -----------------------------------------------------------------------
   Parte                               Decisão
@@ -504,3 +503,21 @@ do jogo, garantindo que a lista encadeada controle as notas, que o Merge
 Sort tenha uma aplicação demonstrável e que áudio, tempo e entrada do
 jogador estejam sincronizados. Só depois ampliar o catálogo e adicionar
 recursos extras.
+
+## Gerador offline de mapas (17/11/2026)
+
+Foi implementada a ferramenta solicitada em `ferramentas/gerador_mapas/`,
+em C99, usando a raylib existente para decodificar MP3/WAV e converter
+para mono a 11025 Hz. FFT radix-2 propria, STFT/Hann, HPSS, fluxo espectral,
+BPM, estimativa de altura e sustentacoes geram cinco arquivos alternativos.
+Os ajustes ficam em `configuracao.h`. Executar `make gerador` compila um
+executavel separado; `make test-gerador` roda sinais sinteticos conhecidos.
+Os mapas sao gravados somente em uma pasta nova indicada pelo usuario.
+
+Nao houve alteracao no relogio, lista encadeada, Merge Sort do jogo,
+catalogo, dificuldade publicada, audio ou mapa atual de Dancing Queen.
+A selecao de um dos cinco arquivos para uso no jogo continua manual.
+HPSS nao isola teclado de voz; qualidade musical em gravacoes reais requer
+conferencia auditiva. Densidades por nivel sao presets iniciais ajustaveis,
+nao uma classificacao definitiva. Consulte o README da ferramenta para
+limites, resultados dos testes e orientacoes de ajuste.

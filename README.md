@@ -1,5 +1,11 @@
 # FINAL ACT
 
+Geracao automatica offline de mapas: veja
+[ferramentas/gerador_mapas/README.md](ferramentas/gerador_mapas/README.md)
+para compilar com `make gerador`, gerar cinco dificuldades a partir de MP3/WAV
+e ajustar os parametros. O teste sintetico roda com `make test-gerador`
+e tambem faz parte de `make test`. A ferramenta nao substitui mapas existentes.
+
 Projeto acadêmico de Algoritmos e Estruturas de Dados: um jogo de ritmo com tema de filmes musicais, desenvolvido em C com raylib.
 
 ## Como funciona
@@ -169,10 +175,7 @@ O último evento termina em 227,064 s; o restante fica sem notas por falta
 de referência de teclado suficientemente confirmada. A vitória ainda aguarda
 o fim dos 244,227 s de áudio e a resolução das notas.
 **A conferência auditiva humana ainda está pendente**; o teste automático
-não comprova sincronização perceptiva perfeita. Há uma prévia de 30 s com
-cliques nos ataques em `referencias_musicais/dancing_queen/previa_teclado_30s.ogg`.
-Fontes, limitações, geração reproduzível, backup do mapa anterior e testes
-estão em [RELATORIO.md](referencias_musicais/dancing_queen/RELATORIO.md).
+não comprova sincronização perceptiva perfeita.
 
 ### Condição de conclusão
 

@@ -9,6 +9,7 @@ HEADERS = interface.h partida.h midia_partida.h ranking.h catalogo_musicas.h lis
 TEST_FLAGS = $(CFLAGS) -Werror -I.
 TEST_BINS = /tmp/final_act_teste_carregamento_notas /tmp/final_act_teste_merge_sort_notas /tmp/final_act_teste_desempenho /tmp/final_act_teste_conclusao_partida /tmp/final_act_teste_logica_partida /tmp/final_act_teste_ranking /tmp/final_act_teste_partida /tmp/final_act_teste_sustentacao
 TEST_BINS += /tmp/final_act_teste_dancing_queen
+TEST_BINS += /tmp/final_act_teste_gerador
 
 all: $(TARGET)
 
@@ -54,6 +55,7 @@ test: /tmp/final_act_teste_carregamento_notas /tmp/final_act_teste_merge_sort_no
 	/tmp/final_act_teste_ranking
 	/tmp/final_act_teste_sustentacao
 	/tmp/final_act_teste_dancing_queen
+	/tmp/final_act_teste_gerador
 
 test-grafico: /tmp/final_act_teste_partida
 	/tmp/final_act_teste_partida
@@ -62,3 +64,24 @@ clean:
 	rm -f $(TARGET) $(TEST_BINS)
 
 .PHONY: all run clean test test-grafico
+
+# Ferramenta offline: destino separado, sem substituir final_act.
+GERADOR_DIR = ferramentas/gerador_mapas
+GERADOR_SRCS = $(GERADOR_DIR)/audio.c $(GERADOR_DIR)/fft.c $(GERADOR_DIR)/espectrograma.c $(GERADOR_DIR)/onsets.c $(GERADOR_DIR)/batidas.c $(GERADOR_DIR)/melodia.c $(GERADOR_DIR)/gerador.c
+GERADOR_HEADERS = $(GERADOR_DIR)/gerador.h $(GERADOR_DIR)/configuracao.h
+GERADOR_TARGET ?= /tmp/final_act_gerador_mapas
+
+$(GERADOR_TARGET): $(GERADOR_DIR)/principal.c $(GERADOR_SRCS) $(GERADOR_HEADERS)
+	$(CC) $(CFLAGS) -Werror -O2 $(GERADOR_DIR)/principal.c $(GERADOR_SRCS) -o $@ $(LIBS)
+
+gerador: $(GERADOR_TARGET)
+
+/tmp/final_act_teste_gerador: tests/teste_gerador_mapas.c $(GERADOR_SRCS) $(GERADOR_HEADERS) lista_notas.c lista_notas.h
+	$(CC) $(TEST_FLAGS) -O2 tests/teste_gerador_mapas.c $(GERADOR_SRCS) lista_notas.c -o $@ $(LIBS)
+
+test-gerador: /tmp/final_act_teste_gerador
+	/tmp/final_act_teste_gerador
+
+test: /tmp/final_act_teste_gerador
+
+.PHONY: gerador test-gerador
