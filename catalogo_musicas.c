@@ -6,7 +6,7 @@
  * Cada musica possui sua pasta de audio, notas, fundo e ranking.
  */
 void inicializar_catalogo(Musica catalogo[], int *quantidade) {
-    *quantidade = 8;
+    *quantidade = 6;
 
     /* Musica 1 - Wicked */
     strncpy(catalogo[0].titulo, "Popular", sizeof(catalogo[0].titulo) - 1);
@@ -38,53 +38,23 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[1].caminho_ranking, "assets/musicas/dancing_queen/ranking.txt", sizeof(catalogo[1].caminho_ranking) - 1);
     catalogo[1].caminho_ranking[sizeof(catalogo[1].caminho_ranking) - 1] = '\0';
 
-    /* Musica 3 - La La Land */
-    strncpy(catalogo[2].titulo, "City of Stars", sizeof(catalogo[2].titulo) - 1);
+    /* Musica 3 - High School Musical */
+    strncpy(catalogo[2].titulo, "Breaking Free", sizeof(catalogo[2].titulo) - 1);
     catalogo[2].titulo[sizeof(catalogo[2].titulo) - 1] = '\0';
-    strncpy(catalogo[2].filme, "La La Land", sizeof(catalogo[2].filme) - 1);
+    strncpy(catalogo[2].filme, "High School Musical", sizeof(catalogo[2].filme) - 1);
     catalogo[2].filme[sizeof(catalogo[2].filme) - 1] = '\0';
-    catalogo[2].dificuldade = 1;
-    strncpy(catalogo[2].caminho_audio, "assets/musicas/city_of_stars/audio.mp3", sizeof(catalogo[2].caminho_audio) - 1);
+    catalogo[2].dificuldade = 2;
+    strncpy(catalogo[2].caminho_audio, "assets/musicas/breaking_free/audio.mp3", sizeof(catalogo[2].caminho_audio) - 1);
     catalogo[2].caminho_audio[sizeof(catalogo[2].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[2].caminho_notas, "assets/musicas/city_of_stars/notas.txt", sizeof(catalogo[2].caminho_notas) - 1);
+    strncpy(catalogo[2].caminho_notas, "assets/musicas/breaking_free/notas.txt", sizeof(catalogo[2].caminho_notas) - 1);
     catalogo[2].caminho_notas[sizeof(catalogo[2].caminho_notas) - 1] = '\0';
-    strncpy(catalogo[2].caminho_fundo, "assets/musicas/city_of_stars/fundo.png", sizeof(catalogo[2].caminho_fundo) - 1);
+    strncpy(catalogo[2].caminho_fundo, "assets/musicas/breaking_free/fundo.png", sizeof(catalogo[2].caminho_fundo) - 1);
     catalogo[2].caminho_fundo[sizeof(catalogo[2].caminho_fundo) - 1] = '\0';
-    strncpy(catalogo[2].caminho_ranking, "assets/musicas/city_of_stars/ranking.txt", sizeof(catalogo[2].caminho_ranking) - 1);
+    strncpy(catalogo[2].caminho_ranking, "assets/musicas/breaking_free/ranking.txt", sizeof(catalogo[2].caminho_ranking) - 1);
     catalogo[2].caminho_ranking[sizeof(catalogo[2].caminho_ranking) - 1] = '\0';
 
-    /* Musica 4 - The Greatest Showman */
-    strncpy(catalogo[3].titulo, "This Is Me", sizeof(catalogo[3].titulo) - 1);
-    catalogo[3].titulo[sizeof(catalogo[3].titulo) - 1] = '\0';
-    strncpy(catalogo[3].filme, "The Greatest Showman", sizeof(catalogo[3].filme) - 1);
-    catalogo[3].filme[sizeof(catalogo[3].filme) - 1] = '\0';
-    catalogo[3].dificuldade = 3;
-    strncpy(catalogo[3].caminho_audio, "assets/musicas/this_is_me/audio.mp3", sizeof(catalogo[3].caminho_audio) - 1);
-    catalogo[3].caminho_audio[sizeof(catalogo[3].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[3].caminho_notas, "assets/musicas/this_is_me/notas.txt", sizeof(catalogo[3].caminho_notas) - 1);
-    catalogo[3].caminho_notas[sizeof(catalogo[3].caminho_notas) - 1] = '\0';
-    strncpy(catalogo[3].caminho_fundo, "assets/musicas/this_is_me/fundo.png", sizeof(catalogo[3].caminho_fundo) - 1);
-    catalogo[3].caminho_fundo[sizeof(catalogo[3].caminho_fundo) - 1] = '\0';
-    strncpy(catalogo[3].caminho_ranking, "assets/musicas/this_is_me/ranking.txt", sizeof(catalogo[3].caminho_ranking) - 1);
-    catalogo[3].caminho_ranking[sizeof(catalogo[3].caminho_ranking) - 1] = '\0';
-
-    /* Musica 5 - High School Musical */
-    strncpy(catalogo[4].titulo, "Breaking Free", sizeof(catalogo[4].titulo) - 1);
-    catalogo[4].titulo[sizeof(catalogo[4].titulo) - 1] = '\0';
-    strncpy(catalogo[4].filme, "High School Musical", sizeof(catalogo[4].filme) - 1);
-    catalogo[4].filme[sizeof(catalogo[4].filme) - 1] = '\0';
-    catalogo[4].dificuldade = 2;
-    strncpy(catalogo[4].caminho_audio, "assets/musicas/breaking_free/audio.mp3", sizeof(catalogo[4].caminho_audio) - 1);
-    catalogo[4].caminho_audio[sizeof(catalogo[4].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[4].caminho_notas, "assets/musicas/breaking_free/notas.txt", sizeof(catalogo[4].caminho_notas) - 1);
-    catalogo[4].caminho_notas[sizeof(catalogo[4].caminho_notas) - 1] = '\0';
-    strncpy(catalogo[4].caminho_fundo, "assets/musicas/breaking_free/fundo.png", sizeof(catalogo[4].caminho_fundo) - 1);
-    catalogo[4].caminho_fundo[sizeof(catalogo[4].caminho_fundo) - 1] = '\0';
-    strncpy(catalogo[4].caminho_ranking, "assets/musicas/breaking_free/ranking.txt", sizeof(catalogo[4].caminho_ranking) - 1);
-    catalogo[4].caminho_ranking[sizeof(catalogo[4].caminho_ranking) - 1] = '\0';
-
-    /* Musica 6 - origem provisoria; nivel medio do gerador offline. */
-    catalogo[5] = (Musica){
+    /* Musica 4 - origem provisoria; nivel medio do gerador offline. */
+    catalogo[3] = (Musica){
         .titulo = "Twist and Shout",
         .filme = "Twist and Shout",
         .dificuldade = 3,
@@ -94,7 +64,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_ranking = "assets/musicas/twist_and_shout/ranking.txt"
     };
     /* Mapas pendentes: dificuldade ainda nao classificada. */
-    catalogo[6] = (Musica){
+    catalogo[4] = (Musica){
         .titulo = "I'm Still Standing",
         .filme = "Sing: Quem Canta Seus Males Espanta",
         .dificuldade = 0,
@@ -103,7 +73,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_fundo = "assets/musicas/im_still_standing/fundo.png",
         .caminho_ranking = "assets/musicas/im_still_standing/ranking.txt"
     };
-    catalogo[7] = (Musica){
+    catalogo[5] = (Musica){
         .titulo = "Um Sonho Eu Tenho",
         .filme = "Enrolados",
         .dificuldade = 0,

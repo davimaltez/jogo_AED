@@ -63,35 +63,35 @@ int main(void) {
     Musica catalogo[MAX_MUSICAS], original[MAX_MUSICAS];
     int total;
     inicializar_catalogo(catalogo, &total);
-    assert(MAX_MUSICAS == 8 && total == 8);
+    assert(MAX_MUSICAS == 6 && total == 6);
     memcpy(original, catalogo, sizeof(catalogo));
-    assert(strcmp(catalogo[6].titulo, "I'm Still Standing") == 0);
-    assert(strcmp(catalogo[6].filme, "Sing: Quem Canta Seus Males Espanta") == 0);
-    assert(strcmp(catalogo[7].titulo, "Um Sonho Eu Tenho") == 0);
-    assert(strcmp(catalogo[7].filme, "Enrolados") == 0);
+    assert(strcmp(catalogo[4].titulo, "I'm Still Standing") == 0);
+    assert(strcmp(catalogo[4].filme, "Sing: Quem Canta Seus Males Espanta") == 0);
+    assert(strcmp(catalogo[5].titulo, "Um Sonho Eu Tenho") == 0);
+    assert(strcmp(catalogo[5].filme, "Enrolados") == 0);
     const char *pastas[] = {"im_still_standing", "um_sonho_eu_tenho"};
-    for (int i = 6; i < 8; i++) {
+    for (int i = 4; i < 6; i++) {
         char caminho[128];
         assert(catalogo[i].dificuldade == 0);
-        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/audio.wav", pastas[i - 6]);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/audio.wav", pastas[i - 4]);
         assert(strcmp(catalogo[i].caminho_audio, caminho) == 0);
-        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/notas.txt", pastas[i - 6]);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/notas.txt", pastas[i - 4]);
         assert(strcmp(catalogo[i].caminho_notas, caminho) == 0);
-        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/fundo.png", pastas[i - 6]);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/fundo.png", pastas[i - 4]);
         assert(strcmp(catalogo[i].caminho_fundo, caminho) == 0);
-        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/ranking.txt", pastas[i - 6]);
+        snprintf(caminho, sizeof(caminho), "assets/musicas/%s/ranking.txt", pastas[i - 4]);
         assert(strcmp(catalogo[i].caminho_ranking, caminho) == 0);
     }
     const CriterioOrdenacao criterios[] = {
         ORDEM_TITULO_AZ, ORDEM_DIFICULDADE_CRESCENTE, ORDEM_DIFICULDADE_DECRESCENTE
     };
-    const char *esperadas[][8] = {
-        {"Breaking Free", "City of Stars", "Dancing Queen", "I'm Still Standing",
-         "Popular", "This Is Me", "Twist and Shout", "Um Sonho Eu Tenho"},
-        {"City of Stars", "Breaking Free", "This Is Me", "Twist and Shout",
-         "Popular", "Dancing Queen", "I'm Still Standing", "Um Sonho Eu Tenho"},
-        {"Dancing Queen", "Popular", "This Is Me", "Twist and Shout",
-         "Breaking Free", "City of Stars", "I'm Still Standing", "Um Sonho Eu Tenho"}
+    const char *esperadas[][6] = {
+        {"Breaking Free", "Dancing Queen", "I'm Still Standing",
+         "Popular", "Twist and Shout", "Um Sonho Eu Tenho"},
+        {"Breaking Free", "Twist and Shout", "Popular",
+         "Dancing Queen", "I'm Still Standing", "Um Sonho Eu Tenho"},
+        {"Dancing Queen", "Popular", "Twist and Shout",
+         "Breaking Free", "I'm Still Standing", "Um Sonho Eu Tenho"}
     };
     for (int criterio = 0; criterio < 3; criterio++) {
         ordenar_catalogo(catalogo, total, criterios[criterio]);
