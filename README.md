@@ -471,3 +471,107 @@ WAV. Sem mapas, nao ha validacao de sincronizacao musical dessas faixas.
 Audio, relogio, contagem regressiva, pontuacao, Game Over, sustentacoes,
 conclusao, lista encadeada e rankings existentes nao tiveram suas regras
 alteradas.
+
+## Mapas automaticos integrados - 17/11/2026
+
+Esta etapa substitui o estado anterior de mapas pendentes para I'm Still
+Standing e Um Sonho Eu Tenho. Os filmes, artistas, oito registros do
+catalogo e dificuldade 0 / A definir permanecem como cadastrados.
+
+Foram gerados cinco candidatos para cada WAV com o gerador existente,
+sem alteracoes em codigo ou parametros. Os candidatos ficam em
+assets/musicas/im_still_standing/mapas_gerados/ e
+assets/musicas/um_sonho_eu_tenho/mapas_gerados/.
+Cada pasta contem notas_1.txt ate notas_5.txt; o notas.txt publicado fica
+na pasta da musica, separado dos candidatos.
+
+| Musica | Preset escolhido | Notas | Sustentacoes | Notas/s | Primeiro ataque | Ultimo fim | Duracao do WAV |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| I'm Still Standing | 3 | 414 | 1 | 2,203 | 1,927256 s | 181,394287 s | 187,951 s |
+| Um Sonho Eu Tenho | 2 | 310 | 7 | 1,613 | 2,054966 s | 188,499588 s | 192,235 s |
+
+A escolha considerou ataques detectados, densidade local, folga para
+repetir teclas, sustentacoes e simultaneidade. Nao houve conflitos na
+mesma pista. I'm Still Standing exige ate uma tecla por vez e quatro
+ataques em uma janela de 1 s; Um Sonho Eu Tenho, ate duas teclas e tres
+ataques em uma janela de 1 s. Todos usam as cinco pistas, com no maximo
+duas repeticoes consecutivas. Isso indica viabilidade estrutural, nao
+comprova conforto humano ou sincronizacao musical perfeita.
+
+O corte inicial de 1,5 s do gerador foi preservado. Ha sinal nos dois
+audios: em I'm Still Standing nao houve picos filtrados nesse trecho;
+em Um Sonho Eu Tenho houve seis picos harmonicos/percussivos, alguns
+possivelmente do mesmo evento, entre 0,232 e 1,115 s. Nenhum evento foi
+acrescentado artificialmente. Cada mapa escolhido tem tres eventos
+provenientes exclusivamente da grade estimada. Os instantes, as tabelas
+dos cinco presets, a distribuicao por pista, as lacunas, as sustentacoes,
+a energia das bordas e os hashes estao nos README.md de cada musica.
+Esses pontos precisam de revisao auditiva; o fim de Um Sonho Eu Tenho
+ainda tem energia e um ataque filtrado a 188,639 s, proximo demais do
+anterior para o preset escolhido.
+
+Validacoes executadas:
+- Os dez candidatos e os dois notas.txt instalados passaram pelo parser
+  real e pela validacao de duracao usando os WAV.
+- Simulacoes das regras reais a 30, 60, 144 e 240 Hz: todas as notas
+  acertadas, todas as sustentacoes completas, nenhuma derrota nem
+  conclusao antes do fim simulado.
+- make TARGET=/tmp/final_act_mapas: aprovado, executavel antigo preservado.
+- make test e make test-grafico: aprovados. Os mapas novos sao carregados
+  automaticamente pela verificacao existente do catalogo.
+- Breaking Free continua com mapa ausente; a rejeicao e verificada, sem
+  afirmar jogabilidade para um recurso ausente. Outros recursos ausentes
+  tambem nao foram corrigidos.
+
+Nao foi necessario modificar testes existentes nem Makefile. Programas
+temporarios de diagnostico, estatisticas e validacao ficam em
+/tmp/final_act_analise_novas/. Para o teste integral, foi compilada uma
+copia temporaria do teste existente, adaptando a selecao da musica
+por variavel de ambiente e o caminho de inclusao, com diagnosticos e
+prazo de seguranca descritos no resultado abaixo. As regras executadas
+sao os mesmos modulos de producao. Nenhum ranking real e gravado.
+
+Para avaliar manualmente, na raiz do projeto pelo WSL:
+
+    make TARGET=/tmp/final_act_mapas
+    /tmp/final_act_mapas
+
+Escolha JOGAR, selecione a musica e pressione Enter. Use D/F/G/J/K,
+segurando nas notas longas; ESC pausa. O jogo aguarda o fim do WAV mesmo
+depois da ultima nota. A dificuldade continua A definir. Os fundos
+especificos estao ausentes; isso nao impede a partida.
+
+Nenhuma escuta humana foi realizada nesta etapa. Lista, Merge Sort,
+audio, relogio, pontuacao, pausa, reinicio, Game Over, conclusao e mapas
+anteriores foram preservados. Nao houve commit ou push.
+
+### Resultado dos testes integrais com audio real
+
+As repeticoes isoladas passaram pelo fluxo real de inicio e reproducao,
+usando os notas.txt publicados e entradas automatizadas em volume zero:
+
+- I'm Still Standing: 414/414 notas, 1/1 sustentacao completa, zero perdas,
+  zero interrupcoes; estado AUDIO_FINALIZADO e tela de registro de ranking
+  somente depois de 187,951 s de audio.
+- Um Sonho Eu Tenho: 310/310 notas, 7/7 sustentacoes completas, zero perdas,
+  zero interrupcoes; estado AUDIO_FINALIZADO e tela de registro de ranking
+  somente depois de 192,235 s de audio. Tempo real observado: 205,272 s.
+
+As primeiras execucoes, simultaneas, falharam na verificacao final de
+estado. Nao houve diagnostico suficiente nelas para afirmar a causa exata.
+Na repeticao isolada, foram acrescentadas mensagens de estado ao auxiliar
+temporario. Observou-se diferenca entre tempo real e relogio de reproducao
+no WSL. Para a segunda faixa, ampliou-se apenas o prazo de seguranca do
+teste de duracao+15 s para 2*duracao+30 s; todas as verificacoes de estado,
+notas, sustentacoes e ausencia de vitoria antecipada foram mantidas.
+O relogio e os modulos do jogo nao foram modificados. O teste nao comprova
+ausencia de artefatos audiveis nem mede latencia do equipamento.
+
+Uma compilacao inicial do auxiliar de analise falhou por omitir bibliotecas
+de ligacao da raylib. Foi repetida com as mesmas bibliotecas do Makefile,
+sem instalar dependencias nem modificar o gerador.
+
+Os 71 arquivos preexistentes de codigo, testes, Makefile, executavel e
+recursos incluidos na verificacao SHA-256 permaneceram identicos.
+Nao foram gravados rankings reais. Nenhum arquivo de origem foi alterado.
+A avaliacao auditiva e de conforto humano permanece pendente.
