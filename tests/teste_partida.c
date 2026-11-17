@@ -616,7 +616,7 @@ static void testar_audio_sincronizado(void) {
     iniciar_jogo(&jogo);
     int indice = buscar_indice_por_titulo(jogo.catalogo, jogo.total_musicas, "Popular");
     if (!IsAudioDeviceReady() || indice < 0 || !FileExists(jogo.catalogo[indice].caminho_audio)) {
-        puts("AVISO: sem dispositivo de audio ou sem popular.wav; teste de audio pulado.");
+        puts("AVISO: sem dispositivo de audio ou sem o audio de Popular; teste de audio pulado.");
         if (IsAudioDeviceReady()) CloseAudioDevice();
         return;
     }

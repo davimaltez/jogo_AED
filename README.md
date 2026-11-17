@@ -55,7 +55,7 @@ Os caminhos ficam na struct `Musica`, no catálogo. Recursos compartilhados
 podem ficar em `assets/interface/fontes/` e `assets/interface/imagens/`.
 Os demais mapas disponíveis são sequências de demonstração; Dancing Queen
 tem uma adaptação difícil completa, descrita abaixo. Os recursos podem
-estar incompletos. Popular usa `popular.wav`, conforme o catálogo. Execute o jogo a partir
+estar incompletos. Popular usa a versão com letra (`popular-from-wicked-the-soundtrack-1_U0A7jBty.mp3`), conforme o catálogo. Execute o jogo a partir
 da raiz do projeto para que os caminhos relativos sejam encontrados.
 
 ## Formato dos arquivos de notas
