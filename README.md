@@ -5,7 +5,7 @@ Jogo de ritmo com tema de **filmes musicais**, desenvolvido em **C** com a bibli
 O jogador escolhe uma música do catálogo e precisa apertar a tecla certa quando cada nota chega à linha dourada. Acertos somam pontos e combos; erros baixam o medidor de desempenho. Se o medidor zerar, é Game Over. Quem termina a música grava o nome no ranking daquela música.
 
 
-## ▶️ Como executar
+## Como executar
 
 ### Opção A: Linux / WSL
 
@@ -65,7 +65,7 @@ Isso gera `final_act.exe` (ignorado pelo git).
 
 ---
 
-## 🔗 Estrutura de dados: lista simplesmente encadeada
+## Estrutura de dados: lista simplesmente encadeada
 
 As notas de cada música ficam em uma **lista simplesmente encadeada**, que é a estrutura central da partida (`lista_notas.c`).
 
@@ -91,7 +91,7 @@ Durante o jogo, a lista é usada para:
 
 ---
 
-## 🔀 Algoritmo de ordenação: Merge Sort
+## Algoritmo de ordenação: Merge Sort
 
 O projeto usa **Merge Sort** em três lugares:
 
