@@ -357,7 +357,8 @@ static void testar_catalogo_ampliado(bool salvar_capturas) {
             snprintf(musica->caminho_notas, sizeof(musica->caminho_notas), "%s/ausente", caminho_notas);
             jogo.mensagem_erro[0] = '\0';
             quadro(&jogo, KEY_NULL);
-            assert(apareceu("A definir") && !apareceu("Nivel 0"));
+            assert(apareceu(n == 0 ? "Nivel 5 de 5" : "Nivel 4 de 5"));
+            assert(!apareceu("A definir") && !apareceu("Nivel 0"));
             assert(apareceu("Mapa de notas pendente.") && apareceu(musica->filme));
             if (salvar_capturas) {
                 char captura[128];
@@ -385,7 +386,7 @@ static void testar_catalogo_ampliado(bool salvar_capturas) {
         liberar_jogo(&jogo);
     }
     SetWindowSize(900, 600);
-    puts("OK: oito musicas, teclado, mouse, filtros, A definir e bloqueio sem mapa.");
+    puts("OK: catalogo, teclado, mouse, filtros, niveis 5/4 e bloqueio sem mapa.");
 }
 
 /* Abre os WAV reais pelo modulo de midia, sem gerar mapas. */

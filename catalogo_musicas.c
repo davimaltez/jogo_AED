@@ -63,11 +63,11 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_fundo = "assets/musicas/twist_and_shout/fundo_jogo.png",
         .caminho_ranking = "assets/musicas/twist_and_shout/ranking.txt"
     };
-    /* Mapas pendentes: dificuldade ainda nao classificada. */
+    /* Dificuldades definidas pelo usuario para os mapas publicados. */
     catalogo[4] = (Musica){
         .titulo = "I'm Still Standing",
         .filme = "Sing: Quem Canta Seus Males Espanta",
-        .dificuldade = 0,
+        .dificuldade = 5,
         .caminho_audio = "assets/musicas/im_still_standing/audio.wav",
         .caminho_notas = "assets/musicas/im_still_standing/notas.txt",
         .caminho_fundo = "assets/musicas/im_still_standing/fundo.png",
@@ -76,7 +76,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[5] = (Musica){
         .titulo = "Um Sonho Eu Tenho",
         .filme = "Enrolados",
-        .dificuldade = 0,
+        .dificuldade = 4,
         .caminho_audio = "assets/musicas/um_sonho_eu_tenho/audio.wav",
         .caminho_notas = "assets/musicas/um_sonho_eu_tenho/notas.txt",
         .caminho_fundo = "assets/musicas/um_sonho_eu_tenho/fundo.png",

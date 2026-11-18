@@ -72,7 +72,7 @@ int main(void) {
     const char *pastas[] = {"im_still_standing", "um_sonho_eu_tenho"};
     for (int i = 4; i < 6; i++) {
         char caminho[128];
-        assert(catalogo[i].dificuldade == 0);
+        assert(catalogo[i].dificuldade == (i == 4 ? 5 : 4));
         snprintf(caminho, sizeof(caminho), "assets/musicas/%s/audio.wav", pastas[i - 4]);
         assert(strcmp(catalogo[i].caminho_audio, caminho) == 0);
         snprintf(caminho, sizeof(caminho), "assets/musicas/%s/notas.txt", pastas[i - 4]);
@@ -89,9 +89,9 @@ int main(void) {
         {"Breaking Free", "Dancing Queen", "De Nada", "I'm Still Standing", "Popular",
          "Quase Lá", "Twist and Shout", "Um Mundo Ideal", "Um Sonho Eu Tenho"},
         {"Breaking Free", "Quase Lá", "Um Mundo Ideal", "De Nada", "Twist and Shout",
-         "Popular", "Dancing Queen", "I'm Still Standing", "Um Sonho Eu Tenho"},
-        {"Dancing Queen", "Popular", "De Nada", "Twist and Shout", "Breaking Free",
-         "Quase Lá", "Um Mundo Ideal", "I'm Still Standing", "Um Sonho Eu Tenho"}
+         "Popular", "Um Sonho Eu Tenho", "Dancing Queen", "I'm Still Standing"},
+        {"Dancing Queen", "I'm Still Standing", "Popular", "Um Sonho Eu Tenho",
+         "De Nada", "Twist and Shout", "Breaking Free", "Quase Lá", "Um Mundo Ideal"}
     };
     for (int criterio = 0; criterio < 3; criterio++) {
         ordenar_catalogo(catalogo, total, criterios[criterio]);
