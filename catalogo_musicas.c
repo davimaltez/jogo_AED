@@ -6,7 +6,7 @@
  * Cada musica possui sua pasta de audio, notas, fundo e ranking.
  */
 void inicializar_catalogo(Musica catalogo[], int *quantidade) {
-    *quantidade = 9;
+    *quantidade = 8;
 
     /* Musica 1 - Wicked */
     strncpy(catalogo[0].titulo, "Popular", sizeof(catalogo[0].titulo) - 1);
@@ -38,23 +38,8 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     strncpy(catalogo[1].caminho_ranking, "assets/musicas/dancing_queen/ranking.txt", sizeof(catalogo[1].caminho_ranking) - 1);
     catalogo[1].caminho_ranking[sizeof(catalogo[1].caminho_ranking) - 1] = '\0';
 
-    /* Musica 3 - High School Musical */
-    strncpy(catalogo[2].titulo, "Breaking Free", sizeof(catalogo[2].titulo) - 1);
-    catalogo[2].titulo[sizeof(catalogo[2].titulo) - 1] = '\0';
-    strncpy(catalogo[2].filme, "High School Musical", sizeof(catalogo[2].filme) - 1);
-    catalogo[2].filme[sizeof(catalogo[2].filme) - 1] = '\0';
-    catalogo[2].dificuldade = 2;
-    strncpy(catalogo[2].caminho_audio, "assets/musicas/breaking_free/audio.mp3", sizeof(catalogo[2].caminho_audio) - 1);
-    catalogo[2].caminho_audio[sizeof(catalogo[2].caminho_audio) - 1] = '\0';
-    strncpy(catalogo[2].caminho_notas, "assets/musicas/breaking_free/notas.txt", sizeof(catalogo[2].caminho_notas) - 1);
-    catalogo[2].caminho_notas[sizeof(catalogo[2].caminho_notas) - 1] = '\0';
-    strncpy(catalogo[2].caminho_fundo, "assets/musicas/breaking_free/fundo.png", sizeof(catalogo[2].caminho_fundo) - 1);
-    catalogo[2].caminho_fundo[sizeof(catalogo[2].caminho_fundo) - 1] = '\0';
-    strncpy(catalogo[2].caminho_ranking, "assets/musicas/breaking_free/ranking.txt", sizeof(catalogo[2].caminho_ranking) - 1);
-    catalogo[2].caminho_ranking[sizeof(catalogo[2].caminho_ranking) - 1] = '\0';
-
-    /* Musica 4 - origem provisoria; nivel medio do gerador offline. */
-    catalogo[3] = (Musica){
+    /* Musica 3 - origem provisoria; nivel medio do gerador offline. */
+    catalogo[2] = (Musica){
         .titulo = "Twist and Shout",
         .filme = "Twist and Shout",
         .dificuldade = 3,
@@ -64,7 +49,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_ranking = "assets/musicas/twist_and_shout/ranking.txt"
     };
     /* Dificuldades definidas pelo usuario para os mapas publicados. */
-    catalogo[4] = (Musica){
+    catalogo[3] = (Musica){
         .titulo = "I'm Still Standing",
         .filme = "Sing: Quem Canta Seus Males Espanta",
         .dificuldade = 5,
@@ -73,7 +58,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_fundo = "assets/musicas/im_still_standing/fundo.png",
         .caminho_ranking = "assets/musicas/im_still_standing/ranking.txt"
     };
-    catalogo[5] = (Musica){
+    catalogo[4] = (Musica){
         .titulo = "Um Sonho Eu Tenho",
         .filme = "Enrolados",
         .dificuldade = 4,
@@ -82,8 +67,8 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_fundo = "assets/musicas/um_sonho_eu_tenho/fundo.png",
         .caminho_ranking = "assets/musicas/um_sonho_eu_tenho/ranking.txt"
     };
-    /* Musicas 7 a 9: mapas do gerador offline no nivel de cada uma. */
-    catalogo[6] = (Musica){
+    /* Musicas 6 a 8: mapas do gerador offline no nivel de cada uma. */
+    catalogo[5] = (Musica){
         .titulo = "Quase Lá",
         .filme = "A Princesa e o Sapo",
         .dificuldade = 2,
@@ -92,7 +77,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_fundo = "assets/musicas/Quase_la/fundo.png",
         .caminho_ranking = "assets/musicas/Quase_la/ranking.txt"
     };
-    catalogo[7] = (Musica){
+    catalogo[6] = (Musica){
         .titulo = "Um Mundo Ideal",
         .filme = "Aladdin",
         .dificuldade = 2,
@@ -101,7 +86,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_fundo = "assets/musicas/Um_mundo_ideal/fundo.png",
         .caminho_ranking = "assets/musicas/Um_mundo_ideal/ranking.txt"
     };
-    catalogo[8] = (Musica){
+    catalogo[7] = (Musica){
         .titulo = "De Nada",
         .filme = "Moana",
         .dificuldade = 3,

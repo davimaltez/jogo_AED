@@ -7,7 +7,9 @@ O jogador escolhe uma música do catálogo e precisa apertar a tecla certa quand
 
 ## ▶️ Como executar
 
-### 1. Instalar as dependências e a raylib (uma vez só)
+### Opção A: Linux / WSL
+
+#### 1. Instalar as dependências e a raylib (uma vez só)
 
 ```sh
 sudo apt update
@@ -50,7 +52,7 @@ mingw32-make
 .\final_act.exe
 ```
 
-Isso gera `final_act.exe` (ignorado pelo git). Os testes (`make test`) continuam só no WSL.
+Isso gera `final_act.exe` (ignorado pelo git).
 
 ### Controles
 
@@ -100,34 +102,3 @@ O projeto usa **Merge Sort** em três lugares:
 | **Ranking** | Vetor de registros | Maior pontuação primeiro; no empate, nome em ordem alfabética | `ranking.c` (`ordenar_ranking`) |
 
 O Merge Sort divide os dados ao meio até sobrar um elemento, depois intercala as partes já ordenadas. A complexidade é **O(n log n)**. A versão usada é **estável**: elementos iguais mantêm a ordem original.
-
-## Fundos e dificuldades de Sing e Enrolados - 17/11/2026
-
-Atualizacao das duas faixas: I'm Still Standing agora tem dificuldade 5/5,
-e Um Sonho Eu Tenho, 4/5, definidas pelo usuario. Os presets e notas dos
-mapas permanecem iguais. Esta decisao substitui a indicacao anterior
-A definir para essas duas musicas.
-
-Copiados, sem conversao e preservando os originais de
-C:/Users/gabri/OneDrive/Desktop/Nova pasta/:
-- Sing.png -> assets/musicas/im_still_standing/fundo.png
-- enrolados.png -> assets/musicas/um_sonho_eu_tenho/fundo.png
-
-Ambos sao PNG validos de 1672x941. Os caminhos ja estavam cadastrados.
-O carregamento e o escurecimento usam o modulo de midia existente.
-O catalogo encontrado nesta etapa tem nove musicas; as demais sete
-entradas e suas dificuldades foram preservadas.
-
-Validacao: make TARGET=/tmp/final_act_fundos, make test e make test-grafico
-aprovados. Expectativas de niveis e ordenacao atualizadas nos testes de
-desempenho/catalogo e partida. As duas partidas iniciaram com mapas e
-fundos reais; as texturas foram validadas. Quatro capturas em
-1280x720/1920x1080 foram inspecionadas: notas, sustentacoes, teclas,
-pontuacao e medidor legiveis. Capturas e auxiliar temporario em
-/tmp/final_act_fundos_verificacao/. Nao se trata de nova avaliacao auditiva.
-Os avisos da suite relativos a outros recursos ausentes/invalidos nao
-foram corrigidos nesta tarefa.
-
-Nenhuma alteracao no gerador, mapas, WAV, rankings, regras, renderizacao,
-Makefile ou executavel final_act preexistente. Este executavel ja estava
-modificado no git status inicial e foi preservado. Sem commit ou push.
