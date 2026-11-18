@@ -86,7 +86,7 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
     catalogo[6] = (Musica){
         .titulo = "Quase Lá",
         .filme = "A Princesa e o Sapo",
-        .dificuldade = 1,
+        .dificuldade = 2,
         .caminho_audio = "assets/musicas/Quase_la/audio.wav",
         .caminho_notas = "assets/musicas/Quase_la/notas.txt",
         .caminho_fundo = "assets/musicas/Quase_la/fundo.png",
