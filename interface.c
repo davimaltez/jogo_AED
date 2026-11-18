@@ -1747,9 +1747,11 @@ static bool musica_e_sing(const Musica *musica) {
     return strcmp(musica->titulo, "I'm Still Standing") == 0;
 }
 
-static RitmoShow calcular_ritmo_show(float tempo) {
+/* Batida, compasso e refrao de uma faixa de andamento fixo, a partir do tempo da partida. */
+static RitmoShow calcular_ritmo(float tempo, float periodo, float fase_batida, const float refroes[][2],
+                                int total_refroes, const Color *cores, int total_cores) {
     RitmoShow ritmo;
-    float batidas = (tempo - SING_FASE_BATIDA) / SING_PERIODO_BATIDA;
+    float batidas = (tempo - fase_batida) / periodo;
     ritmo.tempo = tempo;
     ritmo.batida = (int)floorf(batidas);
     ritmo.fase = batidas - floorf(batidas);
@@ -1760,19 +1762,23 @@ static RitmoShow calcular_ritmo_show(float tempo) {
     ritmo.refrao = 0.0f;
     ritmo.indice_refrao = -1;
     ritmo.tempo_no_refrao = 0.0f;
-    for (int i = 0; i < TOTAL_REFROES_SING; i++) {
-        float inicio = REFROES_SING[i][0];
-        float fim = REFROES_SING[i][1];
+    for (int i = 0; i < total_refroes; i++) {
+        float inicio = refroes[i][0];
+        float fim = refroes[i][1];
         if (tempo >= inicio && tempo < fim + 1.0f) {
             ritmo.refrao = limitar((tempo - inicio) / 0.25f, 0.0f, 1.0f) * limitar((fim + 1.0f - tempo) / 1.0f, 0.0f, 1.0f);
             ritmo.indice_refrao = i;
             ritmo.tempo_no_refrao = tempo - inicio;
         }
     }
-    int indice_cor = ritmo.compasso % 5;
-    if (indice_cor < 0) indice_cor += 5;
-    ritmo.cor = CORES_SHOW[indice_cor];
+    int indice_cor = ritmo.compasso % total_cores;
+    if (indice_cor < 0) indice_cor += total_cores;
+    ritmo.cor = cores[indice_cor];
     return ritmo;
+}
+
+static RitmoShow calcular_ritmo_show(float tempo) {
+    return calcular_ritmo(tempo, SING_PERIODO_BATIDA, SING_FASE_BATIDA, REFROES_SING, TOTAL_REFROES_SING, CORES_SHOW, 5);
 }
 
 /* Fundo proprio para quando a musica nao tem imagem: palco escuro e telao de LED. */
@@ -2092,6 +2098,638 @@ static void desenhar_destaques_show(int largura, int altura, float escala, const
     }
 }
 
+/* ================= Tema da musica De Nada (Moana) ================= */
+
+/*
+ * Ilha tropical ao por do sol, combinando com o fundo: brilho do sol na agua,
+ * ondinhas, flores boiando, colar de flores no alto, folhas e tochas dancando
+ * na batida (135 BPM, medida no audio). Nos refroes uma arraia salta do mar
+ * (na entrada, um salto enorme que cruza o ceu dando um giro), caem petalas de
+ * hibisco e a faixa "DE NADA!" danca letra por letra. A cada 25 de combo sobem
+ * jatos d'agua com flores dos cantos. Como nos outros temas, nada e alocado.
+ */
+#define MAR_PERIODO_BATIDA (60.0f / 135.0f)
+#define MAR_FASE_BATIDA 0.225f           /* primeira batida medida no audio */
+#define MAR_ENTRADA_REFRAO 3.0f          /* duracao da faixa "DE NADA!" */
+#define MAR_SALTO_ESTRELA 2.6f           /* duracao do grande salto da entrada do refrao */
+#define MAR_HORIZONTE 0.545f             /* altura do horizonte no fundo.png (fracao da tela) */
+#define MAR_BRILHOS_AGUA 46
+#define MAR_ONDAS 10
+#define MAR_FLORES_AGUA 5
+#define MAR_FLORES_COLAR 9               /* por arco do colar */
+#define MAR_PETALAS 42
+#define MAR_GOTAS_ESPIRRO 14
+#define MAR_GOTAS_JATO 44
+#define MAR_FAGULHAS 9                   /* por tocha */
+#define MAR_FOLHAS_POR_LADO 4
+
+/* Inicio e fim (s) dos tres refroes, achados pela energia e repeticao do audio. */
+static const float REFROES_MAR[][2] = { { 35.8f, 52.6f }, { 78.4f, 101.8f }, { 114.0f, 163.2f } };
+#define TOTAL_REFROES_MAR ((int)(sizeof(REFROES_MAR) / sizeof(REFROES_MAR[0])))
+
+static const Color CORES_MAR[5] = {
+    { 40, 225, 210, 255 },    /* turquesa */
+    { 255, 100, 110, 255 },   /* coral */
+    { 255, 175, 50, 255 },    /* manga */
+    { 240, 60, 160, 255 },    /* hibisco */
+    { 150, 235, 90, 255 }     /* folha */
+};
+static const Color CORES_FLOR[4] = {
+    { 240, 50, 120, 255 },    /* hibisco */
+    { 255, 110, 80, 255 },    /* coral */
+    { 255, 246, 232, 255 },   /* plumeria */
+    { 255, 205, 60, 255 }     /* amarelo */
+};
+static const Color COR_ESPUMA = { 220, 250, 255, 255 };
+
+typedef struct {
+    Vector2 saida;
+    Vector2 chegada;
+    float altura;            /* quanto sobe acima da reta entre saida e chegada */
+    float tamanho;           /* meia envergadura, em pixels */
+    float duracao;           /* tempo no ar */
+    float rolagem;           /* giro no proprio eixo durante o salto (radianos) */
+} SaltoArraia;
+
+static bool musica_e_de_nada(const Musica *musica) {
+    return strcmp(musica->titulo, "De Nada") == 0;
+}
+
+static RitmoShow calcular_ritmo_mar(float tempo) {
+    return calcular_ritmo(tempo, MAR_PERIODO_BATIDA, MAR_FASE_BATIDA, REFROES_MAR, TOTAL_REFROES_MAR, CORES_MAR, 5);
+}
+
+static int resto_positivo(int valor, int divisor) {
+    int resto = valor % divisor;
+    return resto < 0 ? resto + divisor : resto;
+}
+
+/* Anel achatado, como uma onda vista de longe. */
+static void anel_eliptico(Vector2 centro, float raio_x, float raio_y, float espessura, Color cor) {
+    const int lados = 20;
+    Vector2 anterior = { centro.x + raio_x, centro.y };
+    for (int i = 1; i <= lados; i++) {
+        float angulo = i * 2.0f * PI / lados;
+        Vector2 ponto = { centro.x + cosf(angulo) * raio_x, centro.y + sinf(angulo) * raio_y };
+        DrawLineEx(anterior, ponto, espessura, cor);
+        anterior = ponto;
+    }
+}
+
+/* Flor de cinco petalas (hibisco/plumeria). */
+static void desenhar_flor(Vector2 centro, float raio, float giro, Color petala, Color miolo) {
+    for (int k = 0; k < 5; k++) {
+        float angulo = giro + k * (2.0f * PI / 5.0f);
+        /* Poligonos de poucos lados bastam numa flor deste tamanho e saem mais baratos que circulos. */
+        DrawPoly((Vector2){ centro.x + cosf(angulo) * raio * 0.55f, centro.y + sinf(angulo) * raio * 0.55f },
+                 10, raio * 0.48f, 0.0f, petala);
+    }
+    DrawPoly(centro, 8, raio * 0.26f, 0.0f, miolo);
+}
+
+/* Petala solta, girando e "virando" no ar (a largura oscila). */
+static void petala(Vector2 centro, float tamanho, float angulo, float virada, Color cor) {
+    Vector2 d = { cosf(angulo), sinf(angulo) };
+    Vector2 n = { -d.y, d.x };
+    float meia = tamanho * 0.28f * (0.2f + 0.8f * fabsf(cosf(virada)));
+    Vector2 ponta = { centro.x + d.x * tamanho * 0.6f, centro.y + d.y * tamanho * 0.6f };
+    Vector2 base = { centro.x - d.x * tamanho * 0.4f, centro.y - d.y * tamanho * 0.4f };
+    Vector2 lado_a = { centro.x + d.x * tamanho * 0.1f + n.x * meia, centro.y + d.y * tamanho * 0.1f + n.y * meia };
+    Vector2 lado_b = { centro.x + d.x * tamanho * 0.1f - n.x * meia, centro.y + d.y * tamanho * 0.1f - n.y * meia };
+    triangulo(ponta, lado_a, lado_b, cor);
+    triangulo(base, lado_a, lado_b, cor);
+}
+
+/* Sol pulsando e faixa quente no horizonte. */
+static void desenhar_sol_e_horizonte(int largura, int altura, const RitmoShow *ritmo) {
+    float horizonte = altura * MAR_HORIZONTE;
+    Color quente = misturar((Color){ 255, 150, 80, 255 }, ritmo->cor, 0.35f * ritmo->refrao);
+    float forca = 0.10f + 0.06f * ritmo->refrao + (0.04f + 0.14f * ritmo->refrao) * ritmo->pulso;
+    int faixa = (int)(altura * 0.05f);
+    BeginBlendMode(BLEND_ADDITIVE);
+    brilho_radial((Vector2){ largura * 0.47f, altura * 0.51f }, largura * (0.20f + 0.03f * ritmo->pulso * ritmo->refrao),
+                  cor_alfa((Color){ 255, 150, 80, 255 }, forca));
+    DrawRectangleGradientV(0, (int)horizonte - faixa, largura, faixa, cor_alfa(quente, 0.0f), cor_alfa(quente, forca));
+    DrawRectangleGradientV(0, (int)horizonte, largura, faixa / 2, cor_alfa(quente, forca), cor_alfa(quente, 0.0f));
+    EndBlendMode();
+}
+
+/* Reflexos do sol piscando na agua, nas faixas de mar que a pista nao cobre. */
+static void desenhar_brilhos_agua(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    float horizonte = altura * MAR_HORIZONTE;
+    BeginBlendMode(BLEND_ADDITIVE);
+    for (int i = 0; i < MAR_BRILHOS_AGUA; i++) {
+        unsigned int base = 5000u + (unsigned int)i * 4u;
+        float piscar = sinf(ritmo->tempo * (1.5f + 2.5f * ruido(base + 3u)) + i * 2.1f);
+        if (piscar <= 0.0f) continue;
+        piscar = piscar * piscar * piscar * (0.7f + 0.3f * ritmo->pulso);
+        bool direita = ruido(base) < 0.72f;
+        float profundidade = ruido(base + 2u);
+        float y = horizonte + altura * (0.008f + (direita ? 0.165f : 0.10f) * profundidade);
+        float x = direita ? largura * (0.70f + 0.30f * ruido(base + 1u)) : largura * (0.195f + 0.10f * ruido(base + 1u));
+        x += sinf(ritmo->tempo * 0.4f + i) * 6.0f * escala;
+        float comprimento = (4.0f + 10.0f * profundidade) * escala;
+        Color cor = misturar((Color){ 255, 190, 120, 255 }, COR_ESPUMA, profundidade);
+        DrawLineEx((Vector2){ x - comprimento, y }, (Vector2){ x + comprimento, y }, (1.0f + 1.2f * profundidade) * escala,
+                   cor_alfa(cor, 0.7f * piscar));
+        DrawCircleV((Vector2){ x, y }, (1.2f + 1.3f * profundidade) * escala, cor_alfa(WHITE, 0.8f * piscar));
+    }
+    EndBlendMode();
+}
+
+/* Cristas de onda que nascem, correm um pouco e se desfazem. */
+static void desenhar_ondas_mar(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    float horizonte = altura * MAR_HORIZONTE;
+    for (int i = 0; i < MAR_ONDAS; i++) {
+        unsigned int base = 5300u + (unsigned int)i * 5u;
+        float ciclo = 3.2f + 1.5f * ruido(base);
+        float fase = ritmo->tempo / ciclo + ruido(base + 1u);
+        int geracao = (int)floorf(fase);
+        fase -= floorf(fase);
+        unsigned int semente = base + (unsigned int)geracao * 31u;
+        bool direita = ruido(semente + 2u) < 0.75f;
+        float profundidade = ruido(semente + 3u);
+        float y = horizonte + altura * (0.012f + (direita ? 0.16f : 0.09f) * profundidade);
+        float x = direita ? largura * (0.72f + 0.25f * ruido(semente + 4u)) : largura * (0.205f + 0.07f * ruido(semente + 4u));
+        x += fase * 14.0f * escala;
+        float meia = (10.0f + 22.0f * profundidade) * escala * (0.6f + 0.4f * fase);
+        float crista = (2.0f + 3.0f * profundidade) * escala;
+        Color cor = cor_alfa(COR_ESPUMA, 0.35f * sinf(PI * fase));
+        Vector2 anterior = { x - meia, y };
+        for (int k = 1; k <= 8; k++) {
+            float s = k / 8.0f;
+            Vector2 ponto = { x - meia + 2.0f * meia * s, y - crista * sinf(PI * s) };
+            DrawLineEx(anterior, ponto, (1.0f + 1.2f * profundidade) * escala, cor);
+            anterior = ponto;
+        }
+    }
+}
+
+/* Flores boiando no mar da direita, subindo e descendo com as ondas. */
+static void desenhar_flores_agua(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    float horizonte = altura * MAR_HORIZONTE;
+    for (int i = 0; i < MAR_FLORES_AGUA; i++) {
+        unsigned int base = 5600u + (unsigned int)i * 3u;
+        float caminho = ruido(base) + ritmo->tempo * 0.006f * (0.5f + ruido(base + 1u));
+        caminho -= floorf(caminho);
+        float surgir = limitar(caminho / 0.1f, 0.0f, 1.0f) * limitar((1.0f - caminho) / 0.1f, 0.0f, 1.0f);
+        float profundidade = 0.3f + 0.7f * ruido(base + 2u);
+        Vector2 centro = { largura * (0.72f + 0.25f * caminho),
+                           horizonte + altura * (0.03f + 0.13f * profundidade) + sinf(ritmo->tempo * 2.0f + i) * 2.0f * escala
+                               - ritmo->pulso * 2.0f * escala };
+        float raio = (4.0f + 5.0f * profundidade) * escala;
+        anel_eliptico((Vector2){ centro.x, centro.y + raio * 0.5f }, raio * 1.4f, raio * 0.35f, 1.0f,
+                      cor_alfa(COR_ESPUMA, 0.25f * surgir));
+        desenhar_flor(centro, raio, ritmo->tempo * 0.3f + i, cor_alfa(CORES_FLOR[i % 4], surgir),
+                      cor_alfa((Color){ 255, 220, 90, 255 }, surgir));
+    }
+}
+
+/* Contorno de meia arraia vista de cima (bico em +x, asa em +y), em unidades do tamanho. */
+static const Vector2 CONTORNO_ARRAIA[] = {
+    { 0.40f, 0.00f }, { 0.50f, 0.05f }, { 0.66f, 0.09f }, { 0.44f, 0.17f }, { 0.30f, 0.36f },
+    { 0.13f, 0.62f }, { -0.08f, 1.00f }, { -0.16f, 0.86f }, { -0.20f, 0.62f }, { -0.28f, 0.34f },
+    { -0.40f, 0.12f }, { -0.44f, 0.00f }
+};
+#define PONTA_ASA_ARRAIA 6
+#define PONTOS_ARRAIA ((int)(sizeof(CONTORNO_ARRAIA) / sizeof(CONTORNO_ARRAIA[0])))
+
+/*
+ * Arraia virada para "angulo". "rolagem" gira no proprio eixo (o lado claro da
+ * barriga aparece de cabeca para baixo) e "bater" anima as asas.
+ */
+static void desenhar_arraia(Vector2 centro, float tamanho, float angulo, float rolagem, float bater, float opacidade) {
+    float c = cosf(angulo), s = sinf(angulo);
+    float lado = cosf(rolagem);
+    float envergadura = 1.0f - 0.22f * (0.5f - 0.5f * cosf(bater));
+    Vector2 pontos[2 * PONTOS_ARRAIA - 2];
+    int total = 0;
+    for (int volta = 0; volta < 2; volta++) {
+        float sinal = volta == 0 ? 1.0f : -1.0f;
+        int inicio = volta == 0 ? 0 : PONTOS_ARRAIA - 2;
+        int fim = volta == 0 ? PONTOS_ARRAIA : 0;
+        for (int i = inicio; volta == 0 ? i < fim : i > fim; i += volta == 0 ? 1 : -1) {
+            float lx = CONTORNO_ARRAIA[i].x;
+            float ly = CONTORNO_ARRAIA[i].y * sinal;
+            if (CONTORNO_ARRAIA[i].y > 0.3f) ly *= envergadura;
+            if (i == PONTA_ASA_ARRAIA) lx += 0.10f * sinf(bater);
+            ly *= lado;
+            pontos[total++] = (Vector2){ centro.x + (lx * c - ly * s) * tamanho, centro.y + (lx * s + ly * c) * tamanho };
+        }
+    }
+    /* Cauda fininha, ondulando atras do corpo. */
+    Vector2 raiz = { centro.x - 0.46f * c * tamanho, centro.y - 0.46f * s * tamanho };
+    float onda = 0.12f * sinf(bater * 0.7f) * lado;
+    Vector2 ponta = { centro.x + (-1.30f * c - onda * s) * tamanho, centro.y + (-1.30f * s + onda * c) * tamanho };
+    Color corpo = lado >= 0.0f ? (Color){ 52, 66, 118, 255 } : (Color){ 226, 206, 222, 255 };
+    BeginBlendMode(BLEND_ADDITIVE);
+    brilho_radial(centro, tamanho * 1.5f, cor_alfa(CORES_MAR[0], 0.28f * opacidade));
+    EndBlendMode();
+    DrawLineEx(raiz, ponta, tamanho * 0.035f, cor_alfa(corpo, opacidade));
+    for (int i = 0; i < total; i++) {
+        triangulo(centro, pontos[i], pontos[(i + 1) % total], cor_alfa(corpo, opacidade));
+    }
+    if (lado > 0.2f) {
+        /* Manchas claras nos "ombros", como nas mantas de recife. */
+        for (int volta = -1; volta <= 1; volta += 2) {
+            Vector2 mancha[3] = { { 0.30f, 0.12f }, { 0.08f, 0.44f }, { 0.02f, 0.14f } };
+            Vector2 tela[3];
+            for (int k = 0; k < 3; k++) {
+                float ly = mancha[k].y * volta * envergadura * lado;
+                tela[k] = (Vector2){ centro.x + (mancha[k].x * c - ly * s) * tamanho,
+                                     centro.y + (mancha[k].x * s + ly * c) * tamanho };
+            }
+            triangulo(tela[0], tela[1], tela[2], cor_alfa((Color){ 175, 190, 220, 255 }, 0.85f * opacidade));
+        }
+    }
+    /* Contraluz do por do sol nas bordas da frente das asas (do lobulo da cabeca a ponta). */
+    BeginBlendMode(BLEND_ADDITIVE);
+    Color borda = cor_alfa((Color){ 255, 170, 110, 255 }, 0.75f * opacidade);
+    float espessura = tamanho * 0.035f;
+    for (int i = 2; i < PONTA_ASA_ARRAIA; i++) {
+        DrawLineEx(pontos[i], pontos[i + 1], espessura, borda);
+        DrawLineEx(pontos[total - i], pontos[total - i - 1], espessura, borda);
+    }
+    EndBlendMode();
+}
+
+/* Espirro d'agua de quando a arraia sai ou volta para o mar; "t" conta desde o contato. */
+static void desenhar_espirro(Vector2 centro, float tamanho, float t, unsigned int semente) {
+    const float vida = 0.75f;
+    if (t < 0.0f || t > vida) return;
+    float resto = 1.0f - t / vida;
+    for (int k = 0; k < 2; k++) {
+        float tk = t - k * 0.15f;
+        if (tk < 0.0f) continue;
+        float raio = tamanho * (0.25f + 1.4f * tk);
+        anel_eliptico(centro, raio, raio * 0.22f, 1.6f, cor_alfa(COR_ESPUMA, 0.55f * resto));
+    }
+    float coluna = sinf(PI * limitar(t / 0.5f, 0.0f, 1.0f)) * tamanho * 0.9f;
+    if (coluna > 1.0f) {
+        triangulo((Vector2){ centro.x - tamanho * 0.22f, centro.y }, (Vector2){ centro.x + tamanho * 0.22f, centro.y },
+                  (Vector2){ centro.x, centro.y - coluna }, cor_alfa(COR_ESPUMA, 0.45f * resto));
+    }
+    float gravidade = tamanho * 9.0f;
+    for (int i = 0; i < MAR_GOTAS_ESPIRRO; i++) {
+        unsigned int base = semente + (unsigned int)i * 3u;
+        float angulo = (-0.5f + (ruido(base) - 0.5f) * 0.75f) * PI;
+        float rapidez = tamanho * (2.2f + 2.2f * ruido(base + 1u));
+        Vector2 gota = { centro.x + cosf(angulo) * rapidez * t,
+                         centro.y + sinf(angulo) * rapidez * t + 0.5f * gravidade * t * t };
+        if (gota.y > centro.y + 2.0f) continue;
+        DrawCircleV(gota, tamanho * (0.03f + 0.03f * ruido(base + 2u)),
+                    cor_alfa(misturar(COR_ESPUMA, CORES_MAR[0], 0.4f * ruido(base + 2u)), resto));
+    }
+}
+
+static Vector2 posicao_salto(const SaltoArraia *salto, float u) {
+    return (Vector2){ salto->saida.x + (salto->chegada.x - salto->saida.x) * u,
+                      salto->saida.y + (salto->chegada.y - salto->saida.y) * u - 4.0f * salto->altura * u * (1.0f - u) };
+}
+
+/* Um salto completo: espirro na saida, voo em parabola pingando agua e espirro na volta. */
+static void desenhar_salto(const SaltoArraia *salto, float t, unsigned int semente, bool estrelinhas, bool rastro) {
+    desenhar_espirro(salto->saida, salto->tamanho, t, semente);
+    desenhar_espirro(salto->chegada, salto->tamanho, t - salto->duracao, semente + 100u);
+    if (t < 0.0f || t > salto->duracao) return;
+    float u = t / salto->duracao;
+    Vector2 centro = posicao_salto(salto, u);
+    float dx = salto->chegada.x - salto->saida.x;
+    float dy = salto->chegada.y - salto->saida.y - 4.0f * salto->altura * (1.0f - 2.0f * u);
+    for (int k = 1; k <= 6; k++) {
+        float anterior = u - k * 0.03f;
+        if (anterior < 0.0f) break;
+        Vector2 gota = posicao_salto(salto, anterior);
+        float queda = k * 0.03f * salto->duracao;
+        gota.y += 0.5f * salto->tamanho * 9.0f * queda * queda;
+        gota.x += (ruido(semente + (unsigned int)k) - 0.5f) * salto->tamanho * 0.3f;
+        DrawCircleV(gota, salto->tamanho * 0.028f, cor_alfa(COR_ESPUMA, 0.7f * (1.0f - k / 7.0f)));
+    }
+    float opacidade = limitar(u / 0.05f, 0.0f, 1.0f) * limitar((1.0f - u) / 0.05f, 0.0f, 1.0f);
+    if (rastro) {
+        /* Rastro de agua brilhante seguindo a curva do salto. */
+        BeginBlendMode(BLEND_ADDITIVE);
+        for (int k = 1; k <= 16; k++) {
+            float anterior = u - k * 0.022f;
+            if (anterior < 0.0f) break;
+            Vector2 ponto = posicao_salto(salto, anterior);
+            float some = 1.0f - k / 17.0f;
+            brilho_radial(ponto, salto->tamanho * 0.35f * some, cor_alfa(CORES_MAR[0], 0.35f * some));
+            if (k % 3 == 0) {
+                estrela_quatro_pontas(ponto, salto->tamanho * 0.10f * some, cor_alfa(COR_ESPUMA, some));
+            }
+        }
+        EndBlendMode();
+    }
+    float giro = limitar((u - 0.5f) / 0.4f, 0.0f, 1.0f);
+    giro = giro * giro * (3.0f - 2.0f * giro);
+    desenhar_arraia(centro, salto->tamanho, atan2f(dy, dx), salto->rolagem * giro, t * 10.0f, opacidade);
+    if (estrelinhas && fabsf(u - 0.5f) < 0.2f) {
+        /* No alto do salto, um estouro de brilhos de agua. */
+        float abrir = (u - 0.3f) / 0.4f;
+        BeginBlendMode(BLEND_ADDITIVE);
+        for (int k = 0; k < 8; k++) {
+            float angulo = k * (PI / 4.0f) + (float)(semente % 7u);
+            float raio = salto->tamanho * (0.6f + 1.2f * abrir);
+            estrela_quatro_pontas((Vector2){ centro.x + cosf(angulo) * raio, centro.y + sinf(angulo) * raio },
+                                  salto->tamanho * 0.12f * (1.0f - abrir), cor_alfa(misturar(COR_ESPUMA, CORES_MAR[k % 5], 0.4f), 1.0f - abrir));
+        }
+        EndBlendMode();
+    }
+}
+
+/*
+ * Arraias do refrao. Na entrada, um salto enorme com rastro brilhante e giro;
+ * depois saltos no mar da direita a cada dois compassos (a cada compasso no
+ * ultimo refrao, que ganha tambem saltinhos na esquerda e brilhos no alto).
+ */
+static void desenhar_arraias(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    if (ritmo->indice_refrao < 0) return;
+    float no_refrao = ritmo->tempo_no_refrao;
+    float horizonte = altura * MAR_HORIZONTE;
+    bool ultimo = ritmo->indice_refrao == TOTAL_REFROES_MAR - 1;
+    if (no_refrao < MAR_SALTO_ESTRELA + 0.8f) {
+        SaltoArraia estrela = { { largura * 0.955f, horizonte + altura * 0.06f },
+                                { largura * 0.745f, horizonte + altura * 0.075f },
+                                altura * 0.40f, 80.0f * escala, MAR_SALTO_ESTRELA, 2.0f * PI };
+        desenhar_salto(&estrela, no_refrao, 4000u, true, true);
+    }
+
+    int compassos = ultimo ? 1 : 2;
+    int batidas_ciclo = 4 * compassos;
+    int ciclo = (int)floorf((float)ritmo->compasso / compassos);
+    float t = (resto_positivo(ritmo->batida, batidas_ciclo) + ritmo->fase) * MAR_PERIODO_BATIDA;
+    if (no_refrao - t < MAR_SALTO_ESTRELA + 0.3f) return;   /* o ciclo comecou durante o grande salto */
+    unsigned int semente = (unsigned int)(ciclo * 17 + 5);
+    float profundidade = ruido(semente + 1u);
+    float x0 = largura * (0.74f + 0.16f * ruido(semente));
+    float passo = largura * (0.06f + 0.04f * ruido(semente + 2u));
+    if (x0 + passo > largura * 0.97f) passo = -passo;
+    float y0 = horizonte + altura * (0.02f + 0.07f * profundidade);
+    SaltoArraia salto = { { x0, y0 }, { x0 + passo, y0 + altura * 0.01f },
+                          altura * (0.13f + 0.09f * ruido(semente + 3u)), (38.0f + 34.0f * profundidade) * escala,
+                          ultimo ? 1.1f : 1.35f, ruido(semente + 4u) < 0.35f ? 2.0f * PI : 0.0f };
+    desenhar_salto(&salto, t, semente * 7u, ultimo, false);
+
+    if (ultimo && (ciclo & 1)) {
+        SaltoArraia pequeno = { { largura * (0.215f + 0.02f * ruido(semente + 5u)), horizonte + altura * 0.045f },
+                                { largura * 0.28f, horizonte + altura * 0.05f },
+                                altura * 0.07f, 26.0f * escala, 0.9f, 0.0f };
+        desenhar_salto(&pequeno, t - 2.0f * MAR_PERIODO_BATIDA, semente * 11u, false, false);
+    }
+}
+
+/* Colar de flores pendurado no alto, balancando; as flores pulam e giram na batida. */
+static void desenhar_colar_flores(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    float queda = altura * 0.075f;
+    for (int arco = 0; arco < 2; arco++) {
+        float x0 = largura * (arco == 0 ? 0.27f : 0.50f);
+        float x1 = largura * (arco == 0 ? 0.50f : 0.73f);
+        float balanco = sinf(PI * (resto_positivo(ritmo->batida, 2) + ritmo->fase) + arco * PI)
+                        * (2.0f + 4.0f * ritmo->refrao) * escala;
+        Vector2 anterior = { x0, 0.0f };
+        for (int k = 1; k <= 14; k++) {
+            float u = k / 14.0f;
+            float curva = 4.0f * u * (1.0f - u);
+            Vector2 ponto = { x0 + (x1 - x0) * u, (queda + balanco) * curva };
+            DrawLineEx(anterior, ponto, 2.0f * escala, (Color){ 40, 95, 50, 255 });
+            anterior = ponto;
+        }
+        for (int i = 0; i < MAR_FLORES_COLAR; i++) {
+            float u = (i + 0.5f) / MAR_FLORES_COLAR;
+            float curva = 4.0f * u * (1.0f - u);
+            Vector2 centro = { x0 + (x1 - x0) * u, (queda + balanco) * curva };
+            /* Folhinha entre as flores, seguindo a inclinacao do fio. */
+            float inclinacao = atan2f((queda + balanco) * 4.0f * (1.0f - 2.0f * u), x1 - x0);
+            float u_folha = (i + 1.0f) / MAR_FLORES_COLAR;
+            if (i < MAR_FLORES_COLAR - 1) {
+                float curva_folha = 4.0f * u_folha * (1.0f - u_folha);
+                petala((Vector2){ x0 + (x1 - x0) * u_folha, (queda + balanco) * curva_folha + 3.0f * escala },
+                       12.0f * escala, inclinacao + (i & 1 ? 0.6f : -0.6f), 0.0f, (Color){ 60, 150, 70, 255 });
+            }
+            int indice = arco * MAR_FLORES_COLAR + i;
+            float pulo = resto_positivo(indice + ritmo->batida, 2) == 0 ? ritmo->pulso : 0.0f;
+            float raio = 8.5f * escala * (1.0f + (0.15f + 0.25f * ritmo->refrao) * pulo);
+            int cor = resto_positivo(indice + (int)(ritmo->refrao > 0.5f ? ritmo->batida : 0), 4);
+            float giro = (indice & 1 ? 1.0f : -1.0f) * ritmo->tempo * (0.4f + 2.2f * ritmo->refrao);
+            centro.y -= pulo * 3.0f * escala;
+            desenhar_flor(centro, raio, giro, CORES_FLOR[cor], (Color){ 255, 215, 80, 255 });
+        }
+        DrawCircleV((Vector2){ x0, 2.0f * escala }, 3.0f * escala, (Color){ 40, 95, 50, 255 });
+    }
+    DrawCircleV((Vector2){ (float)largura * 0.73f, 2.0f * escala }, 3.0f * escala, (Color){ 40, 95, 50, 255 });
+}
+
+/* Folha tropical: nervura curva e largura que engorda no meio. */
+static void desenhar_folha(Vector2 base, float comprimento, float largura_folha, float angulo, float curva,
+                           float espessura_nervura, Color cor, Color nervura) {
+    const int partes = 8;
+    Vector2 meio_anterior = base, esquerda_anterior = base, direita_anterior = base;
+    for (int k = 1; k <= partes; k++) {
+        float s = k / (float)partes;
+        float a = angulo + curva * s;
+        Vector2 d = { cosf(a), sinf(a) };
+        Vector2 meio = { meio_anterior.x + d.x * comprimento / partes, meio_anterior.y + d.y * comprimento / partes };
+        float meia = largura_folha * sinf(PI * (0.08f + 0.92f * s));
+        Vector2 esquerda = { meio.x - d.y * meia, meio.y + d.x * meia };
+        Vector2 direita = { meio.x + d.y * meia, meio.y - d.x * meia };
+        triangulo(meio_anterior, esquerda_anterior, esquerda, cor);
+        triangulo(meio_anterior, esquerda, meio, cor);
+        triangulo(meio_anterior, direita_anterior, direita, cor);
+        triangulo(meio_anterior, direita, meio, cor);
+        DrawLineEx(meio_anterior, meio, espessura_nervura, nervura);
+        meio_anterior = meio;
+        esquerda_anterior = esquerda;
+        direita_anterior = direita;
+    }
+}
+
+/* Folhagem nos cantos de baixo, dancando no ritmo (mais solta no refrao). */
+static void desenhar_folhagem(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    static const float angulos[MAR_FOLHAS_POR_LADO] = { -1.45f, -1.10f, -0.75f, -0.40f };
+    const Color cor = { 18, 62, 42, 255 };
+    const Color nervura = { 70, 140, 90, 255 };
+    float danca = sinf(PI * (resto_positivo(ritmo->batida, 2) + ritmo->fase));
+    for (int lado = 0; lado < 2; lado++) {
+        Vector2 base = { lado == 0 ? -10.0f * escala : largura + 10.0f * escala, altura + 12.0f * escala };
+        for (int j = 0; j < MAR_FOLHAS_POR_LADO; j++) {
+            float balanco = (0.04f + 0.10f * ritmo->refrao) * danca * (j & 1 ? 1.0f : -0.7f);
+            float angulo = angulos[j] + balanco;
+            float curva = 0.35f;
+            if (lado == 1) {
+                angulo = -PI - angulo;
+                curva = -curva;
+            }
+            float comprimento = altura * (0.22f + 0.05f * ruido(6100u + (unsigned int)(lado * 10 + j)));
+            desenhar_folha(base, comprimento, comprimento * 0.20f, angulo, curva, 1.5f * escala, cor, nervura);
+        }
+    }
+}
+
+/* Tochas tiki nas laterais: a chama danca, cresce na batida e solta fagulhas. */
+static void desenhar_tochas(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    for (int lado = 0; lado < 2; lado++) {
+        float x = largura * (lado == 0 ? 0.175f : 0.825f);
+        float topo = altura * 0.70f;
+        DrawRectangle((int)(x - 4.0f * escala), (int)topo, (int)(8.0f * escala), (int)(altura - topo), (Color){ 70, 44, 26, 255 });
+        for (int k = 0; k < 4; k++) {
+            DrawRectangle((int)(x - 5.0f * escala), (int)(topo + (20.0f + 38.0f * k) * escala), (int)(10.0f * escala),
+                          (int)(4.0f * escala), (Color){ 40, 24, 14, 255 });
+        }
+        Rectangle copo = { x - 10.0f * escala, topo - 10.0f * escala, 20.0f * escala, 14.0f * escala };
+        DrawRectangleRec(copo, (Color){ 95, 60, 32, 255 });
+        DrawLineEx((Vector2){ copo.x, copo.y + copo.height * 0.5f }, (Vector2){ copo.x + copo.width, copo.y + copo.height * 0.5f },
+                   1.5f * escala, (Color){ 50, 30, 16, 255 });
+
+        float tremor = sinf(ritmo->tempo * 13.0f + lado * 2.0f) * 0.5f + sinf(ritmo->tempo * 21.0f + lado) * 0.5f;
+        float chama = 1.0f + 0.25f * ritmo->pulso + 0.35f * ritmo->refrao + 0.10f * tremor;
+        float alto = 34.0f * escala * chama;
+        Vector2 boca = { x, copo.y + 2.0f * escala };
+        BeginBlendMode(BLEND_ADDITIVE);
+        brilho_radial((Vector2){ x, boca.y - alto * 0.4f }, 70.0f * escala * chama,
+                      cor_alfa((Color){ 255, 140, 40, 255 }, 0.28f + 0.15f * ritmo->pulso));
+        static const Color camadas[3] = { { 255, 80, 20, 255 }, { 255, 160, 40, 255 }, { 255, 235, 150, 255 } };
+        for (int c = 0; c < 3; c++) {
+            float f = 1.0f - c * 0.28f;
+            float meia = 11.0f * escala * f;
+            Vector2 ponta = { x + sinf(ritmo->tempo * 7.0f + lado + c) * 4.0f * escala * (c + 1), boca.y - alto * f };
+            triangulo(ponta, (Vector2){ x - meia, boca.y - meia * 0.6f }, (Vector2){ x + meia, boca.y - meia * 0.6f },
+                      cor_alfa(camadas[c], 0.85f));
+            DrawCircleV((Vector2){ x, boca.y - meia * 0.6f }, meia, cor_alfa(camadas[c], 0.85f));
+        }
+        for (int i = 0; i < MAR_FAGULHAS; i++) {
+            if (i >= 3 && ritmo->refrao <= 0.01f) break;
+            unsigned int base = 6300u + (unsigned int)(lado * 20 + i) * 3u;
+            float subida = ruido(base) + ritmo->tempo * (0.6f + 0.5f * ruido(base + 1u)) * (1.0f + ritmo->refrao);
+            subida -= floorf(subida);
+            Vector2 fagulha = { x + sinf(ritmo->tempo * 3.0f + i) * 10.0f * escala * subida,
+                                boca.y - alto * 0.6f - subida * 90.0f * escala * (1.0f + 0.5f * ritmo->refrao) };
+            DrawCircleV(fagulha, (1.5f + 1.0f * ruido(base + 2u)) * escala,
+                        cor_alfa((Color){ 255, 190, 80, 255 }, 1.0f - subida));
+        }
+        EndBlendMode();
+    }
+}
+
+/* Ondas de luz descendo a pista: cada uma chega na linha de acerto bem na batida. */
+static void desenhar_ondas_pista(const GeometriaPista *pista, float escala, const RitmoShow *ritmo) {
+    float progresso = powf(ritmo->fase, CURVA_PERSPECTIVA);
+    float y = pista->y_topo + (pista->y_alvo - pista->y_topo) * progresso;
+    float largura = largura_pista_em(pista, y);
+    float x0 = pista->centro_x - largura / 2.0f;
+    float amplitude = (1.5f + 4.0f * progresso) * escala;
+    Color cor = cor_alfa(misturar(CORES_MAR[0], ritmo->cor, 0.5f * ritmo->refrao),
+                         (0.10f + 0.22f * ritmo->refrao) * (0.3f + 0.7f * progresso));
+    BeginBlendMode(BLEND_ADDITIVE);
+    Vector2 anterior = { x0, y + sinf(ritmo->tempo * 4.0f) * amplitude };
+    for (int j = 1; j <= 12; j++) {
+        Vector2 ponto = { x0 + largura * j / 12.0f, y + sinf(j * 1.3f + ritmo->tempo * 4.0f) * amplitude };
+        DrawLineEx(anterior, ponto, (1.5f + 3.0f * progresso) * escala, cor);
+        anterior = ponto;
+    }
+    EndBlendMode();
+}
+
+/* Acerto: respingos e uma ondinha em volta da tecla. */
+static void desenhar_respingos_acerto(const GeometriaPista *pista, float escala, const EfeitosPartida *efeitos) {
+    float largura_coluna = largura_pista_em(pista, pista->y_alvo) / TOTAL_PISTAS;
+    for (int p = 0; p < TOTAL_PISTAS; p++) {
+        float impacto = efeitos->impacto[p];
+        if (impacto <= 0.0f) continue;
+        float u = 1.0f - impacto;
+        float centro_x = x_pista_em(pista, pista->y_alvo, (p + 0.5f) / TOTAL_PISTAS);
+        Color agua = misturar(COR_ESPUMA, CORES_PISTAS[p], 0.35f);
+        float raio = largura_coluna * (0.35f + 0.55f * u);
+        anel_eliptico((Vector2){ centro_x, pista->y_alvo }, raio, raio * 0.28f, (1.0f + 2.0f * impacto) * escala,
+                      cor_alfa(agua, 0.8f * impacto));
+        unsigned int semente = 5800u + (unsigned int)(p * 16 + efeitos->acertos_pista[p] * 37);
+        for (int k = 0; k < 7; k++) {
+            unsigned int base = semente + (unsigned int)k * 2u;
+            float direcao = (ruido(base) - 0.5f) * 2.0f;
+            float alto = (40.0f + 50.0f * ruido(base + 1u)) * escala;
+            Vector2 gota = { centro_x + direcao * largura_coluna * 0.75f * u, pista->y_alvo - alto * 4.0f * u * (1.0f - u) };
+            DrawCircleV(gota, (2.2f + 1.5f * ruido(base + 2u)) * escala * (0.5f + 0.5f * impacto), cor_alfa(agua, impacto));
+        }
+    }
+}
+
+/* Chuva de petalas de hibisco e plumeria no refrao. */
+static void desenhar_chuva_petalas(int largura, int altura, float escala, const RitmoShow *ritmo) {
+    if (ritmo->refrao <= 0.01f) return;
+    for (int i = 0; i < MAR_PETALAS; i++) {
+        unsigned int base = 6000u + (unsigned int)i * 5u;
+        float percurso = ruido(base) + ritmo->tempo * (0.08f + 0.07f * ruido(base + 1u));
+        percurso -= floorf(percurso);
+        Vector2 posicao = { (ruido(base + 2u) + 0.03f * sinf(ritmo->tempo * 1.3f + i)) * largura,
+                            (-0.05f + 1.10f * percurso) * altura };
+        petala(posicao, (10.0f + 7.0f * ruido(base + 3u)) * escala, ritmo->tempo * (1.5f + 2.0f * ruido(base + 4u)) + i,
+               ritmo->tempo * (3.0f + 3.0f * ruido(base + 1u)) + i, cor_alfa(CORES_FLOR[i % 4], 0.9f * ritmo->refrao));
+    }
+}
+
+/* A cada 25 de combo, jatos d'agua com flores sobem dos cantos de baixo. */
+static void desenhar_jatos_agua(int largura, int altura, float escala, const EfeitosPartida *efeitos) {
+    if (efeitos->celebracao <= 0.0f) return;
+    float t = (1.0f - efeitos->celebracao) * 1.4f;
+    float gravidade = 900.0f * escala;
+    for (int i = 0; i < MAR_GOTAS_JATO; i++) {
+        unsigned int base = 6500u + (unsigned int)i * 4u;
+        bool esquerda = (i & 1) == 0;
+        float angulo = (0.30f + 0.22f * ruido(base)) * PI;
+        float rapidez = (600.0f + 450.0f * ruido(base + 1u)) * escala;
+        float vx = cosf(angulo) * rapidez * (esquerda ? 1.0f : -1.0f);
+        float vy = -sinf(angulo) * rapidez;
+        Vector2 posicao = { (esquerda ? 0.0f : (float)largura) + vx * t, altura + vy * t + 0.5f * gravidade * t * t };
+        if (i % 6 == 0) {
+            desenhar_flor(posicao, 8.0f * escala, t * 6.0f + i, cor_alfa(CORES_FLOR[(i / 6) % 4], efeitos->celebracao),
+                          cor_alfa((Color){ 255, 215, 80, 255 }, efeitos->celebracao));
+        } else {
+            DrawCircleV(posicao, (3.0f + 3.0f * ruido(base + 2u)) * escala,
+                        cor_alfa(misturar(COR_ESPUMA, CORES_MAR[0], 0.5f * ruido(base + 3u)), efeitos->celebracao));
+        }
+    }
+}
+
+/* Flash nas bordas, onda no horizonte e faixa "DE NADA!" dancando na entrada do refrao. */
+static void desenhar_destaques_mar(int largura, int altura, float escala, const GeometriaPista *pista,
+                                   const RitmoShow *ritmo) {
+    BeginBlendMode(BLEND_ADDITIVE);
+    if (ritmo->caixa) {
+        float forca = ritmo->pulso * (0.08f + 0.26f * ritmo->refrao);
+        int faixa = (int)(largura * 0.07f);
+        DrawRectangleGradientH(0, 0, faixa, altura, cor_alfa(ritmo->cor, forca), cor_alfa(ritmo->cor, 0.0f));
+        DrawRectangleGradientH(largura - faixa, 0, faixa, altura, cor_alfa(ritmo->cor, 0.0f), cor_alfa(ritmo->cor, forca));
+    }
+    float entrada = ritmo->tempo_no_refrao;
+    if (ritmo->indice_refrao >= 0 && entrada < 0.7f) {
+        DrawRectangle(0, 0, largura, altura, cor_alfa(WHITE, 0.15f * limitar(1.0f - entrada / 0.25f, 0.0f, 1.0f)));
+        float raio = (40.0f + 1600.0f * entrada) * escala;
+        anel_eliptico((Vector2){ pista->centro_x, altura * MAR_HORIZONTE }, raio, raio * 0.18f, 4.0f * escala,
+                      cor_alfa(misturar(COR_ESPUMA, CORES_MAR[0], 0.5f), 0.7f * (1.0f - entrada / 0.7f)));
+    }
+    EndBlendMode();
+
+    if (ritmo->indice_refrao >= 0 && entrada < MAR_ENTRADA_REFRAO) {
+        float aparecer = limitar(entrada / 0.15f, 0.0f, 1.0f);
+        float sumir = limitar((MAR_ENTRADA_REFRAO - entrada) / 0.6f, 0.0f, 1.0f);
+        float opacidade = aparecer * sumir;
+        int tamanho = (int)(fonte(40, escala) * (1.0f + 0.10f * ritmo->pulso + 0.5f * (1.0f - aparecer)));
+        const char *texto = "DE NADA!";
+        float x = largura / 2.0f - MeasureText(texto, tamanho) / 2.0f;
+        float y_base = altura * 0.125f - tamanho * 0.5f;
+        char letra[2] = { 0, 0 };
+        /* Cada letra pula numa onda que corre pela palavra. */
+        for (int i = 0; texto[i] != '\0'; i++) {
+            letra[0] = texto[i];
+            float y = y_base - fabsf(sinf(entrada * 7.0f - i * 0.6f)) * 10.0f * escala;
+            Color cor = CORES_MAR[resto_positivo(i + ritmo->batida, 5)];
+            DrawText(letra, (int)x + 3, (int)y + 3, tamanho, cor_alfa(COR_SOMBRA_TEXTO, opacidade));
+            DrawText(letra, (int)x, (int)y, tamanho, cor_alfa(misturar(cor, WHITE, 0.15f), opacidade));
+            x += MeasureText(letra, tamanho) + tamanho / 10;
+        }
+    }
+}
+
 void desenhar_tela_partida(int largura, int altura, const Partida *partida,
                            const Musica *musica, const MidiaPartida *midia,
                            const bool teclas_seguradas[TOTAL_PISTAS], EfeitosPartida *efeitos) {
@@ -2100,7 +2738,8 @@ void desenhar_tela_partida(int largura, int altura, const Partida *partida,
     atualizar_efeitos(efeitos, partida, &pista, escala, teclas_seguradas);
     bool tema_popular = musica_e_popular(musica);
     bool tema_sing = musica_e_sing(musica);
-    RitmoShow ritmo = calcular_ritmo_show(partida->tempo);
+    bool tema_mar = musica_e_de_nada(musica);
+    RitmoShow ritmo = tema_mar ? calcular_ritmo_mar(partida->tempo) : calcular_ritmo_show(partida->tempo);
 
     if (midia->fundo_carregado) {
         /* A imagem cobre a tela inteira: nao e preciso desenhar o palco por baixo. */
@@ -2121,12 +2760,25 @@ void desenhar_tela_partida(int largura, int altura, const Partida *partida,
         desenhar_letreiro(largura, escala, &ritmo);
         desenhar_globo(largura, altura, escala, &ritmo);
     }
+    if (tema_mar) {
+        desenhar_sol_e_horizonte(largura, altura, &ritmo);
+        desenhar_brilhos_agua(largura, altura, escala, &ritmo);
+        desenhar_ondas_mar(largura, altura, escala, &ritmo);
+        desenhar_flores_agua(largura, altura, escala, &ritmo);
+        desenhar_arraias(largura, altura, escala, &ritmo);
+        desenhar_colar_flores(largura, altura, escala, &ritmo);
+        desenhar_folhagem(largura, altura, escala, &ritmo);
+        desenhar_tochas(largura, altura, escala, &ritmo);
+    }
     desenhar_corpo_pista(&pista, escala, partida->tempo, efeitos);
     if (tema_popular) {
         desenhar_horizonte_popular(&pista, efeitos);
     }
-    if (tema_sing) {
+    if (tema_sing || tema_mar) {
         desenhar_batida_pista(&pista, escala, &ritmo);
+    }
+    if (tema_mar) {
+        desenhar_ondas_pista(&pista, escala, &ritmo);
     }
     desenhar_receptores(&pista, escala, efeitos);
     desenhar_notas(&pista, escala, partida);
@@ -2143,6 +2795,12 @@ void desenhar_tela_partida(int largura, int altura, const Partida *partida,
         desenhar_canhoes_confete(largura, altura, escala, efeitos);
         desenhar_fogos(largura, altura, escala, &ritmo);
         desenhar_destaques_show(largura, altura, escala, &pista, &ritmo);
+    }
+    if (tema_mar) {
+        desenhar_respingos_acerto(&pista, escala, efeitos);
+        desenhar_chuva_petalas(largura, altura, escala, &ritmo);
+        desenhar_jatos_agua(largura, altura, escala, efeitos);
+        desenhar_destaques_mar(largura, altura, escala, &pista, &ritmo);
     }
     desenhar_medidor(largura, altura, escala, partida->desempenho.valor, efeitos);
     desenhar_painel_informacoes(largura, altura, escala, partida, musica, efeitos);
