@@ -71,7 +71,8 @@ void __wrap_DrawText(const char *texto, int x, int y, int tamanho, Color cor) {
         texto_fora_da_janela = true;
     }
     /* Titulos reais da coluna esquerda: limites do texto e alvos para cliques. */
-    const char *titulos[] = {"Popular", "Dancing Queen", "Breaking Free", "Twist and Shout", "I'm Still Standing", "Um Sonho Eu Tenho"};
+    const char *titulos[] = {"Popular", "Dancing Queen", "Breaking Free", "Twist and Shout", "I'm Still Standing", "Um Sonho Eu Tenho",
+                             "Quase Lá", "Um Mundo Ideal", "De Nada"};
     if (x < GetScreenWidth() / 2) {
         for (int i = 0; i < MAX_MUSICAS; i++) {
             if (strcmp(texto, titulos[i]) == 0 && total_titulos_catalogo < MAX_MUSICAS) {

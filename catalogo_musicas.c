@@ -6,7 +6,7 @@
  * Cada musica possui sua pasta de audio, notas, fundo e ranking.
  */
 void inicializar_catalogo(Musica catalogo[], int *quantidade) {
-    *quantidade = 6;
+    *quantidade = 9;
 
     /* Musica 1 - Wicked */
     strncpy(catalogo[0].titulo, "Popular", sizeof(catalogo[0].titulo) - 1);
@@ -81,6 +81,34 @@ void inicializar_catalogo(Musica catalogo[], int *quantidade) {
         .caminho_notas = "assets/musicas/um_sonho_eu_tenho/notas.txt",
         .caminho_fundo = "assets/musicas/um_sonho_eu_tenho/fundo.png",
         .caminho_ranking = "assets/musicas/um_sonho_eu_tenho/ranking.txt"
+    };
+    /* Musicas 7 a 9: mapas do gerador offline no nivel de cada uma. */
+    catalogo[6] = (Musica){
+        .titulo = "Quase Lá",
+        .filme = "A Princesa e o Sapo",
+        .dificuldade = 1,
+        .caminho_audio = "assets/musicas/Quase_la/audio.wav",
+        .caminho_notas = "assets/musicas/Quase_la/notas.txt",
+        .caminho_fundo = "assets/musicas/Quase_la/fundo.png",
+        .caminho_ranking = "assets/musicas/Quase_la/ranking.txt"
+    };
+    catalogo[7] = (Musica){
+        .titulo = "Um Mundo Ideal",
+        .filme = "Aladdin",
+        .dificuldade = 2,
+        .caminho_audio = "assets/musicas/Um_mundo_ideal/audio.wav",
+        .caminho_notas = "assets/musicas/Um_mundo_ideal/notas.txt",
+        .caminho_fundo = "assets/musicas/Um_mundo_ideal/fundo.png",
+        .caminho_ranking = "assets/musicas/Um_mundo_ideal/ranking.txt"
+    };
+    catalogo[8] = (Musica){
+        .titulo = "De Nada",
+        .filme = "Moana",
+        .dificuldade = 3,
+        .caminho_audio = "assets/musicas/De_nada/audio.wav",
+        .caminho_notas = "assets/musicas/De_nada/notas.txt",
+        .caminho_fundo = "assets/musicas/De_nada/fundo.png",
+        .caminho_ranking = "assets/musicas/De_nada/ranking.txt"
     };
 }
 

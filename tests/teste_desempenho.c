@@ -63,7 +63,7 @@ int main(void) {
     Musica catalogo[MAX_MUSICAS], original[MAX_MUSICAS];
     int total;
     inicializar_catalogo(catalogo, &total);
-    assert(MAX_MUSICAS == 6 && total == 6);
+    assert(MAX_MUSICAS == 9 && total == 9);
     memcpy(original, catalogo, sizeof(catalogo));
     assert(strcmp(catalogo[4].titulo, "I'm Still Standing") == 0);
     assert(strcmp(catalogo[4].filme, "Sing: Quem Canta Seus Males Espanta") == 0);
@@ -85,13 +85,13 @@ int main(void) {
     const CriterioOrdenacao criterios[] = {
         ORDEM_TITULO_AZ, ORDEM_DIFICULDADE_CRESCENTE, ORDEM_DIFICULDADE_DECRESCENTE
     };
-    const char *esperadas[][6] = {
-        {"Breaking Free", "Dancing Queen", "I'm Still Standing",
-         "Popular", "Twist and Shout", "Um Sonho Eu Tenho"},
-        {"Breaking Free", "Twist and Shout", "Popular",
-         "Dancing Queen", "I'm Still Standing", "Um Sonho Eu Tenho"},
-        {"Dancing Queen", "Popular", "Twist and Shout",
-         "Breaking Free", "I'm Still Standing", "Um Sonho Eu Tenho"}
+    const char *esperadas[][9] = {
+        {"Breaking Free", "Dancing Queen", "De Nada", "I'm Still Standing", "Popular",
+         "Quase Lá", "Twist and Shout", "Um Mundo Ideal", "Um Sonho Eu Tenho"},
+        {"Quase Lá", "Breaking Free", "Um Mundo Ideal", "De Nada", "Twist and Shout",
+         "Popular", "Dancing Queen", "I'm Still Standing", "Um Sonho Eu Tenho"},
+        {"Dancing Queen", "Popular", "De Nada", "Twist and Shout", "Breaking Free",
+         "Um Mundo Ideal", "Quase Lá", "I'm Still Standing", "Um Sonho Eu Tenho"}
     };
     for (int criterio = 0; criterio < 3; criterio++) {
         ordenar_catalogo(catalogo, total, criterios[criterio]);
