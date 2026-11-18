@@ -4,8 +4,8 @@ Gerado em 17/11/2026 com ferramentas/gerador_mapas, sem alterar seu codigo
 ou parametros. Analise offline: mono 11025 Hz, FFT/Hann, HPSS, ataques
 espectrais, pulso global estimado e sustentacoes por altura/energia.
 Publicado: copia identica de mapas_gerados/notas_2.txt em notas.txt.
-Os cinco candidatos foram preservados. Dificuldade do catalogo continua
-0 / A definir: o preset nao equivale a uma classificacao musical revisada.
+Os cinco candidatos foram preservados. Dificuldade do catalogo definida pelo usuario em 4/5 em 17/11/2026.
+O preset de geracao foi preservado e nao determina essa classificacao.
 
 ## Comparacao dos cinco presets
 
@@ -117,3 +117,13 @@ Os 71 arquivos preexistentes de codigo, testes, Makefile, executavel e
 recursos incluidos na verificacao SHA-256 permaneceram identicos.
 Nao foram gravados rankings reais. Nenhum arquivo de origem foi alterado.
 A avaliacao auditiva e de conforto humano permanece pendente.
+
+## Fundo e dificuldade definidos pelo usuario - 17/11/2026
+
+Dificuldade: 4/5. Fundo: fundo.png, copia identica de enrolados.png,
+em C:/Users/gabri/OneDrive/Desktop/Nova pasta/. PNG valido, 1672x941,
+sem conversao; original preservado. O caminho ja estava no catalogo.
+Carregamento confirmado pelo modulo midia_partida e capturas da partida
+inspecionadas em 1280x720 e 1920x1080, incluindo notas sustentadas.
+Notas, teclas, pontuacao e medidor legiveis com o escurecimento existente.
+Mapas, WAV, ranking e regras nao foram alterados.

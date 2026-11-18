@@ -711,3 +711,34 @@ Os 71 arquivos preexistentes de codigo, testes, Makefile, executavel e
 recursos incluidos na verificacao SHA-256 permaneceram identicos.
 Nao foram gravados rankings reais. Nenhum arquivo de origem foi alterado.
 A avaliacao auditiva e de conforto humano permanece pendente.
+
+## Fundos e dificuldades de Sing e Enrolados - 17/11/2026
+
+Atualizacao das duas faixas: I'm Still Standing agora tem dificuldade 5/5,
+e Um Sonho Eu Tenho, 4/5, definidas pelo usuario. Os presets e notas dos
+mapas permanecem iguais. Esta decisao substitui a indicacao anterior
+A definir para essas duas musicas.
+
+Copiados, sem conversao e preservando os originais de
+C:/Users/gabri/OneDrive/Desktop/Nova pasta/:
+- Sing.png -> assets/musicas/im_still_standing/fundo.png
+- enrolados.png -> assets/musicas/um_sonho_eu_tenho/fundo.png
+
+Ambos sao PNG validos de 1672x941. Os caminhos ja estavam cadastrados.
+O carregamento e o escurecimento usam o modulo de midia existente.
+O catalogo encontrado nesta etapa tem nove musicas; as demais sete
+entradas e suas dificuldades foram preservadas.
+
+Validacao: make TARGET=/tmp/final_act_fundos, make test e make test-grafico
+aprovados. Expectativas de niveis e ordenacao atualizadas nos testes de
+desempenho/catalogo e partida. As duas partidas iniciaram com mapas e
+fundos reais; as texturas foram validadas. Quatro capturas em
+1280x720/1920x1080 foram inspecionadas: notas, sustentacoes, teclas,
+pontuacao e medidor legiveis. Capturas e auxiliar temporario em
+/tmp/final_act_fundos_verificacao/. Nao se trata de nova avaliacao auditiva.
+Os avisos da suite relativos a outros recursos ausentes/invalidos nao
+foram corrigidos nesta tarefa.
+
+Nenhuma alteracao no gerador, mapas, WAV, rankings, regras, renderizacao,
+Makefile ou executavel final_act preexistente. Este executavel ja estava
+modificado no git status inicial e foi preservado. Sem commit ou push.
